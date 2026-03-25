@@ -38,9 +38,9 @@ function AppContent() {
   const showBars = !hideBarsPaths.includes(location.pathname);
 
   return (
-    <div className="flex bg-bg h-screen w-screen overflow-hidden">
+    <div className="flex bg-bg h-[100dvh] w-screen overflow-hidden">
       {/* Desktop Persistent Sidebar / Mobile Drawer Sidebar */}
-      <div className="hidden lg:block h-full border-r border-gray-100 shrink-0">
+      <div className="hidden lg:block h-screen border-r border-gray-100 shrink-0">
         <Sidebar isOpen={true} isPersistent={true} />
       </div>
 

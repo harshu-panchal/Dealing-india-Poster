@@ -4,7 +4,7 @@ import { Gift, Flame, Briefcase, Sparkles } from 'lucide-react';
 
 const TabNavigation = () => {
   return (
-    <div className="bg-white border-t border-[#e2e8f0] pb-3 pt-2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] w-full flex-shrink-0">
+    <div className="bg-white border-t border-[#e2e8f0] pb-6 pt-2 shadow-[0_-2px_10px_rgba(0,0,0,0.08)] w-full flex-shrink-0 z-[100] relative">
       <div className="flex justify-around items-center max-w-[500px] mx-auto">
         <NavLink to="/" className={({ isActive }) => `flex flex-col items-center gap-1 flex-1 no-underline text-[0.7rem] font-bold ${isActive ? 'text-[#ef4444]' : 'text-[#64748b]'}`}>
           {({ isActive }) => (

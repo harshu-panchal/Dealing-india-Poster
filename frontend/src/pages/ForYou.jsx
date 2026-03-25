@@ -210,16 +210,16 @@ const ForYou = () => {
           </div>
         </section>
 
-        {/* 2. Top Hero POTD Grid - 3 Cards on Desktop */}
+        {/* 2. Top Hero POTD Grid - 3 Cards */}
         <div className="lg:py-6 lg:px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 transition-all">
             <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                {renderPOTDCard(TEMPLATES[0], 0)}
             </div>
-            <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl hidden md:block">
+            <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                {renderPOTDCard(TEMPLATES[1], 1)}
             </div>
-            <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl hidden lg:block">
+            <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                {renderPOTDCard(TEMPLATES[2], 2)}
             </div>
           </div>
@@ -230,7 +230,7 @@ const ForYou = () => {
         <div className="lg:py-6 lg:px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
             {[3, 4, 5].map(idx => (
-              <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl hidden md:first:block lg:block">
+              <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                 {renderPOTDCard(TEMPLATES[idx], idx)}
               </div>
             ))}
@@ -257,8 +257,16 @@ const ForYou = () => {
             </HorizontalScrollList>
           </div>
         </section>
-
-
+        {/* INTERSPERSED POTD GRID 1 */}
+        <div className="lg:py-6 lg:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
+            {[6, 7, 8].map(idx => (
+              <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
+                {renderPOTDCard(TEMPLATES[idx], idx)}
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* 5. Business Boost Posters */}
         <section className="bg-white py-4 mb-1">
@@ -276,6 +284,18 @@ const ForYou = () => {
             </HorizontalScrollList>
           </div>
         </section>
+
+        {/* INTERSPERSED POTD GRID 2 */}
+        <div className="lg:py-6 lg:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
+            {[9, 10, 11].map(idx => (
+              <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
+                {renderPOTDCard(TEMPLATES[idx], idx)}
+              </div>
+            ))}
+          </div>
+        </div>
+
 
         {/* 6. Daily Greetings */}
         <section className="bg-white py-4 mb-1">
@@ -296,9 +316,9 @@ const ForYou = () => {
 
         {/* 7. Final POTD Loop (Everything else) */}
         <div className="lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-10 lg:p-6 lg:w-full">
-           {TEMPLATES.slice(6, visibleSections).map((tpl, idx) => (
+           {TEMPLATES.slice(12, visibleSections).map((tpl, idx) => (
              <div key={tpl.id} className="mb-8 bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
-                {renderPOTDCard(tpl, idx + 6)}
+                {renderPOTDCard(tpl, idx + 12)}
              </div>
            ))}
         </div>
