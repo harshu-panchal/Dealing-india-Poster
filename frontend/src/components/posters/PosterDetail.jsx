@@ -42,47 +42,41 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
             style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
           />
           
-          {/* Dynamic Branding Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-none">
-            <div className="bg-white/95 backdrop-blur-sm p-2 px-3.5 flex items-center gap-3 border-t border-gray-100/50">
-              <div className="w-10 h-10 bg-gray-50 rounded-full overflow-hidden border border-gray-100 flex items-center justify-center shadow-inner">
-                <img src={userData.logo} alt="logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[0.8rem] font-black text-gray-900 leading-tight truncate px-0.5">{userData.business_name}</div>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[0.6rem] font-bold text-gray-500 mt-0.5">
-                  {(userData.enabledFields?.phone && userData.phone_number) && (
-                    <span className="flex items-center gap-1 shrink-0"><Phone size={9} className="text-red-500" fill="currentColor" /> {userData.phone_number}</span>
-                  )}
-                  {(userData.enabledFields?.website && userData.website) && (
-                    <span className="flex items-center gap-1 truncate max-w-[150px]">
-                      <Globe size={9} className="text-red-500" /> {userData.website}
-                    </span>
-                  )}
-                  {(!userData.enabledFields?.website && userData.enabledFields?.email && userData.email) && (
-                    <span className="flex items-center gap-1 truncate max-w-[150px]">
-                      <Globe size={9} className="text-red-500" /> {userData.email}
-                    </span>
-                  )}
+          {/* Unified Branding Overlay (Matches Feed Design) */}
+          <div className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-none w-full">
+            <div className="bg-black/95 flex h-[60px] lg:h-[80px] shadow-2xl overflow-visible border-t border-white/10">
+                {/* Left Details */}
+                <div className="flex-1 flex flex-col justify-center px-4 lg:px-8">
+                  <div className="text-white text-sm lg:text-xl font-black leading-tight truncate uppercase tracking-wide">
+                      {userData.business_name || 'SHEETAL'}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                      <div className="w-[18px] h-[18px] lg:w-6 lg:h-6 bg-[#25D366] rounded-full flex items-center justify-center">
+                        <MessageCircle size={10} className="text-white fill-white lg:w-4 lg:h-4" />
+                      </div>
+                      <span className="text-white text-[0.8rem] lg:text-base font-bold tracking-wider">{userData.phone_number || '6261265704'}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* User Photo Overlay (Matching Ref Image 3) */}
-          <div 
-            className="absolute bottom-16 right-4 z-[20] flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
-            onClick={() => onEdit(template)}
-          >
-            <div className="w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full p-0.5 shadow-xl border border-white/50 overflow-hidden relative group">
-              {userData.userPhoto ? (
-                <img src={userData.userPhoto} alt="User" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <div className="w-full h-full bg-gray-100 rounded-full flex flex-col items-center justify-center text-gray-400">
-                  <User size={24} />
-                  <span className="absolute bottom-1.5 text-[5px] font-black bg-white/80 px-1 py-0.5 rounded-full shadow-sm">YOUR PHOTO HERE</span>
+                {/* Right Cutout Area */}
+                <div className="w-[110px] lg:w-[160px] bg-[#f8fafc] relative rounded-tl-[2rem] lg:rounded-tl-[3.5rem] flex flex-col items-center justify-center border-l border-white/10 overflow-visible pt-1">
+                  <div className="absolute -top-7 lg:-top-11 w-20 lg:w-36 h-20 lg:h-36 flex flex-col items-center pointer-events-none z-30">
+                      {userData.userPhoto ? (
+                        <img src={userData.userPhoto} className="w-full h-full object-contain mb-0.5 drop-shadow-md" alt="u" />
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <User size={36} className="text-gray-300 lg:w-20 lg:h-20 opacity-60 drop-shadow-sm" />
+                          <div className="text-[0.45rem] lg:text-[0.7rem] font-black text-red-600 text-center leading-[0.85] mb-1 -mt-2 drop-shadow-sm bg-white/40 px-1 rounded uppercase">
+                            YOUR PHOTO<br/>HERE
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                  <div className="mt-auto pb-1.5 lg:pb-3 text-[0.45rem] lg:text-xs font-black tracking-tight whitespace-nowrap px-2">
+                      <span className="text-gray-800">Click on </span> 
+                      <span className="text-blue-600">Edit Poster</span>
+                  </div>
                 </div>
-              )}
             </div>
           </div>
 

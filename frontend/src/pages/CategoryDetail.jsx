@@ -8,7 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 const CategoryDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { openEditor } = useEditor();
+  const { openDetail } = useEditor();
   const category = CATEGORIES.find(c => c.id === parseInt(id));
 
   const categoryTemplates = TEMPLATES.filter(t => t.category === category?.title);
@@ -23,9 +23,9 @@ const CategoryDetail = () => {
         <p className="text-text-secondary">Choose a template to start creating your {category?.title.toLowerCase()} poster</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md px-2">
         {categoryTemplates.map(tpl => (
-          <TemplateCard key={tpl.id} template={tpl} onClick={() => openEditor(tpl)} />
+          <TemplateCard key={tpl.id} template={tpl} onClick={() => openDetail(tpl)} />
         ))}
         {categoryTemplates.length === 0 && (
           <div className="col-span-full text-center py-xl bg-card rounded-md text-text-secondary">

@@ -38,59 +38,71 @@ function AppContent() {
   const showBars = !hideBarsPaths.includes(location.pathname);
 
   return (
-    <>
-      <Sidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
-      <div className="h-full w-full flex flex-col overflow-hidden bg-bg">
-      {/* Scrollable Content Area */}
-      <main className="flex-1 w-full overflow-y-auto overflow-x-hidden scroll-smooth relative">
-        <div className="max-w-[1200px] mx-auto w-full">
-          {isAuthenticated && showBars && (
-            <CommonHeader 
-              showSearch={showSearch} 
-              onSearchChange={(val) => console.log('Search:', val)} 
-              onOpenSidebar={() => setShowSidebar(true)}
+    <div className="flex bg-bg h-screen w-screen overflow-hidden">
+      {/* Desktop Persistent Sidebar / Mobile Drawer Sidebar */}
+      <div className="hidden lg:block h-full border-r border-gray-100 shrink-0">
+        <Sidebar isOpen={true} isPersistent={true} />
+      </div>
+
+      <div className="lg:hidden">
+        <Sidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
+      </div>
+
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+        {/* Scrollable Content Area */}
+        <main className="flex-1 w-full overflow-y-auto overflow-x-hidden scroll-smooth relative">
+          <div className="w-full">
+            {isAuthenticated && showBars && (
+              <CommonHeader 
+                showSearch={showSearch} 
+                onSearchChange={(val) => console.log('Search:', val)} 
+                onOpenSidebar={() => setShowSidebar(true)}
+              />
+            )}
+            
+            <Suspense fallback={<ShimmerLayout />}>
+              <Routes>
+                <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
+                <Route path="/trending" element={<Trending />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/category/:id" element={<CategoryDetail />} />
+                <Route path="/calendar" element={<EventCalendar />} />
+                <Route path="/whats-new" element={<WhatsNew />} />
+                <Route path="/my-posters" element={<MyPosters />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </Routes>
+            </Suspense>
+          </div>
+        </main>
+
+        {/* Bottom Navigation - Hidden on Desktop */}
+        {isAuthenticated && showBars && (
+          <div className="lg:hidden">
+            <TabNavigation />
+          </div>
+        )}
+
+        <AnimatePresence>
+          {viewingDetail && (
+            <PosterDetail 
+              template={viewingDetail} 
+              onClose={closeDetail}
+              onEdit={openEditor}
             />
           )}
-          
-          <Suspense fallback={<ShimmerLayout />}>
-            <Routes>
-              <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
-              <Route path="/trending" element={<Trending />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/category/:id" element={<CategoryDetail />} />
-              <Route path="/calendar" element={<EventCalendar />} />
-              <Route path="/whats-new" element={<WhatsNew />} />
-              <Route path="/my-posters" element={<MyPosters />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Routes>
-          </Suspense>
-        </div>
-      </main>
+        </AnimatePresence>
 
-      {/* Permanently Visible Bottom Navigation */}
-      {isAuthenticated && showBars && <TabNavigation />}
-
-      <AnimatePresence>
-        {viewingDetail && (
-          <PosterDetail 
-            template={viewingDetail} 
-            onClose={closeDetail}
-            onEdit={openEditor}
+        {editingTemplate && (
+          <PosterEditor 
+            template={editingTemplate} 
+            onClose={closeEditor} 
           />
         )}
-      </AnimatePresence>
-
-      {editingTemplate && (
-        <PosterEditor 
-          template={editingTemplate} 
-          onClose={closeEditor} 
-        />
-      )}
       </div>
-    </>
+    </div>
   );
 }
 

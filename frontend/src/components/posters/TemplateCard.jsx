@@ -44,26 +44,26 @@ const TemplateCard = ({ template, onClick, variant = 'regular' }) => {
         )}
       </div>
       
-      <div className="flex justify-around py-3 border-t border-[#f1f5f9]">
-        <div className="flex flex-col items-center gap-1 flex-1 cursor-pointer active:scale-90 transition-transform" onClick={onClick}>
-          <div className="w-8 h-8 flex items-center justify-center text-[#334155]"><Edit2 size={20} /></div>
-          <span className="text-[0.75rem] font-bold text-[#64748b]">Edit</span>
+      <div className="flex justify-around py-3 lg:py-4 border-t border-[#f1f5f9] bg-white rounded-b-xl shadow-sm">
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={onClick}>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#334155] group-hover:text-primary"><Edit2 size={20} className="lg:w-6 lg:h-6" /></div>
+          <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-primary">Edit</span>
         </div>
-        <div className="flex flex-col items-center gap-1 flex-1 cursor-pointer active:scale-90 transition-transform">
-          <div className="w-8 h-8 flex items-center justify-center text-[#ef4444]"><Video size={20} /></div>
-          <span className="text-[0.75rem] font-bold text-[#64748b]">Video</span>
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#ef4444] group-hover:text-red-600"><Video size={20} className="lg:w-6 lg:h-6" /></div>
+          <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-red-600">Video</span>
         </div>
-        <div className="flex flex-col items-center gap-1 flex-1 cursor-pointer active:scale-90 transition-transform">
-          <div className="w-8 h-8 flex items-center justify-center text-[#334155]"><Download size={20} /></div>
-          <span className="text-[0.75rem] font-bold text-[#64748b]">Download</span>
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#334155] group-hover:text-primary"><Download size={20} className="lg:w-6 lg:h-6" /></div>
+          <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-primary">Save</span>
         </div>
-        <div className="flex flex-col items-center gap-1 flex-1 cursor-pointer active:scale-90 transition-transform group">
-          <div className="w-8 h-8 flex items-center justify-center text-[#22c55e]"><MessageCircle size={20} /></div>
-          <span className="text-[0.75rem] font-bold text-[#64748b]">Whatsapp</span>
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#22c55e] group-hover:text-green-600"><MessageCircle size={20} className="lg:w-6 lg:h-6" /></div>
+          <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-green-600">WhatsApp</span>
         </div>
-        <div className="flex flex-col items-center gap-1 flex-1 cursor-pointer active:scale-90 transition-transform">
-          <div className="w-8 h-8 flex items-center justify-center text-[#334155]"><Share2 size={20} /></div>
-          <span className="text-[0.75rem] font-bold text-[#64748b]">Share</span>
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#334155] group-hover:text-primary"><Share2 size={20} className="lg:w-6 lg:h-6" /></div>
+          <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-primary">Share</span>
         </div>
       </div>
     </div>
