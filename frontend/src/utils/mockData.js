@@ -1,0 +1,291 @@
+export const CATEGORIES = [
+  // Marketing & Business
+  { id: 1, title: 'Business Promotion', image: 'https://images.unsplash.com/photo-1460925895911-dfc9f9573f0f?q=80&w=600', count: 120, description: 'Scale your business with professional marketing posts.' },
+  { id: 2, title: 'Offer & Discounts', image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600', count: 85, description: 'Announce sales and special offers to your customers.' },
+  { id: 3, title: 'Shop Opening', image: 'https://images.unsplash.com/photo-1542744095-2ad4870f608e?q=80&w=600', count: 40, description: 'Grand opening and new store launch announcements.' },
+  { id: 4, title: 'Restaurant Promotion', image: 'https://images.unsplash.com/photo-1517248135467-4c7ed9d8c47c?q=80&w=600', count: 65, description: 'Delicious designs for food and beverage businesses.' },
+  { id: 5, title: 'Real Estate', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=600', count: 50, description: 'Property listings and real estate marketing ads.' },
+  { id: 18, title: 'Business Card', image: 'https://images.unsplash.com/photo-1589118949245-7d38baf380d6?q=80&w=600', count: 45, description: 'Professional business card designs.' },
+  { id: 20, title: 'Business Shayari', image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=600', count: 32, description: 'Motivational shayaris for business growth.' },
+  { id: 21, title: 'Udhari Reminder', image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=600', count: 18, description: 'Polite payment reminder posters.' },
+  
+  // Festivals
+  { id: 6, title: 'Diwali Specials', image: 'https://images.unsplash.com/photo-1541336032412-2048a678540d?q=80&w=600', count: 200, description: 'Celebratory designs for the festival of lights.' },
+  { id: 7, title: 'Holi Greetings', image: 'https://images.unsplash.com/photo-1590076215667-873d3148f323?q=80&w=600', count: 150, description: 'Colorful posters for the festival of colors.' },
+  { id: 8, title: 'Eid Mubarak', image: 'https://images.unsplash.com/photo-1540979388789-6eca284147df?q=80&w=600', count: 90, description: 'Graceful greetings for Eid celebrations.' },
+  { id: 9, title: 'Christmas & New Year', image: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?q=80&w=600', count: 130, description: 'Season greetings for year-end festivities.' },
+  
+  // Personal & Greetings
+  { id: 10, title: 'Birthday Cards', image: 'https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34?q=80&w=600', count: 300, description: 'Customize birthday wishes for your loved ones.' },
+  { id: 11, title: 'Anniversary', image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=600', count: 80, description: 'Celebrate milestones with beautiful posters.' },
+  { id: 12, title: 'Wedding Greetings', image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=600', count: 75, description: 'Marriage invitations and congratulation cards.' },
+  
+  // Daily Content
+  { id: 13, title: 'Motivational Quotes', image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=600', count: 500, description: 'Inspire your audience with daily suvichar and thoughts.' },
+  { id: 14, title: 'Good Morning', image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=600', count: 400, description: 'Daily positive morning greetings for social media.' },
+  { id: 19, title: 'Good Night', image: 'https://images.unsplash.com/photo-1532767153582-b1a0e5145009?q=80&w=600', count: 350, description: 'Peaceful good night wishes for social media.' },
+  { id: 15, title: 'Religious & Spiritual', image: 'https://images.unsplash.com/photo-1563200020-006277a83d1c?q=80&w=600', count: 250, description: 'Spiritual cards for daily peace and devotion.' },
+  
+  // National Days
+  { id: 16, title: 'National Day Posters', image: 'https://images.unsplash.com/photo-1532375810709-75b1da00537c?q=80&w=600', count: 120, description: 'Independence Day, Republic Day, and national tributes.' },
+  { id: 17, title: 'Teachers & Education', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=600', count: 60, description: 'Honoring educators and educational achievements.' },
+];
+
+export const TEMPLATES = [
+  { 
+    id: 1, 
+    title: 'Holi Festival Greeting', 
+    category: 'Holi Greetings', 
+    image: 'https://images.unsplash.com/photo-1590076215667-873d3148f323?q=80&w=800',
+    trending: true,
+    isVideo: true,
+    width: 1000,
+    height: 1250,
+    backgroundImage: 'https://images.unsplash.com/photo-1590076215667-873d3148f323?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  { 
+    id: 101, 
+    title: 'Good Morning Flowers', 
+    category: 'Good Morning', 
+    image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=800',
+    trending: true,
+    isVideo: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  { 
+    id: 501, 
+    title: 'Success Shayari', 
+    category: 'Business Shayari', 
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800',
+    trending: true,
+    isVideo: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  { 
+    id: 502, 
+    title: 'Payment Reminder Template', 
+    category: 'Udhari Reminder', 
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=800',
+    trending: true,
+    isVideo: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  { 
+    id: 102, 
+    title: 'Positive Vibes Morning', 
+    category: 'Good Morning', 
+    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  { 
+    id: 2, 
+    title: 'Flash Sale Announcement', 
+    category: 'Offer & Discounts', 
+    image: 'https://images.unsplash.com/photo-1621944190310-e3cca1564bd7?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1621944190310-e3cca1564bd7?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 3,
+    title: 'Grand Opening Invite',
+    category: 'Shop Opening',
+    image: 'https://images.unsplash.com/photo-1541746972996-4e0b0f43e01a?q=80&w=800',
+    trending: false,
+    width: 1000,
+    height: 1250,
+    backgroundImage: 'https://images.unsplash.com/photo-1541746972996-4e0b0f43e01a?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 4,
+    title: 'Daily Motivational Thought',
+    category: 'Motivational Quotes',
+    image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 201,
+    title: 'Keep Going Quote',
+    category: 'Motivational Quotes',
+    image: 'https://images.unsplash.com/photo-1493612276216-ee3925520721?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1493612276216-ee3925520721?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 301,
+    title: 'Night Sky Wishes',
+    category: 'Good Night',
+    image: 'https://images.unsplash.com/photo-1532767153582-b1a0e5145009?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1532767153582-b1a0e5145009?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 302,
+    title: 'Cozy Night Greeting',
+    category: 'Good Night',
+    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 401,
+    title: 'Premium Business Card',
+    category: 'Business Card',
+    image: 'https://images.unsplash.com/photo-1589118949245-7d38baf380d6?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 600,
+    backgroundImage: 'https://images.unsplash.com/photo-1589118949245-7d38baf380d6?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 402,
+    title: 'Modern Brand Card',
+    category: 'Business Card',
+    image: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 600,
+    backgroundImage: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 103,
+    title: 'Fresh Morning Coffee',
+    category: 'Good Morning',
+    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=800',
+    trending: false,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 5,
+    title: 'Eid Mubarak Greeting',
+    category: 'Eid Mubarak',
+    image: 'https://images.unsplash.com/photo-1540979388789-6eca284147df?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1250,
+    backgroundImage: 'https://images.unsplash.com/photo-1540979388789-6eca284147df?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 6,
+    title: 'Business Growth',
+    category: 'Business Promotion',
+    image: 'https://images.unsplash.com/photo-1460925895911-dfc9f9573f0f?q=80&w=800',
+    trending: false,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1460925895911-dfc9f9573f0f?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 7,
+    title: 'Season Greetings',
+    category: 'Christmas & New Year',
+    image: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 104,
+    title: 'Sunrise Wishes',
+    category: 'Good Morning',
+    image: 'https://images.unsplash.com/photo-1470252649358-96947c0338d3?q=80&w=800',
+    trending: false,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1470252649358-96947c0338d3?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 8,
+    title: 'Special Discount Sale',
+    category: 'Offer & Discounts',
+    image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 9,
+    title: 'Birthday Bash',
+    category: 'Birthday Cards',
+    image: 'https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34?q=80&w=800',
+    trending: false,
+    width: 1000,
+    height: 1250,
+    backgroundImage: 'https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  },
+  {
+    id: 10,
+    title: 'Anniversary Celebration',
+    category: 'Anniversary',
+    image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800',
+    trending: true,
+    width: 1000,
+    height: 1000,
+    backgroundImage: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=1200',
+    layout: [],
+    editableFields: []
+  }
+];
