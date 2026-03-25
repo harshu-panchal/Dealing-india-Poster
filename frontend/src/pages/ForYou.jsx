@@ -64,23 +64,27 @@ const ForYou = () => {
                       </div>
                    </div>
 
-                   {/* Right Cutout Area */}
-                   <div className="w-[105px] lg:w-[155px] bg-[#f8fafc] relative rounded-tl-[2rem] lg:rounded-tl-[3.5rem] flex flex-col items-center justify-center border-l border-white/10 overflow-visible pt-1">
-                      <div className="absolute -top-7 lg:-top-11 w-20 lg:w-32 h-20 lg:h-32 flex flex-col items-center pointer-events-none z-30">
-                         {userData.userPhoto ? (
-                           <img src={userData.userPhoto} className="w-full h-full object-contain mb-0.5 drop-shadow-md" alt="u" />
-                         ) : (
-                           <div className="flex flex-col items-center">
-                              <User size={36} className="text-gray-300 lg:w-20 lg:h-20 opacity-60 drop-shadow-sm" />
-                              <div className="text-[0.45rem] lg:text-[0.7rem] font-black text-red-600 text-center leading-[0.85] mb-1 -mt-2 drop-shadow-sm bg-white/40 px-1 rounded uppercase">
-                                YOUR PHOTO<br/>HERE
-                              </div>
-                           </div>
-                         )}
-                      </div>
-                      <div className="mt-auto pb-1.5 lg:pb-3 text-[0.45rem] lg:text-xs font-black tracking-tight whitespace-nowrap px-2">
-                         <span className="text-gray-800">Click on </span> 
-                         <span className="text-blue-600">Edit Poster</span>
+                   {/* Floating Circular Profile Holder */}
+                   <div className="relative w-[110px] lg:w-[160px] flex-shrink-0 flex items-center justify-center">
+                      <div className="absolute -top-4 lg:-top-6 right-2 w-[85px] h-[85px] lg:w-[130px] lg:h-[130px] z-30">
+                          <div className="w-full h-full p-1.5 bg-white rounded-full shadow-xl border-4 border-white flex flex-col items-center justify-center overflow-hidden">
+                              {userData.userPhoto ? (
+                                <img src={userData.userPhoto} className="w-full h-full object-cover rounded-full" alt="u" />
+                              ) : (
+                                <div className="w-full h-full bg-gray-50 rounded-full flex flex-col items-center justify-center border-2 border-dashed border-gray-200">
+                                   <User size={30} className="text-gray-300 lg:w-20 lg:h-20" />
+                                   <div className="text-[0.4rem] lg:text-[0.65rem] font-black text-red-600 text-center leading-[0.85] uppercase mt-0.5">
+                                     YOUR PHOTO<br/>HERE
+                                   </div>
+                                </div>
+                              )}
+                          </div>
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[0.45rem] lg:text-[0.7rem] font-black tracking-tight whitespace-nowrap bg-blue-600 text-white px-2 py-0.5 rounded-full shadow-md pointer-events-auto cursor-pointer active:scale-95 transition-transform" onClick={(e) => {
+                            e.stopPropagation();
+                            openDetail(tpl);
+                          }}>
+                              Edit Poster
+                          </div>
                       </div>
                    </div>
                 </div>
@@ -130,12 +134,12 @@ const ForYou = () => {
           {/* Top Category Chips - Horizontal Sticky Video */}
           <section className="bg-white pt-1 pb-4 relative border-b border-[#f1f5f9] flex justify-center">
             <div className="flex px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth transition-all lg:max-w-6xl w-full">
-              {/* Sticky Video Button Wrapper with Background Mask */}
+              {/* Sticky Video Button Wrapper with Solid Background to mask scrolling chips */}
               <div 
-                className="sticky left-0 z-[60] bg-white pr-2 -ml-2 pl-2"
+                className="sticky left-0 z-[60] bg-white pr-3 -ml-2 pl-2 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]"
                 onClick={() => setActiveCategory('Video')}
               >
-                <button className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 shadow-md active:scale-95 transition-all shrink-0 ${activeCategory === 'Video' ? 'bg-[#b91c1c] text-white' : 'bg-[#ef4444] text-white'}`}>
+                <button className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 active:scale-95 transition-all shrink-0 ${activeCategory === 'Video' ? 'bg-[#b91c1c] text-white' : 'bg-[#ef4444] text-white'}`}>
                   <Video size={18} fill="white" /> Video
                 </button>
               </div>
