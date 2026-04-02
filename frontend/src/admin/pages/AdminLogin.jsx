@@ -44,12 +44,12 @@ const AdminLogin = () => {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-red-100/20 via-transparent to-transparent">
+    <div ref={containerRef} className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-red-100/20 via-transparent to-transparent">
       {/* Background Ornaments */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-500/5 blur-[120px] rounded-full" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[40%] bg-[#ef4444]/5 blur-[100px] rounded-full" />
       
-      <Card className="login-card w-full max-w-[480px] p-10 border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] dark:shadow-none dark:bg-slate-900 rounded-[3rem] relative z-10 overflow-hidden">
+      <Card className="login-card w-full max-w-[480px] p-10 border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] bg-white rounded-[3rem] relative z-10 overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-5">
            <Layers size={140} className="text-slate-950 dark:text-white" />
         </div>
@@ -68,12 +68,10 @@ const AdminLogin = () => {
           </div>
         </div>
 
-        {error && (
-          <div className="login-item bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-black tracking-widest uppercase p-4 rounded-2xl mb-8 flex items-center gap-3 animate-pulse">
+          <div className="login-item bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-black tracking-widest uppercase p-4 rounded-2xl mb-8 flex items-center gap-3 animate-pulse">
             <Activity size={14} />
             {error}
           </div>
-        )}
 
         <form onSubmit={handleLogin} className="space-y-6 relative">
           <div className="login-item space-y-2">
@@ -85,7 +83,7 @@ const AdminLogin = () => {
               <Input 
                 type="text" 
                 required
-                className="h-16 pl-14 bg-white dark:bg-[var(--admin-input-bg)] border-none rounded-2xl text-sm font-bold shadow-inner"
+                className="h-16 pl-14 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-800 shadow-inner"
                 placeholder="Principal ID"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
@@ -102,7 +100,7 @@ const AdminLogin = () => {
               <Input 
                 type={showPassword ? 'text' : 'password'} 
                 required
-                className="h-16 pl-14 pr-14 bg-white dark:bg-[var(--admin-input-bg)] border-none rounded-2xl text-sm font-black shadow-inner"
+                className="h-16 pl-14 pr-14 bg-slate-50 border-none rounded-2xl text-sm font-black text-slate-800 shadow-inner"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -141,9 +139,9 @@ const AdminLogin = () => {
 
         <div className="login-item mt-12 flex flex-col items-center gap-4 border-t border-slate-100 dark:border-slate-800 pt-10">
            <div className="flex gap-4">
-              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-300"><Command size={14} /></div>
-              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-300"><Activity size={14} /></div>
-              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-300"><Fingerprint size={14} /></div>
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold">C</div>
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold">A</div>
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 font-bold">F</div>
            </div>
            <p className="text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] leading-relaxed opacity-40">
               Authorized Ops Node Access<br/>
