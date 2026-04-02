@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Phone, Lock, ChevronRight, Grapes as Google, Facebook, Mail, ArrowLeft } from 'lucide-react';
+import { Phone, Lock, ChevronRight, Chrome as Google, Share2 as Facebook, Mail, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Login = () => {
@@ -90,7 +90,7 @@ const Login = () => {
 
         <div className="text-center pt-2">
            <p className="text-slate-400 text-xs font-bold uppercase tracking-wide">
-             New to Appzeto? <Link to="/register" className="text-[#ef4444] hover:underline">Create Account</Link>
+             New to Dealing India Poster? <Link to="/register" className="text-[#ef4444] hover:underline">Create Account</Link>
            </p>
         </div>
       </motion.div>

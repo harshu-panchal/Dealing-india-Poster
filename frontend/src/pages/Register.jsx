@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Phone, Lock, ChevronRight, User, Plus, Facebook, Mail, ArrowLeft } from 'lucide-react';
+import { Phone, Lock, ChevronRight, User, Plus, Share2 as Facebook, Mail, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Register = () => {
@@ -34,7 +34,7 @@ const Register = () => {
           <div className="w-16 h-16 bg-[#ef4444] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-100 mb-6 font-black italic text-2xl">
              A
           </div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Join Appzeto</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Join Dealing India Poster</h1>
           <p className="text-slate-400 text-sm font-semibold mt-1 text-center">Start creating beautiful posters today</p>
         </div>
 
