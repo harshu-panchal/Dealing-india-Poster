@@ -6,7 +6,7 @@ import ShimmerLayout from './components/common/ShimmerLayout';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
 
-// Lazy loading pages
+// Lazy loading User pages
 const Home = lazy(() => import('./pages/ForYou'));
 const Categories = lazy(() => import('./pages/Categories'));
 const CategoryDetail = lazy(() => import('./pages/CategoryDetail'));
@@ -19,9 +19,27 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Trending = lazy(() => import('./pages/Trending'));
 
+// Lazy loading Admin pages
+const AdminLayout = lazy(() => import('./admin/components/AdminLayout'));
+const AdminLogin = lazy(() => import('./admin/pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
+const UserManager = lazy(() => import('./admin/pages/UserManager'));
+const MusicLibrary = lazy(() => import('./admin/pages/MusicLibrary'));
+const CategoryManager = lazy(() => import('./admin/pages/CategoryManager'));
+const TemplateManager = lazy(() => import('./admin/pages/TemplateManager'));
+const ReferralManager = lazy(() => import('./admin/pages/ReferralManager'));
+const EventManager = lazy(() => import('./admin/pages/EventManager'));
+const UserDetail = lazy(() => import('./admin/pages/UserDetail'));
+
 import { EditorProvider, useEditor } from './context/EditorContext';
 import PosterEditor from './components/editor/PosterEditor';
 import PosterDetail from './components/posters/PosterDetail';
+
+// Protected Route for Admin
+const ProtectedAdminRoute = ({ children }) => {
+  const isAdmin = localStorage.getItem('isAdminAuthenticated') === 'true';
+  return isAdmin ? children : <Navigate to="/admin/login" replace />;
+};
 
 function AppContent() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -32,21 +50,47 @@ function AppContent() {
   } = useEditor();
   const location = useLocation();
 
+  const isAdminPath = location.pathname.startsWith('/admin');
   const showSearchInHeaderPages = ['/', '/trending', '/categories'];
   const showSearch = showSearchInHeaderPages.includes(location.pathname);
-  const hideBarsPaths = ['/calendar', '/whats-new'];
-  const showBars = !hideBarsPaths.includes(location.pathname);
+  const hideBarsPaths = ['/calendar', '/whats-new', '/login', '/register'];
+  const showBars = !hideBarsPaths.includes(location.pathname) && !isAdminPath;
+
+  // Handle routing for Admin Panel separately
+  if (isAdminPath) {
+    return (
+      <Suspense fallback={<ShimmerLayout />}>
+        <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
+             <Route index element={<Navigate to="/admin/dashboard" replace />} />
+             <Route path="dashboard" element={<AdminDashboard />} />
+             <Route path="users" element={<UserManager />} />
+             <Route path="users/:id" element={<UserDetail />} />
+             <Route path="music" element={<MusicLibrary />} />
+             <Route path="categories" element={<CategoryManager />} />
+             <Route path="templates" element={<TemplateManager />} />
+             <Route path="referrals" element={<ReferralManager />} />
+             <Route path="events" element={<EventManager />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    );
+  }
 
   return (
-    <div className="flex bg-bg h-[100dvh] w-screen overflow-hidden">
-      {/* Desktop Persistent Sidebar / Mobile Drawer Sidebar */}
-      <div className="hidden lg:block h-screen border-r border-gray-100 shrink-0">
-        <Sidebar isOpen={true} isPersistent={true} />
-      </div>
-
-      <div className="lg:hidden">
-        <Sidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
-      </div>
+    <div className="flex bg-bg h-full w-full overflow-hidden">
+      {/* User Sidebar - Only shown if Not Admin Route */}
+      {!isAdminPath && (
+        <>
+          <div className="hidden lg:block h-screen border-r border-gray-100 shrink-0">
+            <Sidebar isOpen={true} isPersistent={true} />
+          </div>
+          <div className="lg:hidden">
+            <Sidebar isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
+          </div>
+        </>
+      )}
 
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
         {/* Scrollable Content Area */}
@@ -78,7 +122,7 @@ function AppContent() {
           </div>
         </main>
 
-        {/* Bottom Navigation - Hidden on Desktop */}
+        {/* Bottom Navigation - Hidden on Desktop and Admin */}
         {isAuthenticated && showBars && (
           <div className="lg:hidden">
             <TabNavigation />
@@ -117,3 +161,4 @@ function App() {
 }
 
 export default App;
+

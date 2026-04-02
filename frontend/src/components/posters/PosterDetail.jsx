@@ -15,7 +15,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: '100%' }}
     >
-      <div className="bg-[#b91c1c] p-3 px-4 flex items-center gap-4 text-white">
+      <div className="bg-[#b91c1c] px-4 flex items-center gap-4 text-white" style={{ paddingTop: 'calc(0.75rem + var(--safe-top))', paddingBottom: '0.75rem' }}>
         <button className="bg-transparent text-white p-0 flex items-center active:scale-95 transition-transform" onClick={onClose}>
           <ArrowLeft size={24} />
         </button>
@@ -92,7 +92,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
         </div>
       </div>
 
-      <div className="p-6 px-4 pb-10 bg-white flex flex-col gap-5">
+      <div className="p-6 px-4 bg-white flex flex-col gap-5" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
         <button className="w-full bg-white border-2 border-[#4f46e5] text-[#4f46e5] p-3.5 rounded-xl text-lg font-bold shadow-sm active:bg-[#4f46e5]/5 transition-colors" onClick={() => onEdit(template)}>
           Edit Poster
         </button>

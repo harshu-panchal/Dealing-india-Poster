@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { 
   Type, X, Check, ImageIcon as ImageIcon, 
-  User, Star, Smile, Plus
+  User, Star, Smile, Plus, Video, Music, Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
 
 const PosterEditor = ({ template, onClose }) => {
-  const { userData, setUserData } = useEditor();
-  const [activeTab, setActiveTab] = useState('branding');
+  const { userData, setUserData, initialEditorTab } = useEditor();
+  const [activeTab, setActiveTab] = useState(initialEditorTab || 'branding');
   
   // Local state for edits before "Okay"
   const [localUserData, setLocalUserData] = useState({...userData});
@@ -56,18 +56,25 @@ const PosterEditor = ({ template, onClose }) => {
         {/* Custom Tabs */}
         <div className="flex border-b border-gray-100 relative">
           <button 
-            className={`flex-1 py-4 text-[1rem] font-bold flex items-center justify-center gap-2 border-none bg-transparent transition-colors ${activeTab === 'text' ? 'text-red-500' : 'text-gray-400'}`}
+            className={`flex-1 py-4 text-[0.9rem] font-bold flex items-center justify-center gap-2 border-none bg-transparent transition-colors ${activeTab === 'text' ? 'text-red-500' : 'text-gray-400'}`}
             onClick={() => setActiveTab('text')}
           >
-            <Type size={20} /> Text
-            {activeTab === 'text' && <div className="absolute bottom-0 left-0 w-1/2 h-[3px] bg-red-500 rounded-t-full" />}
+            <Type size={18} /> Text
+            {activeTab === 'text' && <div className="absolute bottom-0 left-0 w-1/3 h-[3px] bg-red-500 rounded-t-full" />}
           </button>
           <button 
-            className={`flex-1 py-4 text-[1rem] font-bold flex items-center justify-center gap-2 border-none bg-transparent transition-colors ${activeTab === 'branding' ? 'text-red-500' : 'text-gray-400'}`}
+            className={`flex-1 py-4 text-[0.9rem] font-bold flex items-center justify-center gap-2 border-none bg-transparent transition-colors ${activeTab === 'branding' ? 'text-red-500' : 'text-gray-400'}`}
             onClick={() => setActiveTab('branding')}
           >
-            <ImageIcon size={20} /> Photo / Logo
-            {activeTab === 'branding' && <div className="absolute bottom-0 right-0 w-1/2 h-[3px] bg-red-500 rounded-t-full" />}
+            <ImageIcon size={18} /> Photo
+            {activeTab === 'branding' && <div className="absolute bottom-0 left-1/3 w-1/3 h-[3px] bg-red-500 rounded-t-full" />}
+          </button>
+          <button 
+            className={`flex-1 py-4 text-[0.9rem] font-bold flex items-center justify-center gap-2 border-none bg-transparent transition-colors ${activeTab === 'video' ? 'text-red-500' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('video')}
+          >
+            <Video size={18} /> Video
+            {activeTab === 'video' && <div className="absolute bottom-0 right-0 w-1/3 h-[3px] bg-red-500 rounded-t-full" />}
           </button>
         </div>
 
@@ -223,10 +230,100 @@ const PosterEditor = ({ template, onClose }) => {
               </div>
             </div>
           )}
-        </div>
+          
+          {activeTab === 'video' && (
+            <div className="p-5 flex flex-col gap-8 pb-10">
+              {/* Music Section */}
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2">
+                    <Music size={20} className="text-pink-500" /> Choose Music
+                  </h3>
+                  <span className="text-[0.7rem] font-bold text-red-500 uppercase tracking-widest cursor-pointer">View All</span>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                   {[
+                     { name: 'Upbeat Corporate', duration: '0:45', active: true },
+                     { name: 'Inspirational Morning', duration: '1:12' },
+                     { name: 'Modern Tech Beats', duration: '0:38' }
+                   ].map((m, i) => (
+                     <div key={i} className={`min-w-[124px] p-3 rounded-2xl flex flex-col gap-2 transition-all ${m.active ? 'bg-black text-white shadow-lg' : 'bg-gray-50 border border-gray-100 text-gray-800'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${m.active ? 'bg-white/20' : 'bg-gray-200'}`}>
+                           <Music size={14} className={m.active ? 'text-white' : 'text-gray-500'} />
+                        </div>
+                        <span className="text-[0.7rem] font-bold leading-tight line-clamp-1">{m.name}</span>
+                        <span className={`text-[0.55rem] font-medium ${m.active ? 'opacity-60' : 'text-gray-400'}`}>{m.duration}</span>
+                     </div>
+                   ))}
+                </div>
+              </section>
 
+              {/* Video Effects */}
+              <section>
+                <div className="flex items-center mb-4">
+                  <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2">
+                    <Sparkles size={20} className="text-amber-500" /> Video Effects
+                  </h3>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { name: 'None', active: true },
+                    { name: 'Film Rim' },
+                    { name: 'Particles' },
+                    { name: 'Glow' },
+                    { name: 'Sepia' },
+                    { name: 'BW' },
+                    { name: 'Flares' },
+                    { name: 'Magic' }
+                  ].map((e, i) => (
+                    <div key={i} className="flex flex-col items-center gap-2">
+                       <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${e.active ? 'ring-2 ring-red-500 ring-offset-2 bg-gray-50' : 'bg-gray-100 opacity-60'}`}>
+                          <Sparkles size={20} className={e.active ? 'text-red-500' : 'text-gray-400'} />
+                       </div>
+                       <span className={`text-[0.6rem] font-bold ${e.active ? 'text-red-500' : 'text-gray-400'}`}>{e.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Subtitles / Captions */}
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                   <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2">
+                      <Type size={20} className="text-blue-500" /> Video Subtitles
+                   </h3>
+                   <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-full px-2">
+                      <div className="w-[18px] h-[18px] bg-green-500 rounded-full flex items-center justify-center">
+                         <Check size={10} className="text-white" />
+                      </div>
+                      <span className="text-[0.6rem] font-bold text-gray-600">Auto Captions ON</span>
+                   </div>
+                </div>
+                <div className="space-y-3">
+                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                      <div>
+                         <span className="text-[0.7rem] font-bold text-gray-400 block mb-1">CAPTION STYLE</span>
+                         <span className="text-[0.85rem] font-bold text-gray-800">Dynamic Pop (Center)</span>
+                      </div>
+                      <button className="text-[0.7rem] font-black text-red-500 bg-white px-4 py-1.5 rounded-full shadow-sm">Change</button>
+                   </div>
+                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                      <div>
+                         <span className="text-[0.7rem] font-bold text-gray-400 block mb-1">LANGUAGE</span>
+                         <span className="text-[0.85rem] font-bold text-gray-800">Hindi + English (Mix)</span>
+                      </div>
+                      <button className="text-[0.7rem] font-black text-red-500 bg-white px-4 py-1.5 rounded-full shadow-sm">Change</button>
+                   </div>
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
         {/* Footer Actions */}
-        <div className="p-4 px-6 border-t border-gray-100 bg-white flex items-center justify-between gap-6 pb-10">
+        <div 
+          className="p-4 px-6 border-t border-gray-100 bg-white flex items-center justify-between gap-6"
+          style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}
+        >
            <button className="bg-transparent text-red-500 font-bold text-lg active:scale-95 transition-transform border-none" onClick={onClose}>
              Cancel
            </button>

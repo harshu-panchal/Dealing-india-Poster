@@ -4,6 +4,7 @@ const EditorContext = createContext();
 
 export const EditorProvider = ({ children }) => {
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [initialEditorTab, setInitialEditorTab] = useState('branding');
   const [viewingDetail, setViewingDetail] = useState(null);
   const [userData, setUserData] = useState({
     business_name: 'Sheetal',
@@ -41,8 +42,9 @@ export const EditorProvider = ({ children }) => {
     return templateWithUserData;
   };
 
-  const openEditor = (template) => {
+  const openEditor = (template, initialTab = 'branding') => {
     setEditingTemplate(injectUserData(template));
+    setInitialEditorTab(initialTab);
     // Keep viewingDetail open
   };
 
@@ -57,7 +59,8 @@ export const EditorProvider = ({ children }) => {
     <EditorContext.Provider value={{ 
       editingTemplate, openEditor, closeEditor, 
       viewingDetail, openDetail, closeDetail,
-      userData, setUserData 
+      userData, setUserData,
+      initialEditorTab
     }}>
       {children}
     </EditorContext.Provider>

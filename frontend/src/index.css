@@ -10,18 +10,25 @@
   --border-color: #e2e8f0;
 }
 
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @layer base {
-  html, body, #root {
+  html, body {
     height: 100% !important;
     width: 100% !important;
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
-    position: fixed !important;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
+  }
+
+  #root {
+    height: 100% !important;
+    width: 100% !important;
+    overflow: hidden;
+    background-color: var(--bg-color);
   }
 
   * {
