@@ -128,19 +128,26 @@ const TemplateManager = () => {
       </div>
 
       {/* Designer Call to Action */}
-      <Card className="border-none max-w-2xl mx-auto detail-card relative overflow-hidden group">
-         <div className="absolute top-0 right-0 p-12 opacity-5 translate-x-12 -translate-y-12 rotate-12">
-            <Layers size={200} className="text-red-500" />
+      <Card className="border-none max-w-4xl mx-auto bg-white rounded-[3rem] p-16 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
+         <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none translate-x-12 -translate-y-12 rotate-12 transition-transform duration-700 group-hover:scale-110">
+            <Layers size={320} className="text-[#ef4444]" />
          </div>
-         <div className="p-12 flex flex-col items-center justify-center text-center relative z-10">
-            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-300 dark:text-slate-700 mb-8 shadow-inner transform -rotate-6 group-hover:rotate-0 transition-all duration-500">
-               <Layout size={40} strokeWidth={2.5} />
+         
+         <div className="relative z-10 flex flex-col items-center text-center">
+            <div className="w-24 h-24 bg-red-50 rounded-[2.5rem] flex items-center justify-center text-[#ef4444] mb-10 shadow-sm border border-red-100/50 transition-all duration-500 group-hover:rotate-6">
+               <Layout size={44} strokeWidth={2.5} />
             </div>
-            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-3">Architect Dynamic Systems</h2>
-            <p className="text-slate-400 text-xs font-semibold mb-10 max-w-[320px] leading-relaxed italic">Every layout you engineer propagates across the global Dealing-india-Poster network.</p>
-            <Button className="h-16 px-12 rounded-[2rem] shadow-2xl shadow-red-500/20 font-black text-xs uppercase tracking-[0.2em] w-full max-w-xs gap-3">
-               <Sparkles size={18} /> Provision Designer
+            
+            <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-4">Architect Dynamic Systems</h2>
+            <p className="text-slate-500 text-sm font-semibold mb-12 max-w-[460px] leading-relaxed">
+               Propagate your engineered layouts across the global Dealing India Poster network with real-time asset synchronization.
+            </p>
+            
+            <Button className="h-20 px-16 rounded-[2.5rem] shadow-2xl shadow-red-500/30 font-black text-[11px] uppercase tracking-[0.25em] w-full max-w-md gap-4 bg-[#ef4444] hover:bg-[#d93434] transition-all hover:scale-[1.02] active:scale-[0.98]">
+               <Sparkles size={20} strokeWidth={3} /> Provision Designer
             </Button>
+            
+            <p className="mt-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Authorized Ops Node Access Required</p>
          </div>
       </Card>
     </div>
