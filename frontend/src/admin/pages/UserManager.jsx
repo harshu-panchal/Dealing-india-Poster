@@ -42,17 +42,17 @@ const UserManager = () => {
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-4">
         <div>
            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Management</p>
-           <h1 className="text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Access Control</h1>
-           <p className="text-slate-400 text-xs font-semibold mt-1">Audit and regulate community membership profiles</p>
+           <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Access Control</h1>
+           <p className="text-slate-400 text-xs font-semibold mt-1 max-w-[280px] sm:max-w-none">Audit and regulate community membership profiles</p>
         </div>
-        <div className="flex gap-3">
-           <Button variant="outline" className="rounded-xl border-slate-200">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+           <Button variant="outline" className="w-full sm:w-auto rounded-xl border-slate-200 h-11 md:h-12 text-[10px] md:text-xs font-black uppercase tracking-widest">
               Export Archive
            </Button>
-           <Button className="rounded-xl shadow-lg shadow-red-500/20">
+           <Button className="w-full sm:w-auto rounded-xl shadow-lg shadow-red-500/20 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs font-black uppercase tracking-widest">
               Provision New UID
            </Button>
         </div>

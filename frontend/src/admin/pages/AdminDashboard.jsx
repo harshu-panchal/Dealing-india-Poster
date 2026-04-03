@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { 
   TrendingUp, Users, ImageIcon, Layers, 
   Award, ArrowUpRight, ArrowDownRight, 
@@ -32,16 +32,16 @@ const AdminDashboard = () => {
   return (
     <div ref={containerRef} className="space-y-10">
       {/* Page Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-4">
         <div>
            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Operations Control</p>
-           <h1 className="text-3xl font-black text-[var(--admin-text-main)] tracking-tight">System Insights</h1>
+           <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">System Insights</h1>
         </div>
-        <div className="flex gap-3">
-           <Button variant="outline" className="rounded-xl border-slate-200">
+        <div className="flex gap-3 w-full sm:w-auto">
+           <Button variant="outline" className="flex-1 sm:flex-none rounded-xl border-slate-200 h-11 md:h-12 text-[10px] md:text-xs">
               <Calendar size={16} className="mr-2" /> Last 30 Days
            </Button>
-           <Button className="rounded-xl shadow-lg shadow-red-500/20">
+           <Button className="flex-1 sm:flex-none rounded-xl shadow-lg shadow-red-500/20 h-11 md:h-12 text-[10px] md:text-xs">
               Generate Audit
            </Button>
         </div>

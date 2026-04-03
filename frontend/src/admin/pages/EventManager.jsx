@@ -3,7 +3,7 @@ import {
   Calendar, Plus, Trash2, Edit2, Search, Filter, 
   Clock, MapPin, CheckCircle, AlertCircle, 
   ChevronLeft, ChevronRight, Bookmark, Zap,
-  Layers, Target, Bell, MoreHorizontal, ChevronDown
+  Layers, Target, Bell, MoreHorizontal, ChevronDown, X
 } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
@@ -31,17 +31,17 @@ const EventManager = () => {
   return (
     <div ref={containerRef} className="space-y-10 pb-12">
       {/* Page Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-4">
         <div>
-           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Chronological Strategy</p>
-           <h1 className="text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Event Calendar</h1>
-           <p className="text-slate-400 text-xs font-semibold mt-1">Schedule and synchronize localized content for the community</p>
+           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Schedule Management</p>
+           <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Event Calendar</h1>
+           <p className="text-slate-400 text-xs font-semibold mt-1">Schedule and manage upcoming festivals and important dates</p>
         </div>
         <Button 
           onClick={() => setShowAddEvent(true)}
-          className="rounded-xl shadow-lg shadow-red-500/20 px-6 h-12"
+          className="w-full sm:w-auto rounded-xl shadow-lg shadow-red-500/20 px-6 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs font-black uppercase tracking-widest"
         >
-          <Plus size={18} className="mr-2" strokeWidth={3} /> Define Event
+          <Plus size={16} className="mr-2" strokeWidth={3} /> Add New Event
         </Button>
       </div>
 
@@ -197,13 +197,13 @@ const EventManager = () => {
                      <div className="p-3 bg-white/10 rounded-2xl">
                         <AlertCircle size={22} className="text-amber-400" />
                      </div>
-                     <h3 className="text-lg font-black tracking-tight">Priority Node</h3>
+                     <h3 className="text-lg font-black tracking-tight">System Alert</h3>
                   </div>
                   <p className="text-[11px] text-slate-400 font-bold uppercase leading-relaxed tracking-widest mb-10">
-                     THE <span className="text-[#ef4444] font-black">HOLI FESTIVAL</span> NODE EXPIRES IN <span className="text-red-600">72 HOURS</span>. PROVISION LOCALIZED OVERLAYS.
+                     THE <span className="text-[#ef4444] font-black">HOLI FESTIVAL</span> EVENT EXPIRES IN <span className="text-red-600">72 HOURS</span>. SETUP LOCALIZED POSTS.
                   </p>
-                  <Button className="w-full h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-50 shadow-xl shadow-slate-200 font-black text-[10px] uppercase tracking-[0.2em] border-none group/btn">
-                     Audit All Assets <ChevronRight size={14} className="ml-2 group-hover/btn:translate-x-1 transition-transform" strokeWidth={3} />
+                  <Button className="w-full h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-50 shadow-xl shadow-slate-200 font-black text-[10px] uppercase tracking-[0.2em] border-none group/btn cursor-pointer">
+                     Check All Tasks <ChevronRight size={14} className="ml-2 group-hover/btn:translate-x-1 transition-transform" strokeWidth={3} />
                   </Button>
                </div>
             </Card>
@@ -211,84 +211,97 @@ const EventManager = () => {
       </div>
 
       {/* Add Event Modal */}
-       <AnimatePresence>
-         {showAddEvent && (
-           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <motion.div 
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }}
-               className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" 
-               onClick={() => setShowAddEvent(false)}
-             />
-             <motion.div 
-               initial={{ scale: 0.9, opacity: 0, y: 30 }}
-               animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.9, opacity: 0, y: 30 }}
-               className="relative w-full max-w-[640px] bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] overflow-hidden"
-             >
-                <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-                   <Calendar size={200} className="text-[#ef4444]" />
-                </div>
+        <AnimatePresence>
+          {showAddEvent && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" 
+                onClick={() => setShowAddEvent(false)}
+              />
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 30 }}
+                className="relative w-full max-w-[640px] max-h-[90vh] bg-white rounded-[2rem] md:rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col"
+              >
+                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                    <Calendar size={200} className="text-[#ef4444]" />
+                 </div>
 
-                <div className="flex items-center gap-6 mb-12 relative z-10">
-                   <div className="w-16 h-16 bg-[#ef4444] rounded-2xl flex items-center justify-center shadow-2xl shadow-red-500/30 text-white">
-                      <Calendar size={28} strokeWidth={2.5} />
-                   </div>
-                   <div>
-                      <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Node Provisioning</h2>
-                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Chronological Event Strategy</p>
-                   </div>
-                </div>
-                
-                <div className="space-y-8 relative z-10">
-                   <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Registry Identity</label>
-                      <Input placeholder="e.g. Traditional New Year Cycle" className="h-16 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-6 font-bold" />
-                   </div>
+                 <div className="flex items-center justify-between p-8 md:p-12 pb-6 md:pb-8 border-b border-slate-50 relative z-10 bg-white">
+                    <div className="flex items-center gap-4 md:gap-6">
+                       <div className="w-12 h-12 md:w-16 md:h-16 bg-[#ef4444] rounded-2xl flex items-center justify-center shadow-2xl shadow-red-500/30 text-white shrink-0">
+                          <Calendar size={24} className="md:size-7" strokeWidth={2.5} />
+                       </div>
+                       <div>
+                          <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">New Event Setup</h2>
+                          <p className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1">Schedule important upcoming dates</p>
+                       </div>
+                    </div>
+                    <button onClick={() => setShowAddEvent(false)} className="w-10 h-10 md:w-12 md:h-12 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 border-none bg-transparent cursor-pointer transition-colors relative z-20">
+                      <X size={20} className="md:size-6" />
+                    </button>
+                 </div>
+                 
+                 <div className="flex-1 overflow-y-auto p-8 md:p-12 pt-6 md:pt-8 custom-scrollbar relative z-10">
+                    <div className="space-y-8">
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Registry Identity</label>
+                          <Input placeholder="e.g. Traditional New Year Cycle" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+                       </div>
 
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Target Date</label>
-                        <Input type="date" className="h-16 rounded-xl bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-6 font-bold text-slate-500" />
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+                         <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Target Date</label>
+                            <Input type="date" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-slate-500" />
+                         </div>
+                         <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Classification</label>
+                            <div className="relative">
+                              <select className="flex h-14 md:h-16 w-full rounded-xl border-none bg-slate-50 px-6 py-2 text-sm font-black text-slate-500 outline-none appearance-none cursor-pointer">
+                                 <option>Determine Type</option>
+                                 <option>Festival Node</option>
+                                 <option>National Holiday</option>
+                                 <option>Religious Cycle</option>
+                                 <option>Business Event</option>
+                              </select>
+                              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                         </div>
+                       </div>
+
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Internal Registry Notes</label>
+                          <textarea className="flex min-h-[120px] w-full rounded-xl border-none bg-slate-50 px-6 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-500/10 transition-all" placeholder="Strategic annotations for content provision..."></textarea>
+                       </div>
+
+                       <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        <Button 
+                           variant="ghost"
+                           onClick={() => setShowAddEvent(false)}
+                           className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none cursor-pointer"
+                        >
+                           Discard
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            // In a real app, this would hit the API
+                            setShowAddEvent(false);
+                          }}
+                          className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none cursor-pointer"
+                        >
+                           Create Event
+                        </Button>
                      </div>
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Classification</label>
-                        <div className="relative">
-                          <select className="flex h-16 w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-6 py-2 text-sm font-black text-slate-500 outline-none appearance-none cursor-pointer">
-                             <option>Determine Type</option>
-                             <option>Festival Node</option>
-                             <option>National Holiday</option>
-                             <option>Religious Cycle</option>
-                             <option>Business Event</option>
-                          </select>
-                          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                     </div>
-                   </div>
-
-                   <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Internal Registry Notes</label>
-                      <textarea className="flex min-h-[120px] w-full rounded-xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-6 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-500/10 transition-all" placeholder="Strategic annotations for content provision..."></textarea>
-                   </div>
-
-                   <div className="flex gap-4 pt-6">
-                      <Button 
-                         variant="ghost"
-                         onClick={() => setShowAddEvent(false)}
-                         className="flex-1 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500"
-                      >
-                         Discard
-                      </Button>
-                      <Button className="flex-[1.5] h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3">
-                          <CheckCircle size={18} strokeWidth={3} /> Commit Node
-                      </Button>
-                   </div>
-                </div>
-             </motion.div>
-           </div>
-         )}
-       </AnimatePresence>
+                    </div>
+                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
     </div>
   );
 };
