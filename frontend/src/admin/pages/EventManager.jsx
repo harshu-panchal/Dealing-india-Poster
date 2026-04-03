@@ -12,6 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { AnimatePresence, motion } from 'framer-motion';
+import AdminModal from '../components/ui/AdminModal';
 
 const EventManager = () => {
   const [currentMonth, setCurrentMonth] = useState('March 2026');
@@ -53,10 +54,20 @@ const EventManager = () => {
                   <div className="flex items-center gap-6">
                      <h2 className="text-xl font-black text-slate-900 tracking-tight">{currentMonth}</h2>
                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-slate-400">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => alert('Navigating to previous calendar cycle...')}
+                          className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-slate-400"
+                        >
                            <ChevronLeft size={16} strokeWidth={3} />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-slate-400">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => alert('Navigating to next calendar cycle...')}
+                          className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-slate-400"
+                        >
                            <ChevronRight size={16} strokeWidth={3} />
                         </Button>
                      </div>
@@ -147,10 +158,20 @@ const EventManager = () => {
                               </td>
                               <td className="px-8 py-5 text-right">
                                  <div className="flex justify-end gap-1 transition-all">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-[#ef4444]">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => alert('Opening event strategy modifier...')}
+                                      className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-[#ef4444]"
+                                    >
                                        <Edit2 size={16} />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-500">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => alert('Requesting event purge from registry...')}
+                                      className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-500"
+                                    >
                                        <Trash2 size={16} />
                                     </Button>
                                  </div>
@@ -202,7 +223,10 @@ const EventManager = () => {
                   <p className="text-[11px] text-slate-400 font-bold uppercase leading-relaxed tracking-widest mb-10">
                      THE <span className="text-[#ef4444] font-black">HOLI FESTIVAL</span> EVENT EXPIRES IN <span className="text-red-600">72 HOURS</span>. SETUP LOCALIZED POSTS.
                   </p>
-                  <Button className="w-full h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-50 shadow-xl shadow-slate-200 font-black text-[10px] uppercase tracking-[0.2em] border-none group/btn cursor-pointer">
+                  <Button 
+                     onClick={() => alert('Opening global task distribution list...')}
+                     className="w-full h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-50 shadow-xl shadow-slate-200 font-black text-[10px] uppercase tracking-[0.2em] border-none group/btn cursor-pointer"
+                  >
                      Check All Tasks <ChevronRight size={14} className="ml-2 group-hover/btn:translate-x-1 transition-transform" strokeWidth={3} />
                   </Button>
                </div>
@@ -211,97 +235,48 @@ const EventManager = () => {
       </div>
 
       {/* Add Event Modal */}
-        <AnimatePresence>
-          {showAddEvent && (
-            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" 
-                onClick={() => setShowAddEvent(false)}
-              />
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 30 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 30 }}
-                className="relative w-full max-w-[640px] max-h-[90vh] bg-white rounded-[2rem] md:rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col"
-              >
-                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
-                    <Calendar size={200} className="text-[#ef4444]" />
-                 </div>
+      <AdminModal
+        isOpen={showAddEvent}
+        onClose={() => setShowAddEvent(false)}
+        title="Schedule Registry Event"
+        subtitle="Chronological Event Strategy"
+        icon={Calendar}
+      >
+        <form className="space-y-8">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Event Name</label>
+                 <Input placeholder="e.g. Navratri 2026" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+              </div>
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Event Date</label>
+                 <Input type="date" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+              </div>
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Classification</label>
+                 <select className="w-full h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10 appearance-none cursor-pointer">
+                    <option>Festival</option>
+                    <option>Religious</option>
+                    <option>National</option>
+                    <option>Holiday</option>
+                 </select>
+              </div>
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Poster Capacity</label>
+                 <Input type="number" placeholder="0" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+              </div>
+           </div>
 
-                 <div className="flex items-center justify-between p-8 md:p-12 pb-6 md:pb-8 border-b border-slate-50 relative z-10 bg-white">
-                    <div className="flex items-center gap-4 md:gap-6">
-                       <div className="w-12 h-12 md:w-16 md:h-16 bg-[#ef4444] rounded-2xl flex items-center justify-center shadow-2xl shadow-red-500/30 text-white shrink-0">
-                          <Calendar size={24} className="md:size-7" strokeWidth={2.5} />
-                       </div>
-                       <div>
-                          <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">New Event Setup</h2>
-                          <p className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1">Schedule important upcoming dates</p>
-                       </div>
-                    </div>
-                    <button onClick={() => setShowAddEvent(false)} className="w-10 h-10 md:w-12 md:h-12 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 border-none bg-transparent cursor-pointer transition-colors relative z-20">
-                      <X size={20} className="md:size-6" />
-                    </button>
-                 </div>
-                 
-                 <div className="flex-1 overflow-y-auto p-8 md:p-12 pt-6 md:pt-8 custom-scrollbar relative z-10">
-                    <div className="space-y-8">
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Registry Identity</label>
-                          <Input placeholder="e.g. Traditional New Year Cycle" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
-                       </div>
-
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
-                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Target Date</label>
-                            <Input type="date" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-slate-500" />
-                         </div>
-                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Classification</label>
-                            <div className="relative">
-                              <select className="flex h-14 md:h-16 w-full rounded-xl border-none bg-slate-50 px-6 py-2 text-sm font-black text-slate-500 outline-none appearance-none cursor-pointer">
-                                 <option>Determine Type</option>
-                                 <option>Festival Node</option>
-                                 <option>National Holiday</option>
-                                 <option>Religious Cycle</option>
-                                 <option>Business Event</option>
-                              </select>
-                              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
-                         </div>
-                       </div>
-
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Internal Registry Notes</label>
-                          <textarea className="flex min-h-[120px] w-full rounded-xl border-none bg-slate-50 px-6 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-red-500/10 transition-all" placeholder="Strategic annotations for content provision..."></textarea>
-                       </div>
-
-                       <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <Button 
-                           variant="ghost"
-                           onClick={() => setShowAddEvent(false)}
-                           className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none cursor-pointer"
-                        >
-                           Discard
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            // In a real app, this would hit the API
-                            setShowAddEvent(false);
-                          }}
-                          className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none cursor-pointer"
-                        >
-                           Create Event
-                        </Button>
-                     </div>
-                    </div>
-                 </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+           <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button type="button" onClick={() => setShowAddEvent(false)} variant="ghost" className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none">
+                 Discard
+              </Button>
+              <Button type="button" onClick={() => setShowAddEvent(false)} className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none">
+                 <CheckCircle size={18} strokeWidth={3} /> Schedule Event
+              </Button>
+           </div>
+        </form>
+      </AdminModal>
     </div>
   );
 };

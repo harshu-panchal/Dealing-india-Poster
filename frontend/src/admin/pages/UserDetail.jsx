@@ -127,18 +127,18 @@ const UserDetail = () => {
              </div>
           </Card>
 
-          <div className="bg-slate-900 dark:bg-red-950/20 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-200 dark:shadow-none relative overflow-hidden group">
+          <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden group">
              <div className="flex items-center justify-between mb-4 relative z-10">
-                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">Subscriber Intelligence</h3>
+                 <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Subscriber Intelligence</h3>
                 <Zap size={18} className="text-amber-400 group-hover:scale-125 transition-transform" />
              </div>
-             <p className="text-xs text-slate-400 font-semibold mb-8 leading-relaxed relative z-10">
-                This user has been a <span className="text-white font-black uppercase tracking-widest text-[10px]">Premium Subscriber</span> for 120 days with consistent weekly activity.
+             <p className="text-xs text-slate-500 font-semibold mb-8 leading-relaxed relative z-10">
+                This user has been a <span className="text-[#ef4444] font-black uppercase tracking-widest text-[10px]">Premium Subscriber</span> for 120 days with consistent weekly activity.
              </p>
-             <Button className="w-full h-12 bg-white/10 dark:bg-white/5 text-white rounded-2xl h-12 text-[10px] font-black uppercase tracking-[0.2em] border-none hover:bg-white/20 transition-all relative z-10">
+             <Button className="w-full h-12 bg-slate-50 text-slate-900 rounded-2xl h-12 text-[10px] font-black uppercase tracking-[0.2em] border-none hover:bg-slate-100 transition-all relative z-10">
                 Review Lifecycle
              </Button>
-             <Zap size={140} className="absolute -bottom-10 -right-10 text-white/5 pointer-events-none group-hover:rotate-12 transition-transform duration-700" />
+             <Zap size={140} className="absolute -bottom-10 -right-10 text-slate-50 pointer-events-none group-hover:rotate-12 transition-transform duration-700 opacity-50" />
           </div>
         </div>
 

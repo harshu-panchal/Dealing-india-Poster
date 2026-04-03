@@ -14,10 +14,18 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import AdminModal from '../components/ui/AdminModal';
+
 const CategoryManager = () => {
   const [expandedCat, setExpandedCat] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingItem, setDeletingItem] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
   const [newCatData, setNewCatData] = useState({ title: '', image: '', type: 'all' });
+  const [newSubData, setNewSubData] = useState({ title: '' });
   const containerRef = useRef();
 
   // Mock categories data
@@ -25,7 +33,7 @@ const CategoryManager = () => {
     { 
       id: 1, 
       title: 'Business Promotion', 
-      image: 'https://images.unsplash.com/photo-1460925895911-dfc9f9573f0f', 
+      image: 'https://images.unsplash.com/photo-1486406146926-c627a92fb1ab', 
       count: 120, 
       status: 'active',
       subcategories: [
@@ -37,7 +45,7 @@ const CategoryManager = () => {
     { 
       id: 2, 
       title: 'Festivals', 
-      image: 'https://images.unsplash.com/photo-1541336032412-2048a678540d', 
+      image: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e', 
       count: 245, 
       status: 'active',
       subcategories: [
@@ -49,7 +57,7 @@ const CategoryManager = () => {
     { 
       id: 3, 
       title: 'Greetings', 
-      image: 'https://images.unsplash.com/photo-1530103862676-fa8c9d34bb34', 
+      image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176', 
       count: 180, 
       status: 'active',
       subcategories: [
@@ -74,7 +82,11 @@ const CategoryManager = () => {
            <p className="text-slate-400 text-xs font-semibold mt-1">Organize and manage template categories for the marketplace</p>
         </div>
         <Button 
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setIsEditMode(false);
+            setNewCatData({ title: '', image: '', type: 'all' });
+            setShowAddModal(true);
+          }}
           className="w-full sm:w-auto rounded-xl shadow-lg shadow-red-500/20 px-6 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs tracking-widest uppercase font-black"
         >
            <Plus size={16} className="mr-2" strokeWidth={3} /> Add New Category
@@ -133,10 +145,29 @@ const CategoryManager = () => {
                 
                 <div className="flex items-center justify-between w-full sm:w-auto gap-2 sm:px-4 sm:border-l border-slate-200 ml-auto">
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-[#ef4444] shadow-sm bg-white border border-slate-100">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setIsEditMode(true);
+                        setNewCatData({ title: cat.title, image: cat.image, type: 'all' });
+                        setShowAddModal(true);
+                      }}
+                      className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-[#ef4444] shadow-sm bg-white border border-slate-100"
+                    >
                       <Edit2 size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-600 hover:text-rose-500 shadow-sm bg-white border border-slate-100">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setDeletingItem({ type: 'category', title: cat.title });
+                        setShowDeleteModal(true);
+                      }}
+                      className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-600 hover:text-rose-500 shadow-sm bg-white border border-slate-100"
+                    >
                       <Trash2 size={16} />
                     </Button>
                   </div>
@@ -155,7 +186,13 @@ const CategoryManager = () => {
                          <Tag size={12} className="text-[#ef4444]" /> Layer: {cat.title}
                       </h4>
                       <Button 
-                        onClick={(e) => { e.stopPropagation(); setShowAddModal(true); }}
+                        onClick={(e) => { 
+                           e.stopPropagation(); 
+                           setIsEditMode(false);
+                           setNewSubData({ title: '' });
+                           setActiveCategory(cat.id);
+                           setShowSubModal(true); 
+                        }}
                         variant="outline" 
                         size="sm" 
                         className="w-full sm:w-auto h-8 rounded-lg text-[9px] font-black uppercase tracking-widest border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
@@ -177,10 +214,23 @@ const CategoryManager = () => {
                                </div>
                             </div>
                             <div className="flex items-center gap-2 transition-opacity">
-                               <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-blue-500 transition-colors border-none bg-transparent cursor-pointer">
+                               <button 
+                                 onClick={() => { 
+                                    setIsEditMode(true);
+                                    setNewSubData({ title: sub.title });
+                                    setShowSubModal(true);
+                                 }}
+                                 className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-blue-500 transition-colors border-none bg-transparent cursor-pointer"
+                               >
                                  <Edit2 size={14} />
                                </button>
-                               <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-red-500 transition-colors border-none bg-transparent cursor-pointer">
+                               <button 
+                                 onClick={() => {
+                                   setDeletingItem({ type: 'subcategory', title: sub.title });
+                                   setShowDeleteModal(true);
+                                 }}
+                                 className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-red-500 transition-colors border-none bg-transparent cursor-pointer"
+                               >
                                  <Trash2 size={14} />
                                </button>
                             </div>
@@ -203,113 +253,151 @@ const CategoryManager = () => {
          </Button>
       </div>
 
-      {/* Add Category Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" 
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 30 }}
-              className="relative w-full max-w-[600px] max-h-[90vh] bg-white rounded-[2rem] md:rounded-[3.5rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col"
-            >
-               <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-                  <Layers size={210} className="text-[#ef4444]" />
-               </div>
+      {/* Add/Edit Category Modal */}
+      <AdminModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title={isEditMode ? "Modify Category" : "Add New Category"}
+        subtitle={isEditMode ? "Update registry details" : "Setup category metadata"}
+        icon={isEditMode ? Edit2 : Plus}
+      >
+        <div className="space-y-8">
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Category Title</label>
+              <Input 
+                placeholder="e.g. Political Campaigning" 
+                className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
+                value={newCatData.title}
+                onChange={(e) => setNewCatData({...newCatData, title: e.target.value})}
+              />
+           </div>
 
-               <div className="flex items-center justify-between p-8 md:p-12 pb-6 md:pb-8 border-b border-slate-50 relative z-10 bg-white">
-                  <div className="flex items-center gap-4 md:gap-6">
-                     <div className="w-12 h-12 md:w-16 md:h-16 bg-[#ef4444] rounded-[1.25rem] md:rounded-2xl flex items-center justify-center shadow-2xl shadow-red-500/30 text-white shrink-0">
-                        <Plus size={24} className="md:size-7" strokeWidth={3} />
-                     </div>
-                     <div>
-                        <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">Add New Category</h2>
-                        <p className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1">Setup category metadata</p>
-                     </div>
-                  </div>
-                  <button onClick={() => setShowAddModal(false)} className="w-10 h-10 md:w-12 md:h-12 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 border-none bg-transparent cursor-pointer transition-colors relative z-20">
-                    <X size={20} className="md:size-6" />
-                  </button>
-               </div>
-               
-               <div className="flex-1 overflow-y-auto p-8 md:p-12 pt-6 md:pt-8 custom-scrollbar relative z-10">
-                  <div className="space-y-8">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Category Title</label>
-                        <Input 
-                          placeholder="e.g. Political Campaigning" 
-                          className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
-                          value={newCatData.title}
-                          onChange={(e) => setNewCatData({...newCatData, title: e.target.value})}
-                        />
-                     </div>
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cover Image URL</label>
+              <Input 
+                placeholder="https://images.unsplash.com/..." 
+                className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
+                value={newCatData.image}
+                onChange={(e) => setNewCatData({...newCatData, image: e.target.value})}
+              />
+           </div>
 
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cover Image URL</label>
-                        <Input 
-                          placeholder="https://images.unsplash.com/..." 
-                          className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
-                          value={newCatData.image}
-                          onChange={(e) => setNewCatData({...newCatData, image: e.target.value})}
-                        />
-                     </div>
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">ContentType Scope</label>
+              <div className="grid grid-cols-3 gap-3">
+                 {['post', 'reel', 'all'].map(type => (
+                    <button
+                       key={type}
+                       onClick={() => setNewCatData({...newCatData, type})}
+                       className={`h-14 md:h-16 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border-none cursor-pointer flex items-center justify-center gap-2 ${newCatData.type === type ? 'bg-[#ef4444] text-white shadow-lg shadow-red-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                    >
+                       {newCatData.type === type && <CheckSquare size={12} />}
+                       {type}
+                    </button>
+                 ))}
+              </div>
+           </div>
 
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">ContentType Scope</label>
-                        <div className="grid grid-cols-3 gap-3">
-                           {['post', 'reel', 'all'].map(type => (
-                              <button
-                                 key={type}
-                                 onClick={() => setNewCatData({...newCatData, type})}
-                                 className={`h-14 md:h-16 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border-none cursor-pointer flex items-center justify-center gap-2 ${newCatData.type === type ? 'bg-[#ef4444] text-white shadow-lg shadow-red-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
-                              >
-                                 {newCatData.type === type && <CheckSquare size={12} />}
-                                 {type}
-                              </button>
-                           ))}
-                        </div>
-                     </div>
+           <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4">
+              <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                 <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Impact Analysis</p>
+                 <p className="text-[0.65rem] font-bold text-amber-600 leading-relaxed uppercase">Modified categories sync across all connected endpoints instantly.</p>
+              </div>
+           </div>
 
-                     <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4">
-                        <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
-                        <div>
-                           <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1">Warning</p>
-                           <p className="text-[0.65rem] font-bold text-amber-600 leading-relaxed uppercase">Creating a new category will make it visible to all app users immediately.</p>
-                        </div>
-                     </div>
+           <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button 
+                 variant="ghost"
+                 onClick={() => setShowAddModal(false)}
+                 className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none"
+              >
+                 Discard
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowAddModal(false);
+                  setNewCatData({ title: '', image: '', type: 'all' });
+                }}
+                className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none"
+              >
+                 {isEditMode ? <Save size={18} /> : <Plus size={18} />} {isEditMode ? "Commit Changes" : "Create Category"}
+              </Button>
+           </div>
+        </div>
+      </AdminModal>
 
-                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <Button 
-                           variant="ghost"
-                           onClick={() => setShowAddModal(false)}
-                           className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none"
-                        >
-                           Discard
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            // In a real app, this would hit the API
-                            setShowAddModal(false);
-                            setNewCatData({ title: '', image: '', type: 'all' });
-                          }}
-                          className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none"
-                        >
-                           Create Category
-                        </Button>
-                     </div>
-                  </div>
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Add/Edit Subcategory Modal */}
+      <AdminModal
+        isOpen={showSubModal}
+        onClose={() => setShowSubModal(false)}
+        title={isEditMode ? "Modify Subcategory" : "Add Subcategory"}
+        subtitle="Manage layer specificity"
+        icon={Tag}
+      >
+        <div className="space-y-8">
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Subcategory Title</label>
+              <Input 
+                placeholder="e.g. Flash Sales" 
+                className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
+                value={newSubData.title}
+                onChange={(e) => setNewSubData({...newSubData, title: e.target.value})}
+              />
+           </div>
+
+           <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button 
+                 variant="ghost"
+                 onClick={() => setShowSubModal(false)}
+                 className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none"
+              >
+                 Cancel
+              </Button>
+              <Button 
+                onClick={() => setShowSubModal(false)}
+                className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none"
+              >
+                 {isEditMode ? "Update Subcategory" : "Add to Registry"}
+              </Button>
+           </div>
+        </div>
+      </AdminModal>
+
+      {/* Delete Confirmation Modal */}
+      <AdminModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title={`Delete ${deletingItem?.type === 'category' ? 'Category' : 'Subcategory'}?`}
+        subtitle="Permanent Action"
+        icon={Trash2}
+        variant="danger"
+        maxWidth="450px"
+      >
+        <div className="text-center">
+           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-8 px-4">
+              Are you sure you want to remove <span className="text-slate-800 font-extrabold">"{deletingItem?.title}"</span>? This action can't be undone.
+           </p>
+
+           <div className="flex gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 h-14 rounded-2xl bg-slate-50 font-black text-[10px] uppercase tracking-widest text-slate-500 border-none"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowDeleteModal(false);
+                }}
+                className="flex-1 h-14 rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black text-[10px] uppercase tracking-widest border-none"
+              >
+                Confirm Delete
+              </Button>
+           </div>
+        </div>
+      </AdminModal>
     </div>
   );
 };

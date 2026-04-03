@@ -12,6 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { AnimatePresence, motion } from 'framer-motion';
+import AdminModal from '../components/ui/AdminModal';
 
 const INITIAL_MUSIC = [
   { id: 1, title: 'Holi Dhamaka Beat', category: 'Festivals', duration: '0:32', plays: 1240, added: 'Mar 18, 2026', tags: ['Energetic', 'Drum'], url: '#' },
@@ -31,6 +32,7 @@ const MusicLibrary = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [newTrackData, setNewTrackData] = useState({ title: '', category: 'Festivals' });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const fileInputRef = useRef();
   const containerRef = useRef();
 
@@ -61,7 +63,7 @@ const MusicLibrary = () => {
       category: newTrackData.category,
       duration: '0:00', 
       plays: 0,
-      added: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      added: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), 
       tags: ['New', selectedFile.type.split('/')[1].toUpperCase()],
       url: URL.createObjectURL(selectedFile)
     };
@@ -135,7 +137,11 @@ const MusicLibrary = () => {
                  onChange={(e) => setSearchQuery(e.target.value)}
               />
            </div>
-           <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 group">
+           <Button 
+             variant="outline" 
+             onClick={() => alert('Opening sonic attribute filtering...')}
+             className="h-12 px-6 rounded-2xl border-slate-200 group"
+           >
               <Filter size={16} className="mr-2 text-slate-400 group-hover:text-[#ef4444]" /> 
               Advanced Filter
            </Button>
@@ -194,12 +200,17 @@ const MusicLibrary = () => {
                   <td className="px-8 py-5">
                     <div className="flex items-center justify-end gap-1 transition-all">
                       <Button 
-                        onClick={() => handleDeleteTrack(track.id)}
+                        onClick={() => setShowDeleteConfirm(track)}
                         variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-red-500"
                       >
                         <Trash2 size={16} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => alert('Initiating secure asset download...')}
+                        className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                      >
                         <Download size={16} />
                       </Button>
                     </div>
@@ -211,123 +222,118 @@ const MusicLibrary = () => {
         </div>
       </Card>
 
-      {/* Add Music Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" 
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div 
-               initial={{ scale: 0.9, opacity: 0, y: 30 }}
-               animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.9, opacity: 0, y: 30 }}
-               className="relative w-full max-w-[560px] max-h-[90vh] bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
-            >
-               <div className="flex items-center justify-between p-8 md:p-12 pb-6 md:pb-8 border-b border-slate-50 relative z-10 bg-white">
-                  <div className="flex items-center gap-4 md:gap-6">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-red-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-red-500/30 text-white shrink-0">
-                       <Music size={24} className="md:size-7" strokeWidth={2.5} />
-                    </div>
-                    <div>
-                       <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">Audio Ingress</h2>
-                       <p className="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1">Strategic Audio Assets</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowAddModal(false)} className="w-10 h-10 md:w-12 md:h-12 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 border-none bg-transparent cursor-pointer transition-colors">
-                    <X size={20} className="md:size-6" />
-                  </button>
-               </div>
+      {/* Ingress Modal */}
+      <AdminModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setSelectedFile(null); }}
+        title="Ingress Audio Track"
+        subtitle="Provision new background layer"
+        icon={Music}
+      >
+        <div className="space-y-8">
+           <div className="p-8 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50 hover:bg-slate-50 transition-all text-center group cursor-pointer" onClick={() => fileInputRef.current.click()}>
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
+              {selectedFile ? (
+                <div className="flex flex-col items-center">
+                   <div className="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20">
+                      <Check size={32} strokeWidth={3} />
+                   </div>
+                   <p className="text-xs font-black text-slate-800 uppercase tracking-widest truncate max-w-xs">{selectedFile.name}</p>
+                   <p className="text-[10px] font-bold text-slate-400 mt-1">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • READY FOR COMMIT</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-6">
+                   <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-sm border border-slate-50">
+                      <Music size={32} />
+                   </div>
+                   <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Select Audio Payload</p>
+                   <p className="text-[10px] font-bold text-slate-400">MP3, WAV, or AAC (Max 10MB)</p>
+                </div>
+              )}
+           </div>
 
-               <div className="flex-1 overflow-y-auto p-8 md:p-12 pt-6 md:pt-8 custom-scrollbar">
-                 <div className="space-y-8 relative z-10">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      className="hidden" 
-                      accept="audio/*" 
-                      onChange={handleFileChange}
-                    />
-                    
-                    <div 
-                      onClick={() => fileInputRef.current.click()}
-                      className={`relative border-2 border-dashed ${selectedFile ? 'border-emerald-500/40 bg-emerald-100/10' : 'border-slate-200 bg-slate-50/50'} rounded-[2rem] p-10 flex flex-col items-center justify-center group/drop hover:border-red-500/40 transition-all cursor-pointer`}
-                    >
-                        {selectedFile ? (
-                          <>
-                            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-lg mb-4">
-                               <FileMusic size={24} strokeWidth={3} />
-                            </div>
-                            <p className="text-sm font-black text-slate-700 text-center px-4 break-all">{selectedFile.name}</p>
-                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-2">Ready for Commitment</p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-slate-300 group-hover/drop:text-red-500 group-hover/drop:scale-110 shadow-lg transition-all mb-4">
-                               <Upload size={24} strokeWidth={3} />
-                            </div>
-                            <p className="text-sm font-black text-slate-700">Synchronize Sound Asset</p>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">MP3 / WAV NODE • MAX 10.0 MB</p>
-                          </>
-                        )}
-                    </div>
+           <div className="space-y-6">
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Asset Identity</label>
+                 <Input 
+                   value={newTrackData.title}
+                   onChange={(e) => setNewTrackData({...newTrackData, title: e.target.value})}
+                   placeholder="e.g. Cinematic Uplifting Hook" 
+                   className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
+                 />
+              </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Asset Identity</label>
-                          <Input 
-                            placeholder="e.g. Cinematic Flow" 
-                            value={newTrackData.title}
-                            onChange={(e) => setNewTrackData(prev => ({ ...prev, title: e.target.value }))}
-                            className="h-14 rounded-xl bg-slate-50 border-none px-6 font-bold" 
-                          />
-                       </div>
-                       <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Modal Classification</label>
-                          <div className="relative group">
-                            <select 
-                              value={newTrackData.category}
-                              onChange={(e) => setNewTrackData(prev => ({ ...prev, category: e.target.value }))}
-                              className="flex h-14 w-full rounded-xl border-none bg-slate-50 px-6 py-2 text-sm font-black text-slate-500 outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-red-500/10"
-                            >
-                               <option value="Festivals">Festivals</option>
-                               <option value="Business">Business</option>
-                               <option value="Good Morning">Good Morning</option>
-                               <option value="Good Night">Good Night</option>
-                               <option value="Motivation">Motivation</option>
-                            </select>
-                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                          </div>
-                       </div>
-                    </div>
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Registry Category</label>
+                 <select 
+                    value={newTrackData.category}
+                    onChange={(e) => setNewTrackData({...newTrackData, category: e.target.value})}
+                    className="w-full h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10"
+                 >
+                    <option value="Festivals">Festivals</option>
+                    <option value="Business">Business</option>
+                    <option value="Greetings">Greetings</option>
+                    <option value="Motivation">Motivation</option>
+                 </select>
+              </div>
+           </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                       <Button 
-                          variant="ghost"
-                          onClick={() => { setShowAddModal(false); setSelectedFile(null); }}
-                          className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500"
-                       >
-                          Discard
-                       </Button>
-                       <Button 
-                          onClick={handleCommitAsset}
-                          disabled={!selectedFile || !newTrackData.title}
-                          className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none disabled:opacity-50 disabled:cursor-not-allowed"
-                       >
-                           <Check size={18} strokeWidth={3} /> Commit Asset
-                       </Button>
-                    </div>
-                 </div>
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+           <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button 
+                 variant="ghost" 
+                 onClick={() => { setShowAddModal(false); setSelectedFile(null); }}
+                 className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none hover:bg-slate-100"
+              >
+                 Abort Changes
+              </Button>
+              <Button 
+                onClick={handleCommitAsset}
+                disabled={!selectedFile || !newTrackData.title}
+                className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none disabled:opacity-50"
+              >
+                 <Check size={18} strokeWidth={3} /> Commit Asset
+              </Button>
+           </div>
+        </div>
+      </AdminModal>
+
+      {/* Delete Confirmation Modal */}
+      <AdminModal
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        title="Wipe Track Metadata?"
+        subtitle="Permanent Action"
+        icon={Trash2}
+        variant="danger"
+        maxWidth="450px"
+      >
+        <div className="text-center">
+           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-8 px-4 font-inter">
+              Are you sure you want to remove <span className="text-slate-800 font-extrabold">"{showDeleteConfirm?.title}"</span>? This track will be purged from the global audio registry.
+           </p>
+
+           <div className="flex gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 h-14 rounded-2xl bg-slate-50 font-black text-[10px] uppercase tracking-widest text-slate-500 border-none"
+              >
+                Abort
+              </Button>
+              <Button 
+                onClick={() => {
+                  handleDeleteTrack(showDeleteConfirm.id);
+                  setShowDeleteConfirm(null);
+                }}
+                className="flex-1 h-14 rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black text-[10px] uppercase tracking-widest border-none"
+              >
+                Confirm Delete
+              </Button>
+           </div>
+        </div>
+      </AdminModal>
     </div>
   );
 };
 
 export default MusicLibrary;
-

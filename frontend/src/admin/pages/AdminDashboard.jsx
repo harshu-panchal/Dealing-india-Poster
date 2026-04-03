@@ -37,11 +37,18 @@ const AdminDashboard = () => {
            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Operations Control</p>
            <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">System Insights</h1>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-           <Button variant="outline" className="flex-1 sm:flex-none rounded-xl border-slate-200 h-11 md:h-12 text-[10px] md:text-xs">
+         <div className="flex gap-3 w-full sm:w-auto">
+           <Button 
+             variant="outline" 
+             onClick={() => alert('Filter applied')}
+             className="flex-1 sm:flex-none rounded-xl border-slate-200 h-11 md:h-12 text-[10px] md:text-xs"
+           >
               <Calendar size={16} className="mr-2" /> Last 30 Days
            </Button>
-           <Button className="flex-1 sm:flex-none rounded-xl shadow-lg shadow-red-500/20 h-11 md:h-12 text-[10px] md:text-xs">
+           <Button 
+             onClick={() => alert('Generating system audit report...')}
+             className="flex-1 sm:flex-none rounded-xl shadow-lg shadow-red-500/20 h-11 md:h-12 text-[10px] md:text-xs"
+           >
               Generate Audit
            </Button>
         </div>
@@ -103,7 +110,11 @@ const AdminDashboard = () => {
                  ))}
                  
                  <div className="pt-4">
-                    <Button variant="outline" className="w-full rounded-xl border-dashed border-2 text-slate-400 text-xs font-black uppercase tracking-widest h-12">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => alert('Opening advanced analytics console...')}
+                      className="w-full rounded-xl border-dashed border-2 text-slate-400 text-xs font-black uppercase tracking-widest h-12"
+                    >
                        Explore Detailed Analytics
                     </Button>
                  </div>
@@ -116,7 +127,12 @@ const AdminDashboard = () => {
            <Card className="border-none">
               <CardHeader className="flex flex-row items-center justify-between">
                  <CardTitle>Fresh Registrations</CardTitle>
-                 <Button variant="ghost" size="icon" className="rounded-xl">
+                 <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   onClick={() => alert('Opening registration options...')}
+                   className="rounded-xl"
+                 >
                     <MoreHorizontal size={20} className="text-slate-400" />
                  </Button>
               </CardHeader>
@@ -164,7 +180,11 @@ const AdminDashboard = () => {
                  </table>
               </div>
               <div className="p-4 border-t border-[var(--admin-border)] flex justify-center">
-                 <Button variant="link" className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-red-500">
+                 <Button 
+                   variant="link" 
+                   onClick={() => alert('Navigating to user registry ledger...')}
+                   className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-red-500"
+                 >
                     View Entire Ledger
                  </Button>
               </div>

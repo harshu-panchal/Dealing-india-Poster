@@ -203,8 +203,8 @@ const AdminLayout = () => {
            </div>
         </header>
 
-        <section className="admin-content relative">
-          <div className="min-h-full">
+        <section className="admin-content relative w-full max-w-full overflow-x-hidden">
+          <div className="min-h-full w-full max-w-full overflow-x-hidden">
             <Outlet />
           </div>
         </section>
