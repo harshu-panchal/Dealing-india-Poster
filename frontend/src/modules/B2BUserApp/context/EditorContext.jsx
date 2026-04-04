@@ -11,14 +11,26 @@ export const EditorProvider = ({ children }) => {
     phone_number: '6261265704', 
     website: 'www.sheetal.com',
     email: 'sheetal@example.com',
+    gst_number: '27AAAAA0000A1Z5',
     logo: 'https://ui-avatars.com/api/?name=S&background=ef4444&color=fff',
     userPhoto: null,
     enabledFields: {
       phone: true,
       website: true,
-      email: true
+      email: true,
+      gst: false
     }
   });
+
+  const [frames] = useState(() => {
+    const saved = localStorage.getItem('admin_frames');
+    return saved ? JSON.parse(saved) : [
+       { id: 1, title: 'Festive Orange', type: 'footer', priceType: 'free', preview: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=200&auto=format&fit=crop' },
+       { id: 2, title: 'Deep Professional', type: 'footer', priceType: 'premium', preview: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=200&auto=format&fit=crop' }
+    ];
+  });
+
+  const [selectedFrame, setSelectedFrame] = useState(frames[0]);
 
   const injectUserData = (template) => {
     const templateWithUserData = JSON.parse(JSON.stringify(template));
@@ -33,8 +45,9 @@ export const EditorProvider = ({ children }) => {
         if (item.placeholderKey === '{{logo}}' && userData.logo) {
           return { ...item, url: userData.logo };
         }
-        if (item.placeholderKey === '{{gst_number}}' && userData.gst_number) {
-          return { ...item, defaultValue: userData.gst_number, text: userData.gst_number };
+        if (item.placeholderKey === '{{gst_number}}') {
+          const val = userData.enabledFields?.gst ? (userData.gst_number || '') : '';
+          return { ...item, defaultValue: val, text: val };
         }
         return item;
       });
@@ -60,6 +73,7 @@ export const EditorProvider = ({ children }) => {
       editingTemplate, openEditor, closeEditor, 
       viewingDetail, openDetail, closeDetail,
       userData, setUserData,
+      frames, selectedFrame, setSelectedFrame,
       initialEditorTab
     }}>
       {children}

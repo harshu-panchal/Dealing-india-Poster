@@ -1,11 +1,11 @@
-import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe } from 'lucide-react';
+import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
 import VideoEditor from '../editor/VideoEditor';
 import { useState } from 'react';
 
 const PosterDetail = ({ template, onEdit, onClose }) => {
-  const { userData } = useEditor();
+  const { userData, frames, selectedFrame, setSelectedFrame } = useEditor();
   const [showVideoEditor, setShowVideoEditor] = useState(false);
 
   return (
@@ -42,9 +42,9 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
             style={{ opacity: 0, transition: 'opacity 0.3s ease' }}
           />
           
-          {/* Unified Branding Overlay (Matches Feed Design) */}
+          {/* Unified Branding Overlay (Dynamic based on selected frame) */}
           <div className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-none w-full">
-            <div className="bg-black/95 flex h-[60px] lg:h-[80px] shadow-2xl overflow-visible border-t border-white/10">
+            <div className={`${selectedFrame?.id === 2 ? 'bg-orange-500/95' : 'bg-black/95'} flex h-[60px] lg:h-[80px] shadow-2xl overflow-visible border-t border-white/10`}>
                 {/* Left Details */}
                 <div className="flex-1 flex flex-col justify-center px-4 lg:px-8">
                   <div className="text-white text-sm lg:text-xl font-black leading-tight truncate uppercase tracking-wide">
@@ -82,40 +82,73 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                   </div>
                 </div>
             </div>
-          </div>
-
-          {/* Like Count */}
-          <div className="absolute top-4 left-4 z-[20] bg-black/40 backdrop-blur-md text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-[0.75rem] font-bold shadow-lg border border-white/10">
-            <Heart size={14} className="text-red-500" fill="currentColor" />
-            <span>244</span>
+          </div>          {/* Like Count (Matches Photo Pill) */}
+          <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 z-[20] bg-[#64748b]/40 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-2 text-[0.8rem] font-bold shadow-lg border border-white/10">
+            <Heart size={14} className="text-white" fill="currentColor" />
+            <span>1.1K</span>
           </div>
         </div>
       </div>
 
-      <div className="p-6 px-4 bg-white flex flex-col gap-5" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
-        <button className="w-full bg-white border-2 border-[#4f46e5] text-[#4f46e5] p-3.5 rounded-xl text-lg font-bold shadow-sm active:bg-[#4f46e5]/5 transition-colors" onClick={() => onEdit(template)}>
+      <div className="px-5 py-4 flex flex-col gap-3">
+         <div className="flex items-center justify-between">
+            <h4 className="text-[0.95rem] font-medium text-gray-500">Frames</h4>
+         </div>
+         
+         <div className="flex gap-3 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
+            {/* None Option (Matches Photo Circle) */}
+            <div 
+              className={`min-w-[75px] h-[75px] rounded-xl flex items-center justify-center border-2 transition-all cursor-pointer ${!selectedFrame ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}
+              onClick={() => setSelectedFrame(null)}
+            >
+               <div className="w-8 h-8 rounded-full border-2 border-slate-400 flex items-center justify-center relative">
+                  <div className="w-10 h-[2px] bg-slate-400 rotate-45 absolute" />
+               </div>
+            </div>
+            
+            {/* Map Adminized Frames (Square Thumbs) */}
+            {frames.map(frame => (
+               <div 
+                 key={frame.id}
+                 className={`min-w-[75px] h-[75px] rounded-xl overflow-hidden border-2 relative cursor-pointer transition-all ${selectedFrame?.id === frame.id ? 'border-blue-500 scale-95 shadow-md' : 'border-gray-200 opacity-80'}`}
+                 onClick={() => setSelectedFrame(frame)}
+               >
+                  <img src={frame.preview} className="w-full h-full object-cover" />
+                  {selectedFrame?.id === frame.id && (
+                    <div className="absolute inset-0 bg-blue-500/10" />
+                  )}
+               </div>
+            ))}
+         </div>
+      </div>
+
+      <div className="p-4 px-5 space-y-6" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
+        <button 
+          className="w-full bg-white border border-[#4338ca] text-[#4338ca] p-3 rounded-md text-[1rem] font-bold active:bg-slate-50 transition-colors shadow-sm" 
+          onClick={() => onEdit(template)}
+        >
           Edit Poster
         </button>
         
-        <div className="flex justify-around items-center">
+        <div className="flex justify-between items-center px-2">
           <div 
-            className="flex flex-col items-center gap-1.5 text-[0.75rem] text-[#64748b] font-medium cursor-pointer active:scale-95 transition-transform"
+            className="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
             onClick={() => setShowVideoEditor(true)}
           >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#ec4899]"><Video size={20} /></div>
-            <span>Video</span>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent text-rose-500"><Video size={24} /></div>
+            <span className="text-[0.7rem] text-[#64748b] font-medium">Video</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 text-[0.75rem] text-[#64748b] font-medium cursor-pointer active:scale-95 transition-transform">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#64748b]"><Download size={20} /></div>
-            <span>Download</span>
+          <div className="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent text-rose-400"><Download size={24} /></div>
+            <span className="text-[0.7rem] text-[#64748b] font-medium">Download</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 text-[0.75rem] text-[#64748b] font-medium cursor-pointer active:scale-95 transition-transform">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#22c55e]"><MessageCircle size={20} /></div>
-            <span>Whatsapp</span>
+          <div className="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent text-green-500"><MessageCircle size={24} /></div>
+            <span className="text-[0.7rem] text-[#64748b] font-medium">Whatsapp</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 text-[0.75rem] text-[#64748b] font-medium cursor-pointer active:scale-95 transition-transform">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#f1f5f9] text-[#3b82f6]"><Share2 size={20} /></div>
-            <span>Share</span>
+          <div className="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-transform">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent text-orange-500"><Share2 size={24} /></div>
+            <span className="text-[0.7rem] text-[#64748b] font-medium">Share</span>
           </div>
         </div>
       </div>

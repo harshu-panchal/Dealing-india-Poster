@@ -1,4 +1,5 @@
 import React, { useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, Users, ImageIcon, Layers, 
   Award, ArrowUpRight, ArrowDownRight, 
@@ -12,12 +13,13 @@ import { Button } from '../components/ui/Button';
 
 const AdminDashboard = () => {
   const containerRef = useRef();
+  const navigate = useNavigate();
 
   // Entrance animations removed for immediate visibility
 
   const stats = useMemo(() => [
-    { label: 'Total Users', value: '12,540', icon: Users, color: '#ef4444', trend: '+12.5%', isUp: true },
-    { label: 'Active Templates', value: '450', icon: Zap, color: '#10b981', trend: '+5.2%', isUp: true },
+    { label: 'Total Users', value: '12,540', icon: Users, color: '#ef4444', trend: '+12.5%', isUp: true, path: '/admin/users' },
+    { label: 'Active Templates', value: '450', icon: Zap, color: '#10b981', trend: '+5.2%', isUp: true, path: '/admin/templates' },
     { label: 'Cloud Exports', value: '2,840', icon: Layers, color: '#f59e0b', trend: '-2.1%', isUp: false },
     { label: 'Growth Target', value: '85%', icon: Target, color: '#6366f1', trend: '+18.7%', isUp: true }
   ], []);
@@ -28,6 +30,14 @@ const AdminDashboard = () => {
     { id: 3, name: 'Amit Singh', phone: '+91 76543 21098', plan: 'Premium', joined: '1 hour ago', status: 'inactive' },
     { id: 4, name: 'Surbhi Gupta', phone: '+91 65432 10987', plan: 'Free', joined: '3 hours ago', status: 'active' },
   ], []);
+
+  const handleStatClick = (path) => {
+    if (path) navigate(path);
+  };
+
+  const handleUserClick = (userId) => {
+    navigate(`/admin/users/${userId}`);
+  };
 
   return (
     <div ref={containerRef} className="space-y-10">
@@ -57,7 +67,11 @@ const AdminDashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, idx) => (
-          <Card key={idx} className="stat-card border-none group hover:shadow-xl transition-all duration-500 overflow-hidden relative">
+          <Card 
+            key={idx} 
+            className={`stat-card border-none group hover:shadow-xl transition-all duration-500 overflow-hidden relative ${stat.path ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+            onClick={() => handleStatClick(stat.path)}
+          >
             <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--admin-border)] rounded-bl-[4rem] group-hover:scale-110 transition-transform duration-500 -z-0" />
             <div className="relative z-10 p-6">
               <div 
@@ -112,7 +126,7 @@ const AdminDashboard = () => {
                  <div className="pt-4">
                     <Button 
                       variant="outline" 
-                      onClick={() => alert('Opening advanced analytics console...')}
+                      onClick={() => navigate('/admin/categories')}
                       className="w-full rounded-xl border-dashed border-2 text-slate-400 text-xs font-black uppercase tracking-widest h-12"
                     >
                        Explore Detailed Analytics
@@ -130,7 +144,7 @@ const AdminDashboard = () => {
                  <Button 
                    variant="ghost" 
                    size="icon" 
-                   onClick={() => alert('Opening registration options...')}
+                   onClick={() => navigate('/admin/users')}
                    className="rounded-xl"
                  >
                     <MoreHorizontal size={20} className="text-slate-400" />
@@ -148,14 +162,18 @@ const AdminDashboard = () => {
                      </thead>
                     <tbody className="divide-y divide-[var(--admin-border)]">
                        {recentUsers.map(user => (
-                         <tr key={user.id} className="group hover:bg-[var(--admin-row-hover)] transition-colors">
+                         <tr 
+                           key={user.id} 
+                           className="group hover:bg-[var(--admin-row-hover)] transition-colors cursor-pointer"
+                           onClick={() => handleUserClick(user.id)}
+                         >
                             <td className="px-6 py-5">
                                <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 rounded-2xl bg-slate-100  flex items-center justify-center font-black text-xs text-[#ef4444] border-2 border-white dark:border-slate-800 shadow-sm group-hover:scale-110 transition-transform">
                                      {user.name.charAt(0)}
                                   </div>
                                   <div>
-                                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-none mb-1">{user.name}</p>
+                                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-none mb-1 group-hover:text-[#ef4444] transition-colors">{user.name}</p>
                                      <p className="text-[0.65rem] font-medium text-slate-400">{user.phone}</p>
                                   </div>
                                </div>
@@ -163,7 +181,7 @@ const AdminDashboard = () => {
                             <td className="px-6 py-5">
                                <Badge variant={user.plan === 'Premium' ? 'success' : 'warning'} className="rounded-lg text-[10px] font-black uppercase tracking-widest">
                                   {user.plan}
-                               </Badge>
+                                </Badge>
                             </td>
                             <td className="px-6 py-5">
                                <span className="text-xs font-semibold text-slate-500 italic">{user.joined}</span>
@@ -172,7 +190,7 @@ const AdminDashboard = () => {
                                <div className="flex items-center gap-2">
                                   <div className={`w-1.5 h-1.5 rounded-full ${user.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{user.status}</span>
-                               </div>
+                                </div>
                             </td>
                          </tr>
                        ))}
@@ -182,8 +200,8 @@ const AdminDashboard = () => {
               <div className="p-4 border-t border-[var(--admin-border)] flex justify-center">
                  <Button 
                    variant="link" 
-                   onClick={() => alert('Navigating to user registry ledger...')}
-                   className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-red-500"
+                   onClick={() => navigate('/admin/users')}
+                   className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 hover:text-red-500 transition-colors"
                  >
                     View Entire Ledger
                  </Button>

@@ -19,15 +19,63 @@ const EventManager = () => {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const containerRef = useRef();
 
-  // Entrance animations removed for immediate visibility
+  const [events, setEvents] = useState(() => {
+    const saved = localStorage.getItem('admin_events');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, title: 'Holi Festival', date: 'Mar 25, 2026', type: 'Festival', status: 'Upcoming', posters: 45, color: '#ef4444' },
+      { id: 2, title: 'Ram Navami', date: 'Mar 28, 2026', type: 'Religious', status: 'Draft', posters: 12, color: '#f59e0b' },
+      { id: 3, title: 'Good Friday', date: 'Apr 03, 2026', type: 'Holiday', status: 'Planned', posters: 20, color: '#3b82f6' },
+      { id: 4, title: 'Ambedkar Jayanti', date: 'Apr 14, 2026', type: 'National', status: 'Planned', posters: 15, color: '#6366f1' },
+    ];
+  });
 
-  // Mock events data
-  const events = useMemo(() => [
-    { id: 1, title: 'Holi Festival', date: 'Mar 25, 2026', type: 'Festival', status: 'Upcoming', posters: 45, color: '#ef4444' },
-    { id: 2, title: 'Ram Navami', date: 'Mar 28, 2026', type: 'Religious', status: 'Draft', posters: 12, color: '#f59e0b' },
-    { id: 3, title: 'Good Friday', date: 'Apr 03, 2026', type: 'Holiday', status: 'Planned', posters: 20, color: '#3b82f6' },
-    { id: 4, title: 'Ambedkar Jayanti', date: 'Apr 14, 2026', type: 'National', status: 'Planned', posters: 15, color: '#6366f1' },
-  ], []);
+  const [newEventData, setNewEventData] = useState({ title: '', date: '', type: 'Festival', capacity: 0 });
+
+  const saveEvents = (updatedEvents) => {
+    setEvents(updatedEvents);
+    localStorage.setItem('admin_events', JSON.stringify(updatedEvents));
+  };
+
+  const handleAddEvent = (e) => {
+    e.preventDefault();
+    const newEvent = {
+        ...newEventData,
+        id: Date.now(),
+        status: 'Upcoming',
+        posters: parseInt(newEventData.capacity) || 0,
+        color: '#ef4444'
+    };
+
+    const updatedEvents = [newEvent, ...events];
+    saveEvents(updatedEvents);
+
+    // Sync with Categories
+    const savedCategoriesString = localStorage.getItem('admin_categories');
+    let categories = savedCategoriesString ? JSON.parse(savedCategoriesString) : [
+      { id: 1, title: 'Business Promotion', subcategories: [] },
+      { id: 2, title: 'Festivals', subcategories: [] },
+      { id: 3, title: 'Greetings', subcategories: [] }
+    ];
+
+    // Find Festivals category
+    const festivalCat = categories.find(c => c.title === 'Festivals');
+    if (festivalCat) {
+      festivalCat.subcategories.push({
+        id: Date.now() + 1,
+        title: newEvent.title,
+        count: 0
+      });
+      localStorage.setItem('admin_categories', JSON.stringify(categories));
+    }
+
+    setShowAddEvent(false);
+    setNewEventData({ title: '', date: '', type: 'Festival', capacity: 0 });
+  };
+
+  const deleteEvent = (id) => {
+    const updated = events.filter(e => e.id !== id);
+    saveEvents(updated);
+  };
 
   return (
     <div ref={containerRef} className="space-y-10 pb-12">
@@ -166,14 +214,14 @@ const EventManager = () => {
                                     >
                                        <Edit2 size={16} />
                                     </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      onClick={() => alert('Requesting event purge from registry...')}
-                                      className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-500"
-                                    >
-                                       <Trash2 size={16} />
-                                    </Button>
+                                     <Button 
+                                       variant="ghost" 
+                                       size="icon" 
+                                       onClick={() => deleteEvent(event.id)}
+                                       className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-500"
+                                     >
+                                        <Trash2 size={16} />
+                                     </Button>
                                  </div>
                               </td>
                            </tr>
@@ -242,19 +290,35 @@ const EventManager = () => {
         subtitle="Chronological Event Strategy"
         icon={Calendar}
       >
-        <form className="space-y-8">
+        <form onSubmit={handleAddEvent} className="space-y-8">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
               <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Event Name</label>
-                 <Input placeholder="e.g. Navratri 2026" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+                 <Input 
+                   required
+                   value={newEventData.title}
+                   onChange={(e) => setNewEventData({...newEventData, title: e.target.value})}
+                   placeholder="e.g. Navratri 2026" 
+                   className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" 
+                 />
               </div>
               <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Event Date</label>
-                 <Input type="date" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+                 <Input 
+                   required
+                   type="date" 
+                   value={newEventData.date}
+                   onChange={(e) => setNewEventData({...newEventData, date: e.target.value})}
+                   className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" 
+                 />
               </div>
               <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Classification</label>
-                 <select className="w-full h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10 appearance-none cursor-pointer">
+                 <select 
+                   value={newEventData.type}
+                   onChange={(e) => setNewEventData({...newEventData, type: e.target.value})}
+                   className="w-full h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10 appearance-none cursor-pointer"
+                 >
                     <option>Festival</option>
                     <option>Religious</option>
                     <option>National</option>
@@ -263,7 +327,13 @@ const EventManager = () => {
               </div>
               <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Poster Capacity</label>
-                 <Input type="number" placeholder="0" className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" />
+                 <Input 
+                   type="number" 
+                   value={newEventData.capacity}
+                   onChange={(e) => setNewEventData({...newEventData, capacity: e.target.value})}
+                   placeholder="0" 
+                   className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold" 
+                 />
               </div>
            </div>
 
@@ -271,7 +341,7 @@ const EventManager = () => {
               <Button type="button" onClick={() => setShowAddEvent(false)} variant="ghost" className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none">
                  Discard
               </Button>
-              <Button type="button" onClick={() => setShowAddEvent(false)} className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none">
+              <Button type="submit" className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none">
                  <CheckCircle size={18} strokeWidth={3} /> Schedule Event
               </Button>
            </div>

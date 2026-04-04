@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Music, Layers, 
   Image as ImageIcon, Share2, LogOut, Bell, 
   Search, Settings, ChevronRight, Calendar, Menu, X,
-  Moon, Sun, Command, ChevronDown, UserCircle
+  Moon, Sun, Command, ChevronDown, UserCircle, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/Button';
@@ -18,15 +18,27 @@ const AdminLayout = () => {
 
   // Sync Dark Mode with DOM
   useEffect(() => {
-    // Only light mode for this administrative interface
-    document.documentElement.classList.remove('dark');
-    setIsDarkMode(false);
-  }, [isDarkMode]);
-
-  // Always start in light mode - remove any previously saved dark setting
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
+    const savedTheme = localStorage.getItem('admin_theme');
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('admin_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('admin_theme', 'light');
+    }
+  };
 
   // Close sidebar on navigation (mobile)
   useEffect(() => {
@@ -46,6 +58,7 @@ const AdminLayout = () => {
         { title: 'User Management', path: '/admin/users', icon: Users },
         { title: 'Music Library', path: '/admin/music', icon: Music },
         { title: 'Template Manager', path: '/admin/templates', icon: ImageIcon },
+        { title: 'Layout Frames', path: '/admin/frames', icon: Sparkles },
       ]
     },
     {
@@ -53,7 +66,8 @@ const AdminLayout = () => {
       items: [
         { title: 'Categories', path: '/admin/categories', icon: Layers },
         { title: 'Events Calendar', path: '/admin/events', icon: Calendar },
-        { title: 'Referral Points', path: '/admin/referrals', icon: Share2 }
+        { title: 'Referral Points', path: '/admin/referrals', icon: Share2 },
+        { title: 'System Configuration', path: '/admin/settings', icon: Settings }
       ]
     }
   ], []);
@@ -179,9 +193,12 @@ const AdminLayout = () => {
               </div>
 
               <div className="flex items-center gap-1.5 lg:gap-3">
-                 <div className="p-2 text-slate-400">
-                    <Sun size={20} />
-                 </div>
+                 <button 
+                   onClick={toggleDarkMode}
+                   className="p-2 text-slate-400 hover:text-[var(--admin-primary)] hover:bg-red-50 rounded-xl transition-all border-none bg-transparent cursor-pointer flex items-center justify-center transform active:scale-95"
+                 >
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                 </button>
                  
                  <div className="relative">
                     <button className="p-2 text-slate-400 hover:text-[var(--admin-primary)] hover:bg-red-50 rounded-xl transition-all border-none bg-transparent cursor-pointer">

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Layout, Plus, Search, Filter, Image as ImageIcon, 
   Video, Star, Trash2, Edit2, CheckCircle, Clock, 
@@ -6,8 +7,6 @@ import {
   RotateCcw, X, AlertCircle, Save, Trash, Archive,
   Info, ArrowLeft
 } from 'lucide-react';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -17,10 +16,12 @@ import AdminModal from '../components/ui/AdminModal';
 
 const INITIAL_TEMPLATES = [
   { id: 1, title: 'Holi Dhamaka', category: 'Festivals', type: 'video', status: 'published', trending: true, usage: 1250, preview: 'https://images.unsplash.com/photo-1590076215667-873d3148f323', deleted: false },
-  { id: 2, title: 'Business Growth', category: 'Business', type: 'image', status: 'published', trending: false, usage: 980, preview: 'https://images.unsplash.com/photo-1460925895911-dfc9f9573f0f', deleted: false },
+  { id: 2, title: 'Business Growth', category: 'Business Promotion', type: 'image', status: 'published', trending: false, usage: 980, preview: 'https://images.unsplash.com/photo-1460925895911-dfc9f9573f0f', deleted: false },
   { id: 3, title: 'Morning Vibes', category: 'Greetings', type: 'image', status: 'draft', trending: false, usage: 450, preview: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9', deleted: false },
   { id: 4, title: 'Success Shayari', category: 'Motivation', type: 'video', status: 'published', trending: true, usage: 2100, preview: 'https://images.unsplash.com/photo-1552664730-d307ca884978', deleted: false },
 ];
+
+const CATEGORIES = ['Business Promotion', 'Festivals', 'Greetings', 'Motivation', 'Sports', 'Education'];
 
 const TemplateManager = () => {
   const [templates, setTemplates] = useState(() => {
@@ -32,8 +33,20 @@ const TemplateManager = () => {
   const [isTrashView, setIsTrashView] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const fileInputRef = useRef();
   const containerRef = useRef();
+  const location = useLocation();
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const initialCategory = queryParams.get('category');
+
+  useEffect(() => {
+    if (initialCategory) {
+      setSearchQuery(initialCategory);
+    }
+  }, [initialCategory]);
 
   useEffect(() => {
     localStorage.setItem('admin_templates', JSON.stringify(templates));
@@ -66,7 +79,7 @@ const TemplateManager = () => {
       category: formData.get('category'),
       type: formData.get('type'),
       status: formData.get('status'),
-      preview: formData.get('preview') || 'https://images.unsplash.com/photo-1502082553048-f009c37129b9',
+      preview: previewUrl || formData.get('preview') || 'https://images.unsplash.com/photo-1502082553048-f009c37129b9',
       trending: formData.get('trending') === 'true',
     };
 
@@ -83,6 +96,8 @@ const TemplateManager = () => {
     }
     setShowModal(false);
     setEditingTemplate(null);
+    setSelectedFile(null);
+    setPreviewUrl('');
   };
 
   const softDelete = (id) => {
@@ -283,12 +298,15 @@ const TemplateManager = () => {
         </Card>
       )}
 
-
-
       {/* Add/Edit Modal */}
       <AdminModal
         isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingTemplate(null); }}
+        onClose={() => { 
+          setShowModal(false); 
+          setEditingTemplate(null); 
+          setSelectedFile(null);
+          setPreviewUrl('');
+        }}
         title={editingTemplate ? 'Modify Component' : 'Provision Layout'}
         subtitle="Design Architecture Node"
         icon={editingTemplate ? Edit2 : Plus}
@@ -299,10 +317,22 @@ const TemplateManager = () => {
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Asset Identity</label>
                  <Input name="title" defaultValue={editingTemplate?.title} placeholder="e.g. Premium Festive Layout" required className="h-14 rounded-xl bg-slate-50 border-none px-6 font-bold" />
              </div>
-             <div className="space-y-3">
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Category Registry</label>
-                 <Input name="category" defaultValue={editingTemplate?.category} placeholder="e.g. Festivals, Business" required className="h-14 rounded-xl bg-slate-50 border-none px-6 font-bold" />
-             </div>
+              <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Category Registry</label>
+                  <div className="relative group">
+                    <select 
+                      name="category" 
+                      defaultValue={editingTemplate?.category || CATEGORIES[0]} 
+                      required 
+                      className="w-full h-14 rounded-xl bg-slate-50 border-none px-6 font-bold text-sm appearance-none outline-none focus:ring-2 focus:ring-red-500/10 cursor-pointer"
+                    >
+                       {CATEGORIES.map(cat => (
+                         <option key={cat} value={cat}>{cat}</option>
+                       ))}
+                    </select>
+                    <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 rotate-90 pointer-events-none" />
+                  </div>
+              </div>
              <div className="space-y-3">
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Asset Type</label>
                  <div className="relative group">
@@ -325,9 +355,58 @@ const TemplateManager = () => {
              </div>
            </div>
 
-           <div className="space-y-3">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Preview Interface URL</label>
-               <Input name="preview" defaultValue={editingTemplate?.preview} placeholder="https://unsplash.com/..." className="h-14 rounded-xl bg-slate-50 border-none px-6 font-bold text-xs" />
+           <div className="space-y-4">
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Layout Assets</label>
+               <div 
+                 className="p-10 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50 hover:bg-slate-100 transition-all text-center group cursor-pointer relative overflow-hidden flex flex-col items-center justify-center min-h-[160px]"
+                 onClick={() => fileInputRef.current.click()}
+               >
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*,video/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setSelectedFile(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                  
+                  {(previewUrl || editingTemplate?.preview) ? (
+                    <div className="absolute inset-0 group/preview">
+                       <img src={previewUrl || editingTemplate?.preview} className="w-full h-full object-cover" alt="Node" />
+                       <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/preview:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                          <ImageIcon size={24} className="text-white mb-2" />
+                          <p className="text-[10px] font-black text-white uppercase tracking-widest">Swap Interface Asset</p>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                       <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mb-4 shadow-sm border border-slate-50 group-hover:scale-110 transition-transform">
+                          <Plus size={32} />
+                       </div>
+                       <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Upload Interface File</p>
+                       <p className="text-[9px] font-bold text-slate-400">High Res Static/Motion Graphics</p>
+                    </div>
+                  )}
+               </div>
+               
+               <div className="pt-2">
+                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] text-center mb-3">OR REMOTE PAYLOAD LINK</p>
+                 <Input 
+                   name="preview" 
+                   defaultValue={editingTemplate?.preview} 
+                   onChange={(e) => {
+                     setPreviewUrl(e.target.value);
+                     setSelectedFile(null);
+                   }}
+                   placeholder="https://unsplash.com/..." 
+                   className="h-14 rounded-xl bg-slate-50 border-none px-6 font-bold text-xs" 
+                 />
+               </div>
            </div>
 
            <div className="flex items-center gap-4 bg-slate-50 p-6 rounded-[1.5rem]">
@@ -419,4 +498,3 @@ const TemplateManager = () => {
 };
 
 export default TemplateManager;
-

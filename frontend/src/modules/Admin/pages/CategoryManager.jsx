@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Layers, Plus, Trash2, Edit2, GripVertical, 
   ChevronRight, Image as ImageIcon, Search, 
@@ -26,47 +27,56 @@ const CategoryManager = () => {
   const [activeCategory, setActiveCategory] = useState(null);
   const [newCatData, setNewCatData] = useState({ title: '', image: '', type: 'all' });
   const [newSubData, setNewSubData] = useState({ title: '' });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef();
   const containerRef = useRef();
+  const navigate = useNavigate();
 
-  // Mock categories data
-  const categories = useMemo(() => [
-    { 
-      id: 1, 
-      title: 'Business Promotion', 
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92fb1ab', 
-      count: 120, 
-      status: 'active',
-      subcategories: [
-        { id: 101, title: 'Shop Opening', count: 40 },
-        { id: 102, title: 'Sale & Offers', count: 45 },
-        { id: 103, title: 'New Launch', count: 35 }
-      ]
-    },
-    { 
-      id: 2, 
-      title: 'Festivals', 
-      image: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e', 
-      count: 245, 
-      status: 'active',
-      subcategories: [
-        { id: 201, title: 'Diwali', count: 120 },
-        { id: 202, title: 'Holi', count: 85 },
-        { id: 203, title: 'Eid', count: 40 }
-      ]
-    },
-    { 
-      id: 3, 
-      title: 'Greetings', 
-      image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176', 
-      count: 180, 
-      status: 'active',
-      subcategories: [
-        { id: 301, title: 'Birthday', count: 100 },
-        { id: 302, title: 'Anniversary', count: 45 },
-        { id: 303, title: 'Wedding', count: 35 }
-      ]
-    }
-  ], []);
+  const [categories, setCategories] = useState(() => {
+    const saved = localStorage.getItem('admin_categories');
+    return saved ? JSON.parse(saved) : [
+      { 
+        id: 1, 
+        title: 'Business Promotion', 
+        image: 'https://images.unsplash.com/photo-1486406146926-c627a92fb1ab', 
+        count: 120, 
+        status: 'active',
+        subcategories: [
+          { id: 101, title: 'Shop Opening', count: 40 },
+          { id: 102, title: 'Sale & Offers', count: 45 },
+          { id: 103, title: 'New Launch', count: 35 }
+        ]
+      },
+      { 
+        id: 2, 
+        title: 'Festivals', 
+        image: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e', 
+        count: 245, 
+        status: 'active',
+        subcategories: [
+          { id: 201, title: 'Diwali', count: 120 },
+          { id: 202, title: 'Holi', count: 85 },
+          { id: 203, title: 'Eid', count: 40 }
+        ]
+      },
+      { 
+        id: 3, 
+        title: 'Greetings', 
+        image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176', 
+        count: 180, 
+        status: 'active',
+        subcategories: [
+          { id: 301, title: 'Birthday', count: 100 },
+          { id: 302, title: 'Anniversary', count: 45 },
+          { id: 303, title: 'Wedding', count: 35 }
+        ]
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('admin_categories', JSON.stringify(categories));
+  }, [categories]);
 
   const toggleExpand = (id) => {
     setExpandedCat(prev => prev === id ? null : id);
@@ -139,7 +149,17 @@ const CategoryManager = () => {
                         <h3 className="text-sm font-black text-slate-900 tracking-tight leading-none">{cat.title}</h3>
                         <Badge variant="success" className="hidden sm:inline-flex text-[8px] px-2 py-0.5 rounded uppercase font-black tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">{cat.status}</Badge>
                      </div>
-                     <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">{cat.count} TEMPLATES</p>
+                      <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/templates?category=${cat.title}`);
+                          }}
+                          className="hover:text-[#ef4444] transition-colors cursor-pointer border-b border-dotted border-slate-300 hover:border-[#ef4444]"
+                        >
+                          {cat.count} TEMPLATES
+                        </span>
+                      </p>
                   </div>
                 </div>
                 
@@ -273,13 +293,51 @@ const CategoryManager = () => {
            </div>
 
            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cover Image URL</label>
-              <Input 
-                placeholder="https://images.unsplash.com/..." 
-                className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
-                value={newCatData.image}
-                onChange={(e) => setNewCatData({...newCatData, image: e.target.value})}
-              />
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cover Image</label>
+              <div 
+                className="p-8 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-50 transition-all text-center group cursor-pointer overflow-hidden relative min-h-[120px] flex flex-col items-center justify-center" 
+                onClick={() => fileInputRef.current.click()}
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setSelectedFile(file);
+                      setNewCatData({...newCatData, image: URL.createObjectURL(file)});
+                    }
+                  }} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+                
+                {newCatData.image ? (
+                  <div className="absolute inset-0 group">
+                    <img src={newCatData.image} className="w-full h-full object-cover" alt="Preview" />
+                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       <p className="text-[10px] font-black text-white uppercase tracking-widest">Change Image</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <ImageIcon size={24} className="text-slate-300 mb-2 group-hover:scale-110 transition-transform" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Cover UI</p>
+                  </div>
+                )}
+              </div>
+              <div className="pt-2">
+                 <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest text-center">OR ENTER REMOTE URL</p>
+                 <Input 
+                   placeholder="https://images.unsplash.com/..." 
+                   className="h-12 rounded-xl bg-slate-50 border-none px-6 font-bold text-xs mt-2"
+                   value={newCatData.image}
+                   onChange={(e) => {
+                     setNewCatData({...newCatData, image: e.target.value});
+                     setSelectedFile(null);
+                   }}
+                 />
+              </div>
            </div>
 
            <div className="space-y-3">

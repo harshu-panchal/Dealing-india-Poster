@@ -175,6 +175,29 @@ const PosterEditor = ({ template, onClose }) => {
                     </div>
                   </div>
                 </div>
+
+                <div className="relative">
+                  <div className="flex justify-between items-center mb-1.5 px-1">
+                    <label className="text-[0.85rem] font-bold text-[#475569]">GST Number</label>
+                    <span className="text-[0.65rem] font-bold text-[#94a3b8]">{localUserData.gst_number?.length || 0} / 15</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 27AAAAA0000A1Z5"
+                      className="flex-1 bg-gray-50/50 border border-gray-100 rounded-xl p-3.5 px-4 outline-none focus:border-red-200 focus:bg-white text-[1rem] font-medium text-gray-800 shadow-sm"
+                      value={localUserData.gst_number || ''}
+                      onChange={(e) => updateLocalField('gst_number', e.target.value.toUpperCase())}
+                      maxLength={15}
+                    />
+                    <div 
+                      className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer transition-all ${localUserData.enabledFields?.gst ? 'bg-blue-500' : 'bg-white border-2 border-gray-200'}`}
+                      onClick={() => toggleField('gst')}
+                    >
+                      {localUserData.enabledFields?.gst && <Check size={14} className="text-white" />}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

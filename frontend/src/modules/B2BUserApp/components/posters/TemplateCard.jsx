@@ -1,7 +1,7 @@
 import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Volume2 } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 
-const TemplateCard = ({ template, onClick, variant = 'regular' }) => {
+const TemplateCard = ({ template, onClick, variant = 'regular', overlay }) => {
   const { openEditor } = useEditor();
   const handleImageError = (e) => {
     e.target.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=400';
@@ -19,12 +19,13 @@ const TemplateCard = ({ template, onClick, variant = 'regular' }) => {
           className="w-full h-full object-cover" 
           onError={handleImageError}
         />
+        {overlay}
       </div>
     );
   }
 
   return (
-    <div className="bg-white mb-1">
+    <div className="bg-white mb-1 overflow-hidden">
       <div 
         className="w-full aspect-square overflow-hidden rounded-xl relative bg-[#f8fafc] cursor-pointer" 
         onClick={onClick}
@@ -36,6 +37,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular' }) => {
           className="w-full h-full object-cover"
           onError={handleImageError}
         />
+        {overlay}
         {template.isVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10">
             <PlayCircle size={48} className="text-white fill-white/20 opacity-80" />

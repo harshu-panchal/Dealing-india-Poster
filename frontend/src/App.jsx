@@ -1,39 +1,41 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import CommonHeader from './components/layout/CommonHeader';
-import TabNavigation from './components/layout/TabNavigation';
-import ShimmerLayout from './components/common/ShimmerLayout';
+import CommonHeader from './modules/B2BUserApp/components/layout/CommonHeader';
+import TabNavigation from './modules/B2BUserApp/components/layout/TabNavigation';
+import ShimmerLayout from './modules/B2BUserApp/components/common/ShimmerLayout';
 import { AnimatePresence } from 'framer-motion';
-import Sidebar from './components/layout/Sidebar';
+import Sidebar from './modules/B2BUserApp/components/layout/Sidebar';
 
 // Lazy loading User pages
-const Home = lazy(() => import('./pages/ForYou'));
-const Categories = lazy(() => import('./pages/Categories'));
-const CategoryDetail = lazy(() => import('./pages/CategoryDetail'));
-const EventCalendar = lazy(() => import('./pages/EventCalendar'));
-const WhatsNew = lazy(() => import('./pages/WhatsNew'));
-const MyPosters = lazy(() => import('./pages/MyPosters'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Trending = lazy(() => import('./pages/Trending'));
+const Home = lazy(() => import('./modules/B2BUserApp/pages/ForYou'));
+const Categories = lazy(() => import('./modules/B2BUserApp/pages/Categories'));
+const CategoryDetail = lazy(() => import('./modules/B2BUserApp/pages/CategoryDetail'));
+const EventCalendar = lazy(() => import('./modules/B2BUserApp/pages/EventCalendar'));
+const WhatsNew = lazy(() => import('./modules/B2BUserApp/pages/WhatsNew'));
+const MyPosters = lazy(() => import('./modules/B2BUserApp/pages/MyPosters'));
+const Profile = lazy(() => import('./modules/B2BUserApp/pages/Profile'));
+const Dashboard = lazy(() => import('./modules/B2BUserApp/pages/Dashboard'));
+const Login = lazy(() => import('./modules/B2BUserApp/pages/Login'));
+const Register = lazy(() => import('./modules/B2BUserApp/pages/Register'));
+const Trending = lazy(() => import('./modules/B2BUserApp/pages/Trending'));
 
 // Lazy loading Admin pages
-const AdminLayout = lazy(() => import('./admin/components/AdminLayout'));
-const AdminLogin = lazy(() => import('./admin/pages/AdminLogin'));
-const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
-const UserManager = lazy(() => import('./admin/pages/UserManager'));
-const MusicLibrary = lazy(() => import('./admin/pages/MusicLibrary'));
-const CategoryManager = lazy(() => import('./admin/pages/CategoryManager'));
-const TemplateManager = lazy(() => import('./admin/pages/TemplateManager'));
-const ReferralManager = lazy(() => import('./admin/pages/ReferralManager'));
-const EventManager = lazy(() => import('./admin/pages/EventManager'));
-const UserDetail = lazy(() => import('./admin/pages/UserDetail'));
+const AdminLayout = lazy(() => import('./modules/Admin/components/AdminLayout'));
+const AdminLogin = lazy(() => import('./modules/Admin/pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./modules/Admin/pages/AdminDashboard'));
+const UserManager = lazy(() => import('./modules/Admin/pages/UserManager'));
+const MusicLibrary = lazy(() => import('./modules/Admin/pages/MusicLibrary'));
+const CategoryManager = lazy(() => import('./modules/Admin/pages/CategoryManager'));
+const TemplateManager = lazy(() => import('./modules/Admin/pages/TemplateManager'));
+const ReferralManager = lazy(() => import('./modules/Admin/pages/ReferralManager'));
+const EventManager = lazy(() => import('./modules/Admin/pages/EventManager'));
+const UserDetail = lazy(() => import('./modules/Admin/pages/UserDetail'));
+const FrameManager = lazy(() => import('./modules/Admin/pages/FrameManager'));
+const SystemSettings = lazy(() => import('./modules/Admin/pages/SystemSettings'));
 
-import { EditorProvider, useEditor } from './context/EditorContext';
-import PosterEditor from './components/editor/PosterEditor';
-import PosterDetail from './components/posters/PosterDetail';
+import { EditorProvider, useEditor } from './modules/B2BUserApp/context/EditorContext';
+import PosterEditor from './modules/B2BUserApp/components/editor/PosterEditor';
+import PosterDetail from './modules/B2BUserApp/components/posters/PosterDetail';
 
 // Protected Route for Admin
 const ProtectedAdminRoute = ({ children }) => {
@@ -72,6 +74,8 @@ function AppContent() {
              <Route path="templates" element={<TemplateManager />} />
              <Route path="referrals" element={<ReferralManager />} />
              <Route path="events" element={<EventManager />} />
+             <Route path="frames" element={<FrameManager />} />
+             <Route path="settings" element={<SystemSettings />} />
           </Route>
         </Routes>
       </Suspense>

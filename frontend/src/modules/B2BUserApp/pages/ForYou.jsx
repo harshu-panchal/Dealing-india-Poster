@@ -33,8 +33,52 @@ const ForYou = () => {
 
   const renderPOTDCard = (tpl, idx) => {
     if (!tpl) return null;
+
+    const BrandingOverlay = (
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-20 w-full px-1 mb-1">
+        <div className="bg-black/85 backdrop-blur-md rounded-b-lg flex h-[46px] lg:h-[60px] shadow-2xl overflow-visible border-t border-white/10 mx-auto w-full">
+          {/* Left Details */}
+          <div className="flex-1 flex flex-col justify-center px-2 lg:px-4 min-w-0">
+            <div className="text-white text-[0.65rem] lg:text-[0.85rem] font-extrabold leading-tight truncate uppercase tracking-tight">
+              {userData.business_name || 'SHEETAL'}
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <div className="w-[12px] h-[12px] lg:w-4 lg:h-4 bg-[#25D366] rounded-full flex items-center justify-center">
+                <MessageCircle size={8} className="text-white fill-white lg:w-3 lg:h-3" />
+              </div>
+              <span className="text-white text-[0.6rem] lg:text-[0.75rem] font-bold tracking-tight truncate">{userData.phone_number || '6261265704'}</span>
+            </div>
+          </div>
+
+          {/* Floating Circular Profile Holder (Relative sizing) */}
+          <div className="relative w-[28%] max-w-[65px] lg:max-w-[95px] flex-shrink-0 flex items-center justify-center mr-1">
+            <div className="absolute -top-[45%] right-0 w-full aspect-square z-30">
+              <div className="w-full h-full p-1 bg-white rounded-full shadow-xl border-2 border-white flex flex-col items-center justify-center overflow-hidden">
+                {userData.userPhoto ? (
+                  <img src={userData.userPhoto} className="w-full h-full object-cover rounded-full" alt="u" />
+                ) : (
+                  <div className="w-full h-full bg-gray-50 rounded-full flex flex-col items-center justify-center border border-dashed border-gray-200">
+                    <User size={14} className="text-gray-300 lg:w-9 lg:h-9" />
+                    <div className="text-[0.3rem] lg:text-[0.4rem] font-black text-red-600 text-center leading-[0.85] uppercase">
+                      PHOTO
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[0.35rem] lg:text-[0.5rem] font-black tracking-tight whitespace-nowrap bg-blue-600 text-white px-1.5 py-0.5 rounded-full shadow-md pointer-events-auto cursor-pointer active:scale-95 transition-transform" onClick={(e) => {
+                e.stopPropagation();
+                openDetail(tpl);
+              }}>
+                Edit
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
     return (
-      <div className="potd-card-wrapper mb-2 lg:mb-0 lg:max-w-full lg:m-0" key={tpl.id}>
+      <div className="potd-card-wrapper mb-2 lg:mb-0 lg:max-w-full lg:m-0 overflow-hidden" key={tpl.id}>
         <section className="bg-white py-2 mb-1 lg:p-0 lg:m-0 lg:bg-transparent">
           <SectionHeader
             title="Poster of the Day"
@@ -46,49 +90,7 @@ const ForYou = () => {
             }
           />
           <div className="px-2 lg:p-0 relative group">
-            <TemplateCard template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
-
-            {/* Unified Branding Overlay (Perfect Fit - Matches Ref Image 2) */}
-            <div className="absolute bottom-[74px] lg:bottom-[92px] left-0 right-0 pointer-events-none z-20 w-full px-2 lg:px-0">
-              <div className="bg-black/85 backdrop-blur-md rounded-b-xl flex h-[58px] lg:h-[76px] shadow-2xl overflow-visible border-t border-white/10">
-                {/* Left Details */}
-                <div className="flex-1 flex flex-col justify-center px-4 lg:px-8">
-                  <div className="text-white text-[0.85rem] lg:text-xl font-black leading-tight truncate uppercase tracking-wide">
-                    {userData.business_name || 'SHEETAL'}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className="w-[18px] h-[18px] lg:w-6 lg:h-6 bg-[#25D366] rounded-full flex items-center justify-center">
-                      <MessageCircle size={10} className="text-white fill-white lg:w-4 lg:h-4" />
-                    </div>
-                    <span className="text-white text-[0.8rem] lg:text-base font-bold tracking-wider">{userData.phone_number || '6261265704'}</span>
-                  </div>
-                </div>
-
-                {/* Floating Circular Profile Holder */}
-                <div className="relative w-[110px] lg:w-[160px] flex-shrink-0 flex items-center justify-center">
-                  <div className="absolute -top-[25px] lg:-top-[50px] right-2 w-[85px] h-[85px] lg:w-[130px] lg:h-[130px] z-30">
-                    <div className="w-full h-full p-1.5 bg-white rounded-full shadow-xl border-4 border-white flex flex-col items-center justify-center overflow-hidden">
-                      {userData.userPhoto ? (
-                        <img src={userData.userPhoto} className="w-full h-full object-cover rounded-full" alt="u" />
-                      ) : (
-                        <div className="w-full h-full bg-gray-50 rounded-full flex flex-col items-center justify-center border-2 border-dashed border-gray-200">
-                          <User size={30} className="text-gray-300 lg:w-20 lg:h-20" />
-                          <div className="text-[0.4rem] lg:text-[0.65rem] font-black text-red-600 text-center leading-[0.85] uppercase mt-0.5">
-                            YOUR PHOTO<br />HERE
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[0.45rem] lg:text-[0.7rem] font-black tracking-tight whitespace-nowrap bg-blue-600 text-white px-2 py-0.5 rounded-full shadow-md pointer-events-auto cursor-pointer active:scale-95 transition-transform" onClick={(e) => {
-                      e.stopPropagation();
-                      openDetail(tpl);
-                    }}>
-                      Edit Poster
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TemplateCard template={tpl} variant="regular" onClick={() => openDetail(tpl)} overlay={BrandingOverlay} />
           </div>
         </section>
         <div className="h-2 bg-[#f1f5f9] lg:hidden"></div>
@@ -177,7 +179,7 @@ const ForYou = () => {
             <h2 className="text-xl font-bold text-[#0f172a]">Video Templates</h2>
             <p className="text-sm text-[#64748b]">Found {videoPosters.length} trending videos</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-10">
             {videoPosters.map(tpl => (
               <TemplateCard key={tpl.id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
             ))}
@@ -189,7 +191,7 @@ const ForYou = () => {
             <h2 className="text-xl font-bold text-[#0f172a]">{activeCategory}</h2>
             <p className="text-sm text-[#64748b]">Showing results for {activeCategory}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 lg:gap-10">
             {TEMPLATES.filter(t => t.category.includes(activeCategory) || activeCategory === 'All').map(tpl => (
               <TemplateCard key={tpl.id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
             ))}
@@ -214,16 +216,16 @@ const ForYou = () => {
             </div>
           </section>
 
-          {/* 2. Top Hero POTD Grid - 3 Cards */}
+          {/* 2. Top Hero POTD Grid - 3 Cards (Updated for responsiveness) */}
           <div className="lg:py-6 lg:px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 transition-all">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-10 transition-all">
               <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                 {renderPOTDCard(TEMPLATES[0], 0)}
               </div>
               <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                 {renderPOTDCard(TEMPLATES[1], 1)}
               </div>
-              <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
+              <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl xl:block hidden">
                 {renderPOTDCard(TEMPLATES[2], 2)}
               </div>
             </div>
@@ -232,12 +234,15 @@ const ForYou = () => {
 
 
           <div className="lg:py-6 lg:px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-              {[3, 4, 5].map(idx => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-10">
+              {[3, 4].map(idx => (
                 <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                   {renderPOTDCard(TEMPLATES[idx], idx)}
                 </div>
               ))}
+              <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl xl:block hidden">
+                 {renderPOTDCard(TEMPLATES[5], 5)}
+              </div>
             </div>
           </div>
 
@@ -263,12 +268,15 @@ const ForYou = () => {
           </section>
           {/* INTERSPERSED POTD GRID 1 */}
           <div className="lg:py-6 lg:px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-              {[6, 7, 8].map(idx => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-10">
+              {[6, 7].map(idx => (
                 <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                   {renderPOTDCard(TEMPLATES[idx], idx)}
                 </div>
               ))}
+              <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl xl:block hidden">
+                {renderPOTDCard(TEMPLATES[8], 8)}
+              </div>
             </div>
           </div>
 
@@ -291,12 +299,15 @@ const ForYou = () => {
 
           {/* INTERSPERSED POTD GRID 2 */}
           <div className="lg:py-6 lg:px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
-              {[9, 10, 11].map(idx => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-10">
+              {[9, 10].map(idx => (
                 <div key={idx} className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl">
                   {renderPOTDCard(TEMPLATES[idx], idx)}
                 </div>
               ))}
+              <div className="bg-white lg:rounded-2xl lg:shadow-md lg:p-4 lg:border lg:border-gray-100 transition-all hover:shadow-xl xl:block hidden">
+                 {renderPOTDCard(TEMPLATES[11], 11)}
+              </div>
             </div>
           </div>
 
