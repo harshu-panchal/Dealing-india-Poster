@@ -16,7 +16,6 @@ const MyPosters = lazy(() => import('./modules/B2BUserApp/pages/MyPosters'));
 const Profile = lazy(() => import('./modules/B2BUserApp/pages/Profile'));
 const Dashboard = lazy(() => import('./modules/B2BUserApp/pages/Dashboard'));
 const Login = lazy(() => import('./modules/B2BUserApp/pages/Login'));
-const Register = lazy(() => import('./modules/B2BUserApp/pages/Register'));
 const Trending = lazy(() => import('./modules/B2BUserApp/pages/Trending'));
 
 // Lazy loading Admin pages
@@ -33,9 +32,11 @@ const UserDetail = lazy(() => import('./modules/Admin/pages/UserDetail'));
 const FrameManager = lazy(() => import('./modules/Admin/pages/FrameManager'));
 const SystemSettings = lazy(() => import('./modules/Admin/pages/SystemSettings'));
 
+import { AuthProvider, useAuth } from './modules/B2BUserApp/context/AuthContext';
 import { EditorProvider, useEditor } from './modules/B2BUserApp/context/EditorContext';
 import PosterEditor from './modules/B2BUserApp/components/editor/PosterEditor';
 import PosterDetail from './modules/B2BUserApp/components/posters/PosterDetail';
+import OnboardingModal from './modules/B2BUserApp/components/modals/OnboardingModal';
 
 // Protected Route for Admin
 const ProtectedAdminRoute = ({ children }) => {
@@ -43,14 +44,24 @@ const ProtectedAdminRoute = ({ children }) => {
   return isAdmin ? children : <Navigate to="/admin/login" replace />;
 };
 
+// Protected Route for User
+const UserPrivateRoute = ({ children, isAuthenticated }) => {
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
 function AppContent() {
   const [showSidebar, setShowSidebar] = useState(false);
-  const isAuthenticated = true; 
+  const { user, loading } = useAuth();
+  const isAuthenticated = !!user; 
+  const isNewUser = isAuthenticated && !user.user?.name;
+
   const { 
     editingTemplate, closeEditor, 
     viewingDetail, closeDetail, openEditor 
   } = useEditor();
   const location = useLocation();
+
+  if (loading) return <ShimmerLayout />;
 
   const isAdminPath = location.pathname.startsWith('/admin');
   const showSearchInHeaderPages = ['/', '/trending', '/categories'];
@@ -84,8 +95,11 @@ function AppContent() {
 
   return (
     <div className="flex bg-bg h-full w-full overflow-hidden">
-      {/* User Sidebar - Only shown if Not Admin Route */}
-      {!isAdminPath && (
+      {/* Onboarding Modal - Mandatory for new users */}
+      <OnboardingModal isOpen={isNewUser} />
+      
+      {/* User Sidebar - Only shown if Not Admin Route and Not in Hidden Paths */}
+      {showBars && !isAdminPath && (
         <>
           <div className="hidden lg:block h-screen border-r border-gray-100 shrink-0">
             <Sidebar isOpen={true} isPersistent={true} />
@@ -110,17 +124,19 @@ function AppContent() {
             
             <Suspense fallback={<ShimmerLayout />}>
               <Routes>
-                <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
-                <Route path="/trending" element={<Trending />} />
-                <Route path="/categories" element={<Categories />} />
-                <Route path="/category/:id" element={<CategoryDetail />} />
-                <Route path="/calendar" element={<EventCalendar />} />
-                <Route path="/whats-new" element={<WhatsNew />} />
-                <Route path="/my-posters" element={<MyPosters />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                {/* Public Routes */}
+                <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+
+                {/* Private User Routes */}
+                <Route path="/" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Home /></UserPrivateRoute>} />
+                <Route path="/trending" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Trending /></UserPrivateRoute>} />
+                <Route path="/categories" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Categories /></UserPrivateRoute>} />
+                <Route path="/category/:id" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><CategoryDetail /></UserPrivateRoute>} />
+                <Route path="/calendar" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><EventCalendar /></UserPrivateRoute>} />
+                <Route path="/whats-new" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><WhatsNew /></UserPrivateRoute>} />
+                <Route path="/my-posters" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><MyPosters /></UserPrivateRoute>} />
+                <Route path="/profile" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Profile /></UserPrivateRoute>} />
+                <Route path="/dashboard" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Dashboard /></UserPrivateRoute>} />
               </Routes>
             </Suspense>
           </div>
@@ -157,9 +173,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <EditorProvider>
-        <AppContent />
-      </EditorProvider>
+      <AuthProvider>
+        <EditorProvider>
+          <AppContent />
+        </EditorProvider>
+      </AuthProvider>
     </Router>
   );
 }
