@@ -210,16 +210,25 @@ const Login = () => {
                 )}
               </button>
 
-              <div className="text-center pt-2">
-                <button 
-                  type="button"
-                  onClick={() => handleSendOtp(null, true)}
-                  disabled={isSending}
-                  className="text-slate-400 text-[0.65rem] font-black uppercase tracking-widest hover:text-[#ef4444] transition-colors disabled:opacity-50"
-                >
-                  {isSending && step === 2 ? 'Resending...' : "Didn't receive code? Resend"}
-                </button>
-              </div>
+                <div className="flex flex-col items-center gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => handleSendOtp(null, true)}
+                    disabled={isSending || timeLeft > 0}
+                    className="text-slate-400 text-[0.65rem] font-black uppercase tracking-widest hover:text-[#ef4444] transition-colors disabled:opacity-50 disabled:hover:text-slate-400"
+                  >
+                    {isSending && step === 2 ? 'Resending...' : "Didn't receive code? Resend"}
+                  </button>
+                  
+                  {timeLeft > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
+                      <div className="w-1 h-1 rounded-full bg-[#ef4444] animate-pulse" />
+                      <span className="text-[0.6rem] font-black text-slate-500 uppercase tracking-widest">
+                        Code expires in <span className="text-[#ef4444]">{formatTime(timeLeft)}</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
             </motion.form>
           )}
         </AnimatePresence>

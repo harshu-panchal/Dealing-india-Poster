@@ -8,7 +8,7 @@ const OnboardingModal = ({ isOpen }) => {
   const { user, setUser } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: user?.user?.name || '',
     mobileNumber: user?.user?.mobileNumber || '',
@@ -33,8 +33,8 @@ const OnboardingModal = ({ isOpen }) => {
       const config = {
         headers: { Authorization: `Bearer ${user.accessToken}` }
       };
-      const { data } = await axios.put('http://localhost:5003/api/user/profile', formData, config);
-      
+      const { data } = await axios.put(`${import.meta.env.VITE_API_URL}/user/profile`, formData, config);
+
       // Update global context
       const updatedUser = { ...user, user: data.user };
       localStorage.setItem('userInfo', JSON.stringify(updatedUser));
@@ -52,7 +52,7 @@ const OnboardingModal = ({ isOpen }) => {
 
   return (
     <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-y-auto">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="w-[min(540px,94%)] bg-white rounded-[32px] overflow-hidden shadow-2xl my-auto"
@@ -76,7 +76,7 @@ const OnboardingModal = ({ isOpen }) => {
         <div className="p-6 sm:p-8">
           <AnimatePresence mode="wait">
             {step === 1 ? (
-              <motion.form 
+              <motion.form
                 key="step1"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -85,7 +85,7 @@ const OnboardingModal = ({ isOpen }) => {
                 className="space-y-6"
               >
                 <div className="space-y-2 text-center mb-4">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">Welcome {user?.user?.email || user?.user?.mobileNumber}</p>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">Welcome {user?.user?.email || user?.user?.mobileNumber}</p>
                 </div>
 
                 <div className="space-y-4">
@@ -93,13 +93,13 @@ const OnboardingModal = ({ isOpen }) => {
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Full Name</label>
                     <div className="relative flex items-center">
                       <User size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         placeholder="John Doe"
                         className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all"
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
                     </div>
                   </div>
@@ -108,19 +108,19 @@ const OnboardingModal = ({ isOpen }) => {
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Mobile Number</label>
                     <div className="relative flex items-center">
                       <Phone size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         required
                         placeholder="6261265704"
                         className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all"
                         value={formData.mobileNumber}
-                        onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                       />
                     </div>
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   className="w-full h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all border-none cursor-pointer group"
                 >
@@ -129,7 +129,7 @@ const OnboardingModal = ({ isOpen }) => {
                 </button>
               </motion.form>
             ) : (
-              <motion.div 
+              <motion.div
                 key="step2"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -157,10 +157,10 @@ const OnboardingModal = ({ isOpen }) => {
                   <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Content Language</label>
                   <div className="relative flex items-center">
                     <Globe size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
-                    <select 
+                    <select
                       className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 appearance-none focus:bg-white focus:border-[#ef4444]/20 transition-all cursor-pointer"
                       value={formData.contentLanguage}
-                      onChange={(e) => setFormData({...formData, contentLanguage: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, contentLanguage: e.target.value })}
                     >
                       {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
                     </select>
@@ -168,20 +168,20 @@ const OnboardingModal = ({ isOpen }) => {
                 </div>
 
                 <div className="flex gap-4">
-                   <button 
-                     disabled={loading}
-                     onClick={() => setStep(1)}
-                     className="flex-1 h-14 bg-slate-100 text-slate-500 rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-slate-200 transition-all border-none cursor-pointer"
-                   >
-                     Back
-                   </button>
-                   <button 
-                     disabled={loading}
-                     onClick={handleFinalSubmit}
-                     className="flex-[2] h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all border-none cursor-pointer disabled:opacity-70"
-                   >
-                     {loading ? <Loader2 size={18} className="animate-spin" /> : <><span>Start Exploring</span> <Check size={18} /></>}
-                   </button>
+                  <button
+                    disabled={loading}
+                    onClick={() => setStep(1)}
+                    className="flex-1 h-14 bg-slate-100 text-slate-500 rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-slate-200 transition-all border-none cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    disabled={loading}
+                    onClick={handleFinalSubmit}
+                    className="flex-[2] h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all border-none cursor-pointer disabled:opacity-70"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <><span>Start Exploring</span> <Check size={18} /></>}
+                  </button>
                 </div>
               </motion.div>
             )}

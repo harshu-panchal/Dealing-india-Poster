@@ -126,8 +126,63 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
     </div>
   );
 
+  const logoutModal = (
+    <AnimatePresence>
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowLogoutModal(false)}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-[min(400px,94%)] bg-white rounded-[32px] p-6 sm:p-8 shadow-2xl border border-slate-100 overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-[#ef4444]" />
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-[#ef4444] mb-6">
+                <AlertCircle size={32} />
+              </div>
+              
+              <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Logout Session</h3>
+              <p className="text-slate-500 text-sm font-semibold mb-8 leading-relaxed">
+                Are you sure you want to end your current session? You'll need to verify your OTP again to log back in.
+              </p>
+
+              <div className="flex flex-col w-full gap-3">
+                <button 
+                  onClick={handleActualLogout}
+                  className="w-full h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 active:scale-[0.98] transition-all border-none cursor-pointer"
+                >
+                  Yes, Logout
+                </button>
+                <button 
+                  onClick={() => setShowLogoutModal(false)}
+                  className="w-full h-14 bg-slate-50 text-slate-600 rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-slate-100 active:scale-[0.98] transition-all border-none cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
   if (isPersistent) {
-    return sidebarContent;
+    return (
+      <>
+        {sidebarContent}
+        {logoutModal}
+      </>
+    );
   }
 
   return (
@@ -154,57 +209,11 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
           </div>
         )}
       </AnimatePresence>
-
-      {/* Custom Logout Modal */}
-      <AnimatePresence>
-        {showLogoutModal && (
-          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowLogoutModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-[min(400px,94%)] bg-white rounded-[32px] p-6 sm:p-8 shadow-2xl border border-slate-100 overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-[#ef4444]" />
-              
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-[#ef4444] mb-6">
-                  <AlertCircle size={32} />
-                </div>
-                
-                <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Logout Session</h3>
-                <p className="text-slate-500 text-sm font-semibold mb-8 leading-relaxed">
-                  Are you sure you want to end your current session? You'll need to verify your OTP again to log back in.
-                </p>
-
-                <div className="flex flex-col w-full gap-3">
-                  <button 
-                    onClick={handleActualLogout}
-                    className="w-full h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 active:scale-[0.98] transition-all border-none cursor-pointer"
-                  >
-                    Yes, Logout
-                  </button>
-                  <button 
-                    onClick={() => setShowLogoutModal(false)}
-                    className="w-full h-14 bg-slate-50 text-slate-600 rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-slate-100 active:scale-[0.98] transition-all border-none cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {logoutModal}
     </>
   );
+
+
 };
 
 export default Sidebar;
