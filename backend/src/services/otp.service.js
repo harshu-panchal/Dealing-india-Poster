@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 import OTP from '../models/otp.model.js';
 
 export const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // return Math.floor(100000 + Math.random() * 900000).toString();
+  return "123456"; // Dummy OTP for production preview (Vercel/Render block SMTP)
 };
 
 export const hashOTP = async (otp) => {

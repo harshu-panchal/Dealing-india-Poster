@@ -22,15 +22,16 @@ export const sendOTP = async (req, res) => {
 
     await otpService.saveOTP(identifier, hashedOtp, type);
 
-    // 📬 REAL EMAIL INTEGRATION (If identifier is an email)
+    // 📬 REAL EMAIL INTEGRATION (Temporarily commented out for Vercel/Render SMTP blocks)
+    /*
     if (type === 'email') {
         try {
             await sendOTPEmail(identifier, otp);
         } catch (mailErr) {
             console.error('Email failed but terminal shows OTP:', otp);
-            // Fallback for dev: log it if email fails
         }
     }
+    */
 
     // Always log to terminal for developer reference
     console.log(`\n\x1b[33m[OTP SENT to ${identifier}] : ${otp}\x1b[0m\n`);
@@ -64,7 +65,11 @@ export const verifyOTP = async (req, res) => {
     }
 
     // OTP is valid, now find/create user
-    let user = await User.findOne({ $or: [{ mobileNumber }, { email }] });
+    const filter = {};
+    if (mobileNumber) filter.mobileNumber = mobileNumber;
+    if (email) filter.email = email;
+
+    let user = await User.findOne(filter);
 
     if (!user) {
       user = await User.create({
@@ -90,8 +95,12 @@ export const verifyOTP = async (req, res) => {
       refreshToken,
       user: {
         id: user._id,
+        name: user.name,
         mobileNumber: user.mobileNumber,
         email: user.email,
+        profilePhoto: user.profilePhoto,
+        logo: user.logo,
+        contentLanguage: user.contentLanguage,
         isVerified: user.isVerified,
       },
     });

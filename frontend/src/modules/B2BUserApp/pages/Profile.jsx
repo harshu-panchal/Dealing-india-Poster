@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
 import { Camera, User, Phone, MapPin, Globe, CreditCard, Share2, LogOut, ShieldCheck, Mail, Building2, ExternalLink, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
+  const { user, logout } = useAuth();
   const [copied, setCopied] = useState(false);
   const [profile, setProfile] = useState({
-    businessName: 'Appzeto Tech Solutions',
-    ownerName: 'Admin User',
-    phone: '+91 9876543210',
-    email: 'contact@appzeto.com',
-    address: '123 Tech Park, Silicon Valley, IND',
-    website: 'www.appzeto.com',
+    businessName: user?.user?.name || 'Your Business Name',
+    ownerName: user?.user?.name || 'Owner Name',
+    phone: user?.user?.mobileNumber || 'Add Phone Number',
+    email: user?.user?.email || 'Add Email Address',
+    address: '123 Tech Park, Silicon Valley, IND', // This field isn't in user model yet
+    website: 'www.dealingindia.com',
     gstNumber: '22AAAAA0000A1Z5'
   });
+
+  // Sync profile when user data changes
+  React.useEffect(() => {
+    if (user?.user) {
+      setProfile(prev => ({
+        ...prev,
+        businessName: user.user.name || prev.businessName,
+        ownerName: user.user.name || prev.ownerName,
+        phone: user.user.mobileNumber || prev.phone,
+        email: user.user.email || prev.email,
+      }));
+    }
+  }, [user]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText('DI-REF-12345');
@@ -164,7 +179,10 @@ const Profile = () => {
 
         {/* Footer Actions */}
         <div className="pt-6 pb-2 text-center">
-          <button className="inline-flex items-center gap-2.5 px-8 py-3.5 text-[#ef4444] font-black text-[0.65rem] uppercase tracking-[0.25em] hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100 group">
+          <button 
+            onClick={logout}
+            className="inline-flex items-center gap-2.5 px-8 py-3.5 text-[#ef4444] font-black text-[0.65rem] uppercase tracking-[0.25em] hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100 group cursor-pointer"
+          >
              <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" /> Logout Securely
           </button>
           <div className="mt-8 flex flex-col items-center gap-2">

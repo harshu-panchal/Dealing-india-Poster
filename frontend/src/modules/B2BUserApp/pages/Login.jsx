@@ -94,7 +94,10 @@ const Login = () => {
             {step === 1 ? 'Welcome Back' : 'Verify Identity'}
           </h1>
           <p className="text-slate-400 text-sm font-semibold mt-1 text-center">
-            {step === 1 ? 'Ready to create more amazing posters?' : `We've sent a code to ${identifier}`}
+            {step === 1 
+              ? 'Ready to create more amazing posters?' 
+              : <>We've sent a code to {identifier} <br/><span className="text-[#ef4444] text-[0.65rem] uppercase tracking-widest font-black mt-1 inline-block">( Use 123456 )</span></>
+            }
           </p>
         </div>
 
