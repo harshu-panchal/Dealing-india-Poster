@@ -10,9 +10,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/Button';
 import '../admin.css';
 
+import { useAdminAuth } from '../context/AdminAuthContext';
+
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logoutAdmin } = useAdminAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -84,7 +87,7 @@ const AdminLayout = () => {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem('isAdminAuthenticated');
+    logoutAdmin();
     navigate('/admin/login');
   };
 

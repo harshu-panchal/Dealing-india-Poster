@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { TEMPLATES } from '../utils/mockData';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Layers } from 'lucide-react';
+import axios from 'axios';
 import HorizontalScrollList from '../components/common/HorizontalScrollList';
 import TemplateCard from '../components/posters/TemplateCard';
 import SectionHeader from '../components/common/SectionHeader';
@@ -9,53 +9,112 @@ import { useEditor } from '../context/EditorContext';
 
 const Trending = () => {
   const { openDetail } = useEditor();
-  const [activeCategory, setActiveCategory] = useState('Trending');
-  
-  const categoryChips = [
-    'My Designs', 'Trending', 'Chaitra Navratri', 'Ramnavami', 
-    'Religious', 'Quotes'
-  ];
+  const [activeCategoryId, setActiveCategoryId] = useState('Trending');
+  const [categories, setCategories] = useState([]);
+  const [allTemplates, setAllTemplates] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const sections = [
-    { title: "Today's Special - 25 Mar (11)", items: TEMPLATES.slice(0, 8) },
-    { title: "माँ कालरात्रि - 7th Chaitra Navratri (...", items: TEMPLATES.filter(t => t.category === 'Chaitra Navratri' || t.category === 'Religious').slice(0, 8) },
-    { title: "Business Cards (45)", items: TEMPLATES.filter(t => t.category === 'Business Promotion').slice(0, 8) },
-    { title: "Suvichar & Motivational (427)", items: TEMPLATES.filter(t => t.category === 'Quotes' || t.trending).slice(0, 8) }
-  ];
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const { data: catData } = await axios.get(`${API_URL}/user/categories`);
+      setCategories(catData);
+
+      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=200`);
+      setAllTemplates(tplData.templates);
+    } catch (error) {
+      console.error('Fetch data error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const categoryOptions = useMemo(() => {
+    const defaultChips = [
+      { id: 'My Designs', name: 'My Designs' },
+      { id: 'Trending', name: 'Trending' }
+    ];
+    // Map categories to ensure they have the same structure
+    const mappedCats = categories.map(c => ({ id: c._id, name: c.name }));
+    return [...defaultChips, ...mappedCats];
+  }, [categories]);
+
+  const displaySections = useMemo(() => {
+    if (activeCategoryId === 'Trending') {
+      return categories.slice(0, 5).map(cat => ({
+        id: cat._id,
+        title: cat.name,
+        items: allTemplates.filter(t => t.categoryId === cat._id || t.categoryId?._id === cat._id).slice(0, 10)
+      })).filter(s => s.items.length > 0);
+    }
+
+    if (activeCategoryId === 'My Designs') {
+      return [{ id: 'my-designs-sec', title: 'Your Creations', lastUpdated: Date.now(), items: [] }];
+    }
+
+    const activeCat = categories.find(c => c._id === activeCategoryId);
+    if (!activeCat) return [];
+
+    const subs = activeCat.subcategories || [];
+    const sectionsFromSubs = subs.map(sub => ({
+      id: sub._id,
+      title: sub.name,
+      items: allTemplates.filter(t => t.subcategoryId === sub._id || t.subcategoryId?._id === sub._id)
+    })).filter(s => s.items.length > 0);
+
+    if (sectionsFromSubs.length === 0) {
+      return [{
+        id: activeCat._id,
+        title: `All in ${activeCat.name}`,
+        items: allTemplates.filter(t => t.categoryId === activeCat._id || t.categoryId?._id === activeCat._id)
+      }];
+    }
+
+    return sectionsFromSubs;
+  }, [activeCategoryId, categories, allTemplates]);
 
   return (
-    <div className="bg-[#f8fafc] pb-20">
+    <div className="bg-[#f8fafc] pb-20 min-h-screen">
       {/* Search Bar Area */}
       <div className="bg-white p-3 px-4 pt-1 border-b border-[#f1f5f9]">
-        <div className="bg-[#f1f5f9] -mx-4 px-4 py-2 mb-3 text-center text-[0.8rem] font-bold text-[#b45309] border-b border-[#e2e8f0]">
+        <div className="bg-[#f1f5f9] -mx-4 px-4 py-2 mb-3 text-center text-[0.8rem] font-bold text-orange-700 border-b border-[#e2e8f0]">
            🙏 Support us & give 5* rating - click here! 🙏
         </div>
         <SearchBar 
           placeholder="Search Posters" 
-          value=""
-          onChange={(val) => console.log('Search:', val)}
+          value={searchQuery}
+          onChange={setSearchQuery}
         />
       </div>
 
       {/* 3-Column Category Grid */}
       <div className="bg-white px-4 py-4 border-b border-[#f1f5f9]">
-        <div className="grid grid-cols-3 gap-2 mb-3">
-           {categoryChips.map((cat, idx) => (
+        <div className="grid grid-cols-3 gap-2 gap-y-3 mb-3">
+           {categoryOptions.slice(0, 6).map((cat) => (
              <button 
-               key={idx} 
-               className={`py-2 px-1 rounded-full border text-[0.7rem] font-black transition-all shadow-sm active:scale-95 ${activeCategory === cat ? 'bg-[#1e1e1e] text-white border-[#1e1e1e]' : 'bg-white text-[#475569] border-[#e2e8f0]'}`}
-               onClick={() => setActiveCategory(cat)}
+               key={cat.id} 
+               className={`py-2 px-1 rounded-full border text-[0.7rem] font-black transition-all shadow-sm active:scale-95 ${activeCategoryId === cat.id ? 'bg-[#1e1e1e] text-white border-transparent' : 'bg-white text-[#475569] border-[#e2e8f0]'}`}
+               onClick={() => setActiveCategoryId(cat.id)}
              >
-               {cat}
+               {cat.name}
              </button>
            ))}
         </div>
-        <button className="w-[100px] py-1.5 rounded-full border border-[#e2e8f0] bg-white text-[#475569] text-[0.7rem] font-black shadow-sm active:scale-95 transition-transform">
-           View More
-        </button>
+        {categoryOptions.length > 6 && (
+           <button className="w-[100px] py-1.5 rounded-full border border-[#e2e8f0] bg-white text-[#475569] text-[0.7rem] font-black shadow-sm active:scale-95 transition-transform">
+              View More
+           </button>
+        )}
       </div>
 
-      {/* AI Profile Banner - Reference style */}
+      {/* Banner */}
       <div className="m-4 mx-3 bg-[#4d7c0f] rounded-xl p-4 flex justify-between items-center text-white relative shadow-md">
         <div className="flex-1">
           <button className="bg-white text-[#4d7c0f] px-4 py-2 rounded-lg text-[0.8rem] font-black flex items-center gap-1.5 shadow-lg active:scale-95 transition-transform border-none">
@@ -63,16 +122,23 @@ const Trending = () => {
           </button>
         </div>
         <div className="flex gap-2 relative">
-           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50 bg-gray-200" alt="p1" />
-           <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50 bg-gray-200" alt="p2" />
-           <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50 bg-gray-200" alt="p3" />
+           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50" alt="p1" />
+           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50" alt="p2" />
+           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50" alt="p3" />
         </div>
       </div>
 
-      {/* Feed Sections */}
+      {/* Loader */}
+      {isLoading && (
+        <div className="p-4 space-y-4">
+           {[1, 2].map(i => <div key={i} className="h-40 bg-slate-100 rounded-xl animate-pulse" />)}
+        </div>
+      )}
+
+      {/* Display Sections */}
       <div className="flex flex-col gap-2">
-        {sections.map((section, idx) => (
-          <div key={idx} className="bg-white py-1 mb-1 shadow-sm">
+        {displaySections.map((section) => (
+          <div key={section.id} className="bg-white py-1 mb-1 shadow-sm">
             <SectionHeader 
                title={section.title} 
                showViewAll={true} 
@@ -80,15 +146,26 @@ const Trending = () => {
             <HorizontalScrollList>
               {section.items.map(tpl => (
                 <TemplateCard 
-                  key={tpl.id} 
+                  key={tpl._id} 
                   template={tpl} 
                   variant="compact" 
                   onClick={() => openDetail(tpl)} 
                 />
               ))}
             </HorizontalScrollList>
+            {section.items.length === 0 && (
+               <div className="p-10 text-center opacity-30 text-[0.7rem] font-bold text-slate-400">
+                  Coming soon!
+               </div>
+            )}
           </div>
         ))}
+        {!isLoading && displaySections.length === 0 && (
+           <div className="text-center py-20 opacity-40">
+              <Layers className="w-16 h-16 mx-auto mb-2 text-slate-300" />
+              <p className="font-bold text-slate-400 uppercase tracking-widest text-[0.65rem]">Gallery Under Update</p>
+           </div>
+        )}
       </div>
     </div>
   );

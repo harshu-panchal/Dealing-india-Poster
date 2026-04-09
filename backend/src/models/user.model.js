@@ -25,10 +25,22 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'English',
     },
+    website: {
+      type: String,
+    },
+    businessName: {
+      type: String,
+    },
     isVerified: {
       type: Boolean,
       default: false,
     },
+    savedTemplates: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Template',
+      },
+    ],
     refreshToken: {
       type: String,
     },

@@ -101,6 +101,8 @@ export const verifyOTP = async (req, res) => {
         profilePhoto: user.profilePhoto,
         logo: user.logo,
         contentLanguage: user.contentLanguage,
+        website: user.website,
+        businessName: user.businessName,
         isVerified: user.isVerified,
       },
     });
@@ -127,7 +129,7 @@ export const logoutUser = async (req, res) => {
 // @desc    Update User Profile
 // @route   PUT /api/user/profile
 export const updateProfile = async (req, res) => {
-  const { name, mobileNumber, email, profilePhoto, logo, contentLanguage } = req.body;
+  const { name, mobileNumber, email, profilePhoto, logo, contentLanguage, website, businessName } = req.body;
 
   try {
     const user = await User.findById(req.user._id);
@@ -151,6 +153,8 @@ export const updateProfile = async (req, res) => {
     user.profilePhoto = profilePhoto || user.profilePhoto;
     user.logo = logo || user.logo;
     user.contentLanguage = contentLanguage || user.contentLanguage;
+    user.website = website || user.website;
+    user.businessName = businessName || user.businessName;
 
     const updatedUser = await user.save();
 
@@ -165,6 +169,8 @@ export const updateProfile = async (req, res) => {
         profilePhoto: updatedUser.profilePhoto,
         logo: updatedUser.logo,
         contentLanguage: updatedUser.contentLanguage,
+        website: updatedUser.website,
+        businessName: updatedUser.businessName,
         isVerified: updatedUser.isVerified,
       },
     });
@@ -172,6 +178,47 @@ export const updateProfile = async (req, res) => {
     if (error.code === 11000) {
         return res.status(400).json({ message: 'Details already in use by another account' });
     }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Add template to user's saved history
+// @route   POST /api/user/save-template
+export const saveTemplate = async (req, res) => {
+  const { templateId } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Avoid duplicates using set-like check
+    if (!user.savedTemplates.includes(templateId)) {
+        user.savedTemplates.unshift(templateId); // Add to beginning (most recent first)
+        // Keep only last 50 for performance
+        if (user.savedTemplates.length > 50) {
+            user.savedTemplates = user.savedTemplates.slice(0, 50);
+        }
+        await user.save();
+    }
+    
+    res.status(200).json({ message: 'Template saved to history', savedTemplates: user.savedTemplates });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get user's saved template history
+// @route   GET /api/user/my-posters
+export const getSavedTemplates = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate({
+        path: 'savedTemplates',
+        match: { isActive: true } // Only show active templates
+    });
+    
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.status(200).json(user.savedTemplates);
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

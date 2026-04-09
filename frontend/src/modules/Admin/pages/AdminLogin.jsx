@@ -10,6 +10,7 @@ import gsap from 'gsap';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
 const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,30 +18,28 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { loginAdmin } = useAdminAuth();
   const containerRef = useRef();
 
   // Entrance animations removed for immediate visibility
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Placeholder login logic for admin
-    setTimeout(() => {
-      if (formData.username === 'admin' && formData.password === 'admin123') {
-        localStorage.setItem('isAdminAuthenticated', 'true');
-        navigate('/admin/dashboard');
-      } else {
-        setError('Security Authentication Failed. Verify credentials.');
-        setLoading(false);
-        gsap.to(".login-card", {
-           x: [-10, 10, -10, 10, 0],
-           duration: 0.4,
-           ease: "power2.inOut"
-        });
-      }
-    }, 1500);
+    try {
+      await loginAdmin(formData.username, formData.password);
+      navigate('/admin/dashboard');
+    } catch (err) {
+      setError(err || 'Security Authentication Failed. Verify credentials.');
+      setLoading(false);
+      gsap.to(".login-card", {
+         x: [-10, 10, -10, 10, 0],
+         duration: 0.4,
+         ease: "power2.inOut"
+      });
+    }
   };
 
   return (

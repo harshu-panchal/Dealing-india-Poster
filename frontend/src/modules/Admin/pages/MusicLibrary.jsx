@@ -1,337 +1,339 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { 
-  Music, Play, Pause, Trash2, Plus, Headphones, 
-  Search, Filter, Tag, Check, Calendar, ArrowRight,
-  Zap, MoreHorizontal, Download, Share2, ChevronDown,
-  Upload, X, FileMusic, AlertCircle
-} from 'lucide-react';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { AnimatePresence, motion } from 'framer-motion';
-import AdminModal from '../components/ui/AdminModal';
-
-const INITIAL_MUSIC = [
-  { id: 1, title: 'Holi Dhamaka Beat', category: 'Festivals', duration: '0:32', plays: 1240, added: 'Mar 18, 2026', tags: ['Energetic', 'Drum'], url: '#' },
-  { id: 2, title: 'Corporate Success', category: 'Business', duration: '0:45', plays: 850, added: 'Mar 15, 2026', tags: ['Inspirational', 'Piano'], url: '#' },
-  { id: 3, title: 'Emotional Morning', category: 'Good Morning', duration: '1:10', plays: 430, added: 'Mar 12, 2026', tags: ['Sitar', 'Traditional'], url: '#' },
-  { id: 4, title: 'Night Sky Lullaby', category: 'Good Night', duration: '0:55', plays: 620, added: 'Mar 10, 2026', tags: ['Relaxing', 'Nature'], url: '#' },
-  { id: 5, title: 'Motivational Speech Beat', category: 'Motivation', duration: '0:28', plays: 2100, added: 'Mar 08, 2026', tags: ['Fast', 'Modern'], url: '#' },
-];
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Music, Plus, Search, Trash2, Play, Pause, Music2, Upload, X, CheckCircle, Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MusicLibrary = () => {
-  const [isPlaying, setIsPlaying] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [musicList, setMusicList] = useState(() => {
-    const saved = localStorage.getItem('admin_music');
-    return saved ? JSON.parse(saved) : INITIAL_MUSIC;
+  const [tracks, setTracks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    artist: '',
+    category: 'General',
+    audioUrl: '',
+    thumbnailUrl: ''
   });
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [newTrackData, setNewTrackData] = useState({ title: '', category: 'Festivals' });
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  const fileInputRef = useRef();
-  const containerRef = useRef();
+  
+  const [isUploading, setIsUploading] = useState({ audio: false, thumb: false });
+  const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
+  const audioRef = useRef(null);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const adminInfo = useMemo(() => JSON.parse(localStorage.getItem('adminInfo')), []);
+
+  const fetchTracks = useCallback(async () => {
+    if (!adminInfo?.accessToken) return;
+    try {
+      setIsLoading(true);
+      const { data } = await axios.get(`${API_URL}/music`, {
+        headers: { Authorization: `Bearer ${adminInfo?.accessToken}` }
+      });
+      setTracks(data);
+    } catch (error) {
+      console.error('Fetch tracks error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_URL, adminInfo]);
 
   useEffect(() => {
-    localStorage.setItem('admin_music', JSON.stringify(musicList));
-  }, [musicList]);
+    fetchTracks();
+  }, [fetchTracks]);
 
-  const togglePlayback = (id) => {
-    setIsPlaying(prev => prev === id ? null : id);
+  const handleFileUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(prev => ({ ...prev, [type]: true }));
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    try {
+      const { data } = await axios.post(`${API_URL}/admin/upload`, formDataUpload, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${adminInfo?.accessToken}`
+        }
+      });
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        [type === 'audio' ? 'audioUrl' : 'thumbnailUrl']: data.url 
+      }));
+    } catch (error) {
+      alert('Upload failed: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setIsUploading(prev => ({ ...prev, [type]: false }));
+    }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      if (!newTrackData.title) {
-        setNewTrackData(prev => ({ ...prev, title: file.name.split('.')[0] }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.audioUrl) return alert('Please upload an audio file first');
+
+    try {
+      await axios.post(`${API_URL}/music`, formData, {
+        headers: { Authorization: `Bearer ${adminInfo?.accessToken}` }
+      });
+      setIsModalOpen(false);
+      setFormData({ title: '', artist: '', category: 'General', audioUrl: '', thumbnailUrl: '' });
+      fetchTracks();
+    } catch (error) {
+      alert('Save failed: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this track?')) return;
+    try {
+      await axios.delete(`${API_URL}/music/${id}`, {
+        headers: { Authorization: `Bearer ${adminInfo?.accessToken}` }
+      });
+      fetchTracks();
+    } catch (error) {
+      alert('Delete failed');
+    }
+  };
+
+  const togglePlayback = (track) => {
+    if (currentlyPlaying?.id === track._id) {
+      setCurrentlyPlaying(null);
+      audioRef.current.pause();
+    } else {
+      setCurrentlyPlaying({ id: track._id, url: track.audioUrl });
+      if (audioRef.current) {
+        audioRef.current.src = track.audioUrl;
+        audioRef.current.play();
       }
     }
   };
 
-  const handleCommitAsset = () => {
-    if (!selectedFile || !newTrackData.title) return;
-
-    const newTrack = {
-      id: Date.now(),
-      title: newTrackData.title,
-      category: newTrackData.category,
-      duration: '0:00', 
-      plays: 0,
-      added: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), 
-      tags: ['New', selectedFile.type.split('/')[1].toUpperCase()],
-      url: URL.createObjectURL(selectedFile)
-    };
-
-    setMusicList(prev => [newTrack, ...prev]);
-    setShowAddModal(false);
-    setSelectedFile(null);
-    setNewTrackData({ title: '', category: 'Festivals' });
-  };
-
-  const handleDeleteTrack = (id) => {
-    setMusicList(prev => prev.filter(m => m.id !== id));
-  };
-
-  const filteredMusic = useMemo(() => {
-    return musicList.filter(m => 
-      m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      m.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [musicList, searchQuery]);
+  const filteredTracks = tracks.filter(t => 
+    t.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    t.artist.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div ref={containerRef} className="space-y-10 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-4">
+    <div className="p-4 md:p-8 pb-32 bg-[var(--admin-bg)] min-h-screen">
+      <audio ref={audioRef} onEnded={() => setCurrentlyPlaying(null)} />
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
         <div>
-           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Audio Assets</p>
-           <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Music Library</h1>
-           <p className="text-slate-400 text-xs font-semibold mt-1">Audit and regulate background audio orchestration</p>
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Catalog Hub</p>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+             <Music className="text-orange-600" size={32} /> Music Library
+          </h1>
+          <p className="text-slate-400 text-xs font-semibold mt-1 italic">Audio assets deployed to the video editing engine</p>
         </div>
-        <Button 
-          onClick={() => setShowAddModal(true)}
-          className="w-full sm:w-auto rounded-xl shadow-lg shadow-red-500/20 px-6 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs font-black uppercase tracking-widest"
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-2xl font-black flex items-center justify-center gap-2 shadow-2xl shadow-orange-500/20 transition-all border-none cursor-pointer active:scale-95"
         >
-          <Plus size={16} className="mr-2" strokeWidth={3} /> Ingress Track
-        </Button>
+          <Plus size={20} strokeWidth={3} /> Add Track to Registry
+        </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[
-          { label: 'Primary Category', value: 'Festivals', icon: Headphones, color: '#ef4444' },
-          { label: 'Network Playback', value: (musicList.reduce((acc, curr) => acc + curr.plays, 0)).toLocaleString(), icon: Play, color: '#10b981' },
-          { label: 'Asset Count', value: musicList.length, icon: Music, color: '#f59e0b' }
-        ].map((stat, i) => (
-          <Card key={i} className="border-none group overflow-hidden bg-white">
-             <div className="relative z-10 flex items-center gap-5 p-6">
-                <div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 group-hover:rotate-0 transition-all duration-500"
-                  style={{ backgroundColor: stat.color }}
-                >
-                   <stat.icon size={22} />
-                </div>
-                <div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                   <h3 className="text-xl font-black text-slate-800 tracking-tight">{stat.value}</h3>
+      {/* Control Bar */}
+      <div className="flex flex-col lg:flex-row gap-4 mb-8">
+         <div className="relative group flex-1">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-600 transition-colors" size={18} />
+            <input 
+              type="text"
+              placeholder="Search by title, artist or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-14 pr-6 py-4 rounded-2xl border-none bg-white shadow-sm font-bold text-sm text-slate-700 outline-none ring-2 ring-transparent focus:ring-orange-500/10 transition-all"
+            />
+         </div>
+         <div className="px-8 py-4 bg-white rounded-2xl flex items-center gap-4 shadow-sm border border-slate-50">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+               <Music2 size={20} />
+            </div>
+            <div className="flex flex-col">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Assets</span>
+               <span className="text-lg font-black text-slate-800 leading-none">{tracks.length}</span>
+            </div>
+         </div>
+      </div>
+
+      {/* Grid Layout */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+           {[...Array(8)].map((_, i) => (
+             <div key={i} className="h-80 bg-white rounded-[2.5rem] border border-slate-100 p-4 animate-pulse">
+                <div className="aspect-square bg-slate-50 rounded-[2rem] mb-4" />
+                <div className="space-y-2 px-2">
+                   <div className="h-4 bg-slate-50 w-2/3 rounded" />
+                   <div className="h-3 bg-slate-50 w-1/2 rounded" />
                 </div>
              </div>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="border-none overflow-hidden pb-2 bg-white">
-        <div className="p-5 border-b border-[var(--admin-border)] flex flex-wrap gap-4 items-center">
-           <div className="flex-1 min-w-[280px] relative group">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#ef4444] transition-colors" />
-              <Input 
-                 placeholder="Filter by Soundscape or Genre..." 
-                 className="pl-12 h-12 bg-[var(--admin-input-bg)] border-none rounded-2xl"
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-              />
-           </div>
-           <Button 
-             variant="outline" 
-             onClick={() => alert('Opening sonic attribute filtering...')}
-             className="h-12 px-6 rounded-2xl border-slate-200 group"
-           >
-              <Filter size={16} className="mr-2 text-slate-400 group-hover:text-[#ef4444]" /> 
-              Advanced Filter
-           </Button>
+           ))}
         </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredTracks.map(track => (
+            <motion.div 
+              layout 
+              key={track._id} 
+              className="group bg-white rounded-[2.5rem] border border-slate-50 overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 p-4"
+            >
+               <div className="aspect-square relative rounded-[2rem] overflow-hidden bg-slate-50 mb-5 shadow-inner">
+                  <img src={track.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={track.title} />
+                  
+                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-4 backdrop-blur-[4px]">
+                     <button 
+                        onClick={() => togglePlayback(track)}
+                        className="w-16 h-16 rounded-full bg-white text-orange-600 flex items-center justify-center shadow-2xl active:scale-90 transition-all border-none cursor-pointer"
+                     >
+                        {currentlyPlaying?.id === track._id ? <Pause fill="currentColor" size={28} /> : <Play fill="currentColor" size={28} className="ml-1" />}
+                     </button>
+                     <button 
+                        onClick={() => handleDelete(track._id)}
+                        className="w-16 h-16 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl active:scale-90 transition-all border-none cursor-pointer"
+                     >
+                        <Trash2 size={28} />
+                     </button>
+                  </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-             <thead>
-               <tr className="border-b border-slate-100">
-                 <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider w-[45%]">Track</th>
-                 <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Category</th>
-                 <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Plays</th>
-                 <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Date Added</th>
-                 <th className="px-8 py-4 text-right text-[11px] font-black text-slate-900 uppercase tracking-wider">Actions</th>
-               </tr>
-             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredMusic.map(track => (
-                <tr key={track.id} className="audio-row group hover:bg-slate-50 transition-all">
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-5">
-                       <button 
-                          onClick={() => togglePlayback(track.id)}
-                          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border-none cursor-pointer shadow-sm relative overflow-hidden group/btn ${isPlaying === track.id ? 'bg-[#ef4444] text-white shadow-red-500/20' : 'bg-slate-50 text-[#ef4444] border border-slate-100'}`}
-                       >
-                          {isPlaying === track.id ? <Pause size={20} fill="white" /> : <Play size={20} fill="currentColor" />}
-                       </button>
-                       <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-black text-slate-700 leading-tight truncate mb-1">{track.title}</span>
-                          <div className="flex items-center gap-3">
-                             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                <Calendar size={10} className="text-red-500" /> {track.duration}
-                             </div>
-                             <div className="h-3 w-[1px] bg-slate-200" />
-                             <div className="flex gap-1">
-                                {track.tags.map(t => <span key={t} className="text-[9px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-tighter">{t}</span>)}
-                             </div>
-                          </div>
+                  {currentlyPlaying?.id === track._id && (
+                    <div className="absolute bottom-4 left-4 right-4 bg-white/20 backdrop-blur-xl p-3 rounded-2xl flex items-center gap-3 border border-white/20">
+                       <div className="flex gap-1 items-end h-5">
+                          {[...Array(4)].map((_, i) => (
+                            <div key={i} className="w-1 bg-white rounded-full animate-bounce" style={{ height: '100%', animationDelay: `${i*0.15}s` }} />
+                          ))}
                        </div>
+                       <span className="text-[0.6rem] font-black text-white uppercase tracking-[0.2em]">Master Preview</span>
                     </div>
-                  </td>
-                  <td className="px-8 py-5">
-                     <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest px-3 border-slate-200 bg-white">
-                        <Tag size={10} className="mr-2 text-red-500" /> {track.category}
-                     </Badge>
-                  </td>
-                  <td className="px-8 py-5">
-                     <div className="flex flex-col">
-                        <span className="text-sm font-black text-slate-700">{track.plays.toLocaleString()}</span>
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">GLOBAL REPRODUCTION</span>
+                  )}
+               </div>
+               
+               <div className="px-2">
+                  <div className="flex items-center gap-2 mb-2">
+                     <span className="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-100">
+                        {track.category || 'General'}
+                     </span>
+                  </div>
+                  <h3 className="font-black text-slate-800 text-lg leading-tight truncate tracking-tight">{track.title}</h3>
+                  <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">{track.artist || 'Unknown Artist'}</p>
+               </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Music Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 sm:p-4 overflow-y-auto bg-slate-900/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-2xl sm:rounded-[3rem] shadow-2xl relative flex flex-col min-h-screen sm:min-h-0"
+            >
+               {/* Modal Header */}
+               {/* Modal Header */}
+               <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 sticky top-0 z-10 sm:static sm:bg-transparent">
+                  <div>
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight">Audio Registry</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">MP3 Marketplace Node</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="w-10 h-10 rounded-xl bg-white shadow-lg flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors border-none cursor-pointer"
+                  >
+                    <X size={20} strokeWidth={3} />
+                  </button>
+               </div>
+               
+               <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6 flex-1 overflow-y-auto max-h-[75vh]">
+                  {/* Title & Artist Input Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Song Title</label>
+                        <input 
+                          required
+                          className="w-full px-5 py-3 rounded-xl border-none bg-slate-50 font-bold text-sm text-slate-800 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none" 
+                          placeholder="e.g. Summer"
+                          value={formData.title}
+                          onChange={(e) => setFormData({...formData, title: e.target.value})}
+                        />
                      </div>
-                  </td>
-                  <td className="px-8 py-5">
-                     <span className="text-xs font-black text-slate-400 italic">{track.added}</span>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="flex items-center justify-end gap-1 transition-all">
-                      <Button 
-                        onClick={() => setShowDeleteConfirm(track)}
-                        variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-red-500"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => alert('Initiating secure asset download...')}
-                        className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                      >
-                        <Download size={16} />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Artist</label>
+                        <input 
+                          className="w-full px-5 py-3 rounded-xl border-none bg-slate-50 font-bold text-sm text-slate-800 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none" 
+                          placeholder="e.g. DJ"
+                          value={formData.artist}
+                          onChange={(e) => setFormData({...formData, artist: e.target.value})}
+                        />
+                     </div>
+                  </div>
 
-      {/* Ingress Modal */}
-      <AdminModal
-        isOpen={showAddModal}
-        onClose={() => { setShowAddModal(false); setSelectedFile(null); }}
-        title="Ingress Audio Track"
-        subtitle="Provision new background layer"
-        icon={Music}
-      >
-        <div className="space-y-8">
-           <div className="p-8 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50 hover:bg-slate-50 transition-all text-center group cursor-pointer" onClick={() => fileInputRef.current.click()}>
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
-              {selectedFile ? (
-                <div className="flex flex-col items-center">
-                   <div className="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20">
-                      <Check size={32} strokeWidth={3} />
-                   </div>
-                   <p className="text-xs font-black text-slate-800 uppercase tracking-widest truncate max-w-xs">{selectedFile.name}</p>
-                   <p className="text-[10px] font-bold text-slate-400 mt-1">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • READY FOR COMMIT</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center py-6">
-                   <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-sm border border-slate-50">
-                      <Music size={32} />
-                   </div>
-                   <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Select Audio Payload</p>
-                   <p className="text-[10px] font-bold text-slate-400">MP3, WAV, or AAC (Max 10MB)</p>
-                </div>
-              )}
-           </div>
+                  {/* Audio File Upload */}
+                  <div className="space-y-1.5">
+                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">MP3 Source</label>
+                     <div className="relative">
+                        <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'audio')} className="hidden" id="audio-input" />
+                        <label 
+                          htmlFor="audio-input" 
+                          className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-[1.5rem] cursor-pointer transition-all duration-300 ${formData.audioUrl ? 'border-green-400 bg-green-50/10' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-orange-400'}`}
+                        >
+                           {isUploading.audio ? (
+                              <div className="flex flex-col items-center gap-2">
+                                 <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
+                                 <span className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Uploading...</span>
+                              </div>
+                           ) : formData.audioUrl ? (
+                              <div className="flex flex-col items-center gap-2">
+                                 <CheckCircle size={24} className="text-green-500" strokeWidth={3} />
+                                 <span className="text-[9px] font-black text-green-700 uppercase tracking-widest">Ready</span>
+                              </div>
+                           ) : (
+                              <>
+                                 <Music2 size={24} className="text-slate-200 mb-2" />
+                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pick MP3</span>
+                              </>
+                           )}
+                        </label>
+                     </div>
+                  </div>
 
-           <div className="space-y-6">
-              <div className="space-y-3">
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Asset Identity</label>
-                 <Input 
-                   value={newTrackData.title}
-                   onChange={(e) => setNewTrackData({...newTrackData, title: e.target.value})}
-                   placeholder="e.g. Cinematic Uplifting Hook" 
-                   className="h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold"
-                 />
-              </div>
+                  {/* Artwork Upload */}
+                  <div className="space-y-1.5">
+                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Artwork</label>
+                     <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="w-16 h-16 rounded-xl bg-white shadow-inner flex-shrink-0 relative overflow-hidden flex items-center justify-center">
+                           {isUploading.thumb ? (
+                              <Loader2 className="w-6 h-6 text-orange-600 animate-spin" />
+                           ) : formData.thumbnailUrl ? (
+                              <img src={formData.thumbnailUrl} className="w-full h-full object-cover" alt="thumb" />
+                           ) : (
+                              <Upload size={24} className="text-slate-100" />
+                           )}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                           <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'thumb')} className="hidden" id="thumb-input" />
+                           <label htmlFor="thumb-input" className="inline-block px-5 py-2 bg-white text-slate-800 font-black text-[10px] uppercase tracking-widest rounded-lg shadow-sm cursor-pointer hover:bg-slate-50 transition-all">Upload Art</label>
+                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Square Ratio Suggested</p>
+                        </div>
+                     </div>
+                  </div>
 
-              <div className="space-y-3">
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Registry Category</label>
-                 <select 
-                    value={newTrackData.category}
-                    onChange={(e) => setNewTrackData({...newTrackData, category: e.target.value})}
-                    className="w-full h-14 md:h-16 rounded-xl bg-slate-50 border-none px-6 font-bold text-sm outline-none focus:ring-2 focus:ring-red-500/10"
-                 >
-                    <option value="Festivals">Festivals</option>
-                    <option value="Business">Business</option>
-                    <option value="Greetings">Greetings</option>
-                    <option value="Motivation">Motivation</option>
-                 </select>
-              </div>
-           </div>
-
-           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button 
-                 variant="ghost" 
-                 onClick={() => { setShowAddModal(false); setSelectedFile(null); }}
-                 className="flex-1 h-14 md:h-16 rounded-2xl bg-slate-50 font-extrabold text-[10px] uppercase tracking-[0.2em] text-slate-500 border-none hover:bg-slate-100"
-              >
-                 Abort Changes
-              </Button>
-              <Button 
-                onClick={handleCommitAsset}
-                disabled={!selectedFile || !newTrackData.title}
-                className="flex-[1.5] h-14 md:h-16 rounded-2xl bg-[#ef4444] text-white shadow-2xl shadow-red-500/30 font-extrabold text-[10px] uppercase tracking-[0.2em] gap-3 border-none disabled:opacity-50"
-              >
-                 <Check size={18} strokeWidth={3} /> Commit Asset
-              </Button>
-           </div>
-        </div>
-      </AdminModal>
-
-      {/* Delete Confirmation Modal */}
-      <AdminModal
-        isOpen={!!showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(null)}
-        title="Wipe Track Metadata?"
-        subtitle="Permanent Action"
-        icon={Trash2}
-        variant="danger"
-        maxWidth="450px"
-      >
-        <div className="text-center">
-           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-8 px-4 font-inter">
-              Are you sure you want to remove <span className="text-slate-800 font-extrabold">"{showDeleteConfirm?.title}"</span>? This track will be purged from the global audio registry.
-           </p>
-
-           <div className="flex gap-3">
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowDeleteConfirm(null)}
-                className="flex-1 h-14 rounded-2xl bg-slate-50 font-black text-[10px] uppercase tracking-widest text-slate-500 border-none"
-              >
-                Abort
-              </Button>
-              <Button 
-                onClick={() => {
-                  handleDeleteTrack(showDeleteConfirm.id);
-                  setShowDeleteConfirm(null);
-                }}
-                className="flex-1 h-14 rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20 font-black text-[10px] uppercase tracking-widest border-none"
-              >
-                Confirm Delete
-              </Button>
-           </div>
-        </div>
-      </AdminModal>
+                  {/* Submission Actions */}
+                  <div className="flex gap-3 pt-2">
+                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500 bg-slate-100 hover:bg-slate-200 border-none cursor-pointer">Cancel</button>
+                     <button type="submit" disabled={isUploading.audio} className="flex-[2] py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-white bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20 disabled:opacity-50 border-none cursor-pointer">Add Track</button>
+                  </div>
+               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,5 +1,6 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
   TrendingUp, Users, ImageIcon, Layers, 
   Award, ArrowUpRight, ArrowDownRight, 
@@ -14,22 +15,67 @@ import { Button } from '../components/ui/Button';
 const AdminDashboard = () => {
   const containerRef = useRef();
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+        totalUsers: 0,
+        activeTemplates: 0,
+        totalCategories: 0,
+        growthTarget: 85
+    },
+    latestUsers: [],
+    popularCategories: []
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Entrance animations removed for immediate visibility
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const adminInfo = localStorage.getItem('adminInfo');
+        const token = adminInfo ? JSON.parse(adminInfo).accessToken : null;
+
+        if (!token) {
+            console.error('No admin token found');
+            return;
+        }
+
+        const { data } = await axios.get(`${API_URL}/admin/dashboard-stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (data.success) {
+            setDashboardData(data);
+        }
+      } catch (error) {
+        console.error('Fetch dashboard stats error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardStats();
+  }, [API_URL]);
 
   const stats = useMemo(() => [
-    { label: 'Total Users', value: '12,540', icon: Users, color: '#ef4444', trend: '+12.5%', isUp: true, path: '/admin/users' },
-    { label: 'Active Templates', value: '450', icon: Zap, color: '#10b981', trend: '+5.2%', isUp: true, path: '/admin/templates' },
-    { label: 'Cloud Exports', value: '2,840', icon: Layers, color: '#f59e0b', trend: '-2.1%', isUp: false },
-    { label: 'Growth Target', value: '85%', icon: Target, color: '#6366f1', trend: '+18.7%', isUp: true }
-  ], []);
+    { label: 'Total Users', value: dashboardData.stats.totalUsers.toLocaleString(), icon: Users, color: '#ef4444', trend: '+12.5%', isUp: true, path: '/admin/users' },
+    { label: 'Active Templates', value: dashboardData.stats.activeTemplates.toLocaleString(), icon: Zap, color: '#10b981', trend: '+5.2%', isUp: true, path: '/admin/templates' },
+    { label: 'Categories', value: dashboardData.stats.totalCategories.toLocaleString(), icon: Layers, color: '#f59e0b', trend: '+8.1%', isUp: true, path: '/admin/categories' },
+    { label: 'Growth Target', value: `${dashboardData.stats.growthTarget}%`, icon: Target, color: '#6366f1', trend: '+18.7%', isUp: true }
+  ], [dashboardData]);
 
-  const recentUsers = useMemo(() => [
-    { id: 1, name: 'Rahul Sharma', phone: '+91 98765 43210', plan: 'Premium', joined: '2 mins ago', status: 'active' },
-    { id: 2, name: 'Priya Verma', phone: '+91 87654 32109', plan: 'Free', joined: '15 mins ago', status: 'active' },
-    { id: 3, name: 'Amit Singh', phone: '+91 76543 21098', plan: 'Premium', joined: '1 hour ago', status: 'inactive' },
-    { id: 4, name: 'Surbhi Gupta', phone: '+91 65432 10987', plan: 'Free', joined: '3 hours ago', status: 'active' },
-  ], []);
+  const recentUsers = dashboardData.latestUsers;
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = Math.abs(now - date);
+    const mins = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (mins < 60) return `${mins} mins ago`;
+    if (hours < 24) return `${hours} hours ago`;
+    return `${days} days ago`;
+  };
 
   const handleStatClick = (path) => {
     if (path) navigate(path);
@@ -38,6 +84,12 @@ const AdminDashboard = () => {
   const handleUserClick = (userId) => {
     navigate(`/admin/users/${userId}`);
   };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-40">
+       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+    </div>
+  );
 
   return (
     <div ref={containerRef} className="space-y-10">
@@ -99,29 +151,33 @@ const AdminDashboard = () => {
         <div className="lg:col-span-4 dashboard-section">
            <Card className="h-full border-none">
               <CardHeader className="flex flex-row items-center justify-between">
-                 <CardTitle>Popular Categories</CardTitle>
+                 <CardTitle>Content Distribution</CardTitle>
                  <TrendingUp size={16} className="text-red-500" />
               </CardHeader>
               <CardContent className="space-y-6">
-                 {[
-                   { name: 'Festival Greetings', count: 1250, pct: 85, color: '#ef4444' },
-                   { name: 'Business Marketing', count: 980, pct: 65, color: '#10b981' },
-                   { name: 'Daily Motivations', count: 850, pct: 55, color: '#f59e0b' },
-                   { name: 'Special Occasions', count: 620, pct: 40, color: '#6366f1' }
-                 ].map((cat, i) => (
-                   <div key={i} className="group">
-                      <div className="flex justify-between items-center mb-2">
-                         <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{cat.name}</span>
-                         <span className="text-[10px] font-black text-slate-400 uppercase">{cat.count} uses</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                         <div 
-                           className="h-full rounded-full transition-all duration-1000 group-hover:brightness-110" 
-                           style={{ width: `${cat.pct}%`, backgroundColor: cat.color }}
-                         />
-                      </div>
+                 {dashboardData.popularCategories.map((cat, i) => {
+                   const colors = ['#ef4444', '#10b981', '#f59e0b', '#6366f1'];
+                   return (
+                     <div key={i} className="group">
+                        <div className="flex justify-between items-center mb-2">
+                           <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{cat.name}</span>
+                           <span className="text-[10px] font-black text-slate-400 uppercase">{cat.count} Templates</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                           <div 
+                             className="h-full rounded-full transition-all duration-1000 group-hover:brightness-110" 
+                             style={{ width: `${cat.pct}%`, backgroundColor: colors[i % colors.length] }}
+                           />
+                        </div>
+                     </div>
+                   );
+                 })}
+                 
+                 {dashboardData.popularCategories.length === 0 && (
+                   <div className="text-center py-10">
+                      <p className="text-xs text-slate-400 font-bold uppercase italic tracking-widest opacity-40">No distribution data available</p>
                    </div>
-                 ))}
+                 )}
                  
                  <div className="pt-4">
                     <Button 
@@ -129,7 +185,7 @@ const AdminDashboard = () => {
                       onClick={() => navigate('/admin/categories')}
                       className="w-full rounded-xl border-dashed border-2 text-slate-400 text-xs font-black uppercase tracking-widest h-12"
                     >
-                       Explore Detailed Analytics
+                       Manage Categories
                     </Button>
                  </div>
               </CardContent>
@@ -140,7 +196,7 @@ const AdminDashboard = () => {
         <div className="lg:col-span-8 dashboard-section">
            <Card className="border-none">
               <CardHeader className="flex flex-row items-center justify-between">
-                 <CardTitle>Fresh Registrations</CardTitle>
+                 <CardTitle>Recent Logins</CardTitle>
                  <Button 
                    variant="ghost" 
                    size="icon" 
@@ -184,7 +240,7 @@ const AdminDashboard = () => {
                                 </Badge>
                             </td>
                             <td className="px-6 py-5">
-                               <span className="text-xs font-semibold text-slate-500 italic">{user.joined}</span>
+                               <span className="text-xs font-semibold text-slate-500 italic">{formatDate(user.joined)}</span>
                             </td>
                             <td className="px-6 py-5">
                                <div className="flex items-center gap-2">

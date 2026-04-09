@@ -9,12 +9,24 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const [showVideoEditor, setShowVideoEditor] = useState(false);
 
   return (
-    <motion.div 
-      className="fixed inset-0 bg-white z-[2000] flex flex-col"
-      initial={{ opacity: 0, x: '100%' }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: '100%' }}
-    >
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 md:p-4 lg:p-8">
+      {/* Backdrop */}
+      <motion.div 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      
+      {/* Content Container */}
+      <motion.div 
+        className="w-full h-full md:h-auto md:max-w-[480px] md:rounded-[2.5rem] bg-white shadow-2xl overflow-hidden relative flex flex-col"
+        initial={{ opacity: 0, y: '50%' }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+      >
       <div className="bg-[#b91c1c] px-4 flex items-center gap-4 text-white" style={{ paddingTop: 'calc(0.75rem + var(--safe-top))', paddingBottom: '0.75rem' }}>
         <button className="bg-transparent text-white p-0 flex items-center active:scale-95 transition-transform" onClick={onClose}>
           <ArrowLeft size={24} />
@@ -48,13 +60,13 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                 {/* Left Details */}
                 <div className="flex-1 flex flex-col justify-center px-4 lg:px-8">
                   <div className="text-white text-sm lg:text-xl font-black leading-tight truncate uppercase tracking-wide">
-                      {userData.business_name || 'SHEETAL'}
+                      {userData.business_name || ''}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                       <div className="w-[18px] h-[18px] lg:w-6 lg:h-6 bg-[#25D366] rounded-full flex items-center justify-center">
                         <MessageCircle size={10} className="text-white fill-white lg:w-4 lg:h-4" />
                       </div>
-                      <span className="text-white text-[0.8rem] lg:text-base font-bold tracking-wider">{userData.phone_number || '6261265704'}</span>
+                      <span className="text-white text-[0.8rem] lg:text-base font-bold tracking-wider">{userData.phone_number || ''}</span>
                   </div>
                 </div>
 
@@ -163,6 +175,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
         )}
       </AnimatePresence>
     </motion.div>
+    </div>
   );
 };
 

@@ -1,18 +1,20 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const EditorContext = createContext();
 
 export const EditorProvider = ({ children }) => {
+  const { user: authUser } = useAuth();
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [initialEditorTab, setInitialEditorTab] = useState('branding');
   const [viewingDetail, setViewingDetail] = useState(null);
   const [userData, setUserData] = useState({
-    business_name: 'Sheetal',
-    phone_number: '6261265704', 
-    website: 'www.sheetal.com',
-    email: 'sheetal@example.com',
-    gst_number: '27AAAAA0000A1Z5',
-    logo: 'https://ui-avatars.com/api/?name=S&background=ef4444&color=fff',
+    business_name: 'Your Name',
+    phone_number: '0000000000', 
+    website: 'www.yourwebsite.com',
+    email: 'user@example.com',
+    gst_number: '',
+    logo: 'https://ui-avatars.com/api/?name=U&background=ef4444&color=fff',
     userPhoto: null,
     enabledFields: {
       phone: true,
@@ -21,6 +23,21 @@ export const EditorProvider = ({ children }) => {
       gst: false
     }
   });
+
+  // Sync with AuthContext user data
+  useEffect(() => {
+    if (authUser?.user) {
+      const u = authUser.user;
+      setUserData(prev => ({
+        ...prev,
+        business_name: u.name || prev.business_name,
+        phone_number: u.mobileNumber || prev.phone_number,
+        email: u.email || prev.email,
+        logo: u.logo || prev.logo,
+        userPhoto: u.profilePhoto || prev.userPhoto
+      }));
+    }
+  }, [authUser]);
 
   const [frames] = useState(() => {
     const saved = localStorage.getItem('admin_frames');

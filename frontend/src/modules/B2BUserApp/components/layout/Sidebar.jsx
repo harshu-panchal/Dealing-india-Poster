@@ -68,8 +68,12 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
         )}
         
         <div className="flex flex-col gap-3">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md border border-white/30">
-            <User size={36} className="text-white" />
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md border border-white/30 overflow-hidden shadow-inner">
+            {user?.user?.profilePhoto ? (
+               <img src={user.user.profilePhoto} className="w-full h-full object-cover" alt="" />
+            ) : (
+               <User size={36} className="text-white" />
+            )}
           </div>
           <div>
             <h2 className="text-xl font-bold">{userName}</h2>

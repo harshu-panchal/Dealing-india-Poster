@@ -1,19 +1,25 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, User, HelpCircle, Search, Mic, CalendarCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenSidebar }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <nav className="bg-[#b91c1c] p-2.5 px-2 z-[1000] shadow-[0_2px_8px_rgba(0,0,0,0.1)] w-full flex-shrink-0">
       <div className="flex items-center justify-between max-w-[1200px] mx-auto">
         <div className="flex items-center gap-1.5 md:gap-3">
           <div 
-            className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#b91c1c] cursor-pointer flex-shrink-0"
+            className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#b91c1c] cursor-pointer flex-shrink-0 overflow-hidden shadow-inner border border-white/20"
             onClick={onOpenSidebar}
           >
-             <User size={18} />
+             {user?.user?.profilePhoto ? (
+                <img src={user.user.profilePhoto} className="w-full h-full object-cover" alt="" />
+             ) : (
+                <User size={18} />
+             )}
           </div>
           <span className="text-white text-[1rem] md:text-[1.15rem] font-bold whitespace-nowrap">Posters</span>
           <button className="bg-[#fde047] text-[#854d0e] px-1.5 md:px-2.5 py-1 rounded-sm text-[0.6rem] md:text-[0.7rem] font-extrabold flex items-center gap-1 ml-0.5 md:ml-1 flex-shrink-0">

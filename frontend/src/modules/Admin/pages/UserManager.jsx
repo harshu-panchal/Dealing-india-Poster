@@ -1,42 +1,72 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
-  Search, Filter, MoreVertical, Heart, Layout, 
-  Calendar, MapPin, Phone, User as UserIcon, X, 
-  ChevronLeft, Award, UserCircle, Star, Download,
-  Edit2, Trash2
+  Search, Filter, Heart, Star, Download,
+  Edit2, Trash2, ChevronLeft, ChevronRight, User as UserIcon
 } from 'lucide-react';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
 const UserManager = () => {
   const navigate = useNavigate();
+  const { admin: adminInfo } = useAdminAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const tableRef = useRef();
 
-  // Entrance animations removed for immediate visibility
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  // Mock users data
-  const users = useMemo(() => [
-    { id: 1, name: 'Rahul Sharma', phone: '+91 98765 43210', plan: 'Premium', status: 'active', joined: 'Mar 15, 2026', likes: 24, downloads: 156, points: 2500, business: 'Rahul Prints', location: 'Jaipur, Rajasthan' },
-    { id: 2, name: 'Priya Verma', phone: '+91 87654 32109', plan: 'Free', status: 'active', joined: 'Mar 12, 2026', likes: 8, downloads: 42, points: 500, business: 'Priya Boutiques', location: 'Bhopal, MP' },
-    { id: 3, name: 'Amit Singh', phone: '+91 76543 21098', plan: 'Premium', status: 'inactive', joined: 'Mar 10, 2026', likes: 45, downloads: 312, points: 4200, business: 'Amit Tech', location: 'Indore, MP' },
-    { id: 4, name: 'Surbhi Gupta', phone: '+91 65432 10987', plan: 'Free', status: 'active', joined: 'Mar 08, 2026', likes: 12, downloads: 65, points: 750, business: 'Gupta Sweets', location: 'Gwalior, MP' },
-  ], []);
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${adminInfo?.accessToken}`,
+        },
+        params: {
+          page,
+          limit: 10,
+          search: searchQuery,
+        },
+      };
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(u => 
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      u.phone.includes(searchQuery)
-    );
-  }, [users, searchQuery]);
+      const { data } = await axios.get(`${API_URL}/admin/users`, config);
+      setUsers(data.users);
+      setTotalPages(data.pages);
+      setTotalUsers(data.totalUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (adminInfo?.accessToken) {
+      fetchUsers();
+    } else {
+      setLoading(false);
+    }
+  }, [page, adminInfo, searchQuery]);
 
   const handleUserClick = (userId) => {
     navigate(`/admin/users/${userId}`);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
   return (
@@ -73,7 +103,10 @@ const UserManager = () => {
                  placeholder="Filter by Identity or Contact..." 
                  className="pl-12 h-12 bg-[var(--admin-input-bg)]"
                  value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
+                 onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1); // Reset to first page on search
+                 }}
               />
            </div>
            <Button 
@@ -93,93 +126,133 @@ const UserManager = () => {
                  <tr className="border-b border-slate-100 bg-white">
                    <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Network Participant</th>
                    <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Status</th>
-                   <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Access Tier</th>
+                   <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Verification</th>
                    <th className="px-8 py-4 text-left text-[11px] font-black text-slate-900 uppercase tracking-wider">Joined</th>
                    <th className="px-8 py-4 text-right text-[11px] font-black text-slate-900 uppercase tracking-wider">Actions</th>
                  </tr>
                </thead>
               <tbody className="divide-y divide-[var(--admin-border)]">
-                {filteredUsers.map(user => (
-                  <tr 
-                    key={user.id} 
-                    className="user-row group hover:bg-[var(--admin-row-hover)] transition-all cursor-pointer"
-                    onClick={() => handleUserClick(user.id)}
-                  >
-                    <td className="px-8 py-5">
-                       <div className="flex items-center gap-4">
-                          <div className="relative group-hover:scale-105 transition-transform">
-                            <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-500/15 flex items-center justify-center font-black text-sm text-[#ef4444] border-2 border-[var(--admin-bg)] shadow-sm relative z-10">
-                              {user.name.charAt(0)}
-                            </div>
-                            {user.plan === 'Premium' && (
-                              <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-amber-400 rounded-lg border-2 border-white dark:border-slate-800 flex items-center justify-center text-[10px] text-white shadow-sm z-20">
-                                <Star size={10} fill="currentColor" />
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-700 dark:text-slate-300 mb-0.5">{user.name}</p>
-                            <p className="text-[0.7rem] font-bold text-[var(--admin-text-subtle)]">{user.phone}</p>
-                          </div>
-                       </div>
-                    </td>
-                    <td className="px-8 py-5">
-                       <div className="flex flex-col gap-1.5">
-                          <Badge variant={user.plan === 'Premium' ? 'success' : 'warning'} className="w-fit text-[10px] font-black tracking-widest uppercase">
-                             {user.plan}
-                          </Badge>
-                          <span className="text-[10px] font-black text-[var(--admin-text-subtle)] uppercase tracking-tighter">EST. {user.joined}</span>
-                       </div>
-                    </td>
-                    <td className="px-8 py-5">
-                       <div className="flex items-center gap-4">
-                          <div className="flex flex-col">
-                             <div className="flex items-center gap-1 text-[0.7rem] font-black text-slate-500 mb-1">
-                                <Heart size={12} className="text-rose-500 fill-rose-500/20" /> {user.likes}
-                             </div>
-                             <div className="flex items-center gap-1 text-[0.7rem] font-black text-slate-500">
-                                <Download size={12} className="text-sky-500" /> {user.downloads}
-                             </div>
-                          </div>
-                          <div className="h-8 w-[1px] bg-slate-100 dark:bg-slate-800" />
-                          <div className="flex flex-col">
-                             <span className="text-[10px] font-black text-[var(--admin-text-subtle)] uppercase leading-none mb-1">Score</span>
-                             <span className="text-sm font-black text-slate-600 dark:text-slate-400 leading-none">{user.points}</span>
-                          </div>
-                       </div>
-                    </td>
-                    <td className="px-8 py-5">
-                       <Badge variant={user.status === 'active' ? 'success' : 'danger'} className="bg-transparent border-2 border-current px-3 py-1 flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${user.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                          {user.status}
-                       </Badge>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={(e) => { e.stopPropagation(); alert('Opening participant edit registry...'); }}
-                          className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-[#ef4444] border border-slate-100 shadow-sm bg-white"
-                        >
-                          <Edit2 size={16} />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={(e) => { e.stopPropagation(); alert('Requesting node decommission...'); }}
-                          className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-500 hover:text-red-500 border border-slate-100 shadow-sm bg-white"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="px-8 py-10 text-center text-slate-400 font-bold">
+                      Loading participant registry...
                     </td>
                   </tr>
-                ))}
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-8 py-10 text-center text-slate-400 font-bold">
+                      No matching participants found.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map(user => (
+                    <tr 
+                      key={user._id} 
+                      className="user-row group hover:bg-[var(--admin-row-hover)] transition-all cursor-pointer"
+                      onClick={() => handleUserClick(user._id)}
+                    >
+                      <td className="px-8 py-5">
+                         <div className="flex items-center gap-4">
+                            <div className="relative group-hover:scale-105 transition-transform">
+                              {user.profilePhoto ? (
+                                <img src={user.profilePhoto} alt="" className="w-11 h-11 rounded-2xl object-cover border-2 border-[var(--admin-bg)] shadow-sm" />
+                              ) : (
+                                <div className="w-11 h-11 rounded-2xl bg-red-50 flex items-center justify-center font-black text-sm text-[#ef4444] border-2 border-[var(--admin-bg)] shadow-sm relative z-10">
+                                  {user.name ? user.name.charAt(0) : <UserIcon size={18} />}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-slate-700 mb-0.5">{user.name || 'Anonymous User'}</p>
+                              <p className="text-[0.7rem] font-bold text-[var(--admin-text-subtle)]">{user.mobileNumber || user.email || 'No Contact Info'}</p>
+                            </div>
+                         </div>
+                      </td>
+                      <td className="px-8 py-5">
+                         <div className="flex flex-col gap-1.5">
+                            <Badge variant={user.isVerified ? 'success' : 'warning'} className="w-fit text-[10px] font-black tracking-widest uppercase">
+                               {user.contentLanguage || 'English'}
+                            </Badge>
+                            <span className="text-[10px] font-black text-[var(--admin-text-subtle)] uppercase tracking-tighter">ID: {user._id.slice(-6)}</span>
+                         </div>
+                      </td>
+                      <td className="px-8 py-5">
+                         <Badge variant={user.isVerified ? 'success' : 'danger'} className="bg-transparent border-2 border-current px-3 py-1 flex items-center gap-2">
+                            <span className={`w-1.5 h-1.5 rounded-full ${user.isVerified ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            {user.isVerified ? 'Verified' : 'Unverified'}
+                         </Badge>
+                      </td>
+                      <td className="px-8 py-5">
+                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                           {formatDate(user.createdAt)}
+                         </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/users/${user._id}/edit`); }}
+                            className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-[#ef4444] border border-slate-100 shadow-sm bg-white"
+                          >
+                            <Edit2 size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={(e) => { e.stopPropagation(); alert('Requesting node decommission...'); }}
+                            className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-500 hover:text-red-500 border border-slate-100 shadow-sm bg-white"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Pagination Controls */}
+        {!loading && totalPages > 1 && (
+          <div className="p-6 border-t border-[var(--admin-border)] flex items-center justify-between bg-slate-50/50">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+               Showing Page {page} of {totalPages} <span className="mx-2">|</span> Total {totalUsers} Participants
+             </p>
+             <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="h-9 w-9 rounded-xl border-slate-200"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={page === i + 1 ? 'default' : 'outline'}
+                    onClick={() => setPage(i + 1)}
+                    className={`h-9 w-9 rounded-xl text-[10px] font-black ${page === i + 1 ? 'bg-[#ef4444] text-white border-none' : 'border-slate-200 text-slate-600'}`}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="h-9 w-9 rounded-xl border-slate-200"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+             </div>
+          </div>
+        )}
       </Card>
     </div>
   );

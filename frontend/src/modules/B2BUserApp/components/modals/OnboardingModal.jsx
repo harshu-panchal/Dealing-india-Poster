@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Phone, Camera, Image as ImageIcon, Globe, ChevronRight, Loader2, Check } from 'lucide-react';
+import { User, Phone, Camera, Image as ImageIcon, Globe, ChevronRight, Loader2, Check, Upload } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
@@ -8,6 +8,10 @@ const OnboardingModal = ({ isOpen }) => {
   const { user, setUser } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState({ profile: false, logo: false });
+
+  const profileInputRef = useRef(null);
+  const logoInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: user?.user?.name || '',
@@ -24,6 +28,31 @@ const OnboardingModal = ({ isOpen }) => {
     e.preventDefault();
     if (formData.name && formData.mobileNumber) {
       setStep(2);
+    }
+  };
+
+  const handleFileUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(prev => ({ ...prev, [type]: true }));
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+
+    try {
+      const config = {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${user.accessToken}` 
+        }
+      };
+      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/upload`, uploadData, config);
+      setFormData(prev => ({ ...prev, [type === 'profile' ? 'profilePhoto' : 'logo']: data.url }));
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert(error.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(prev => ({ ...prev, [type]: false }));
     }
   };
 
@@ -52,6 +81,10 @@ const OnboardingModal = ({ isOpen }) => {
 
   return (
     <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-y-auto">
+      {/* Hidden File Inputs */}
+      <input type="file" ref={profileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'profile')} />
+      <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -84,10 +117,6 @@ const OnboardingModal = ({ isOpen }) => {
                 onSubmit={handleStep1Submit}
                 className="space-y-6"
               >
-                <div className="space-y-2 text-center mb-4">
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest italic">Welcome {user?.user?.email || user?.user?.mobileNumber}</p>
-                </div>
-
                 <div className="space-y-4">
                   <div className="relative group">
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Full Name</label>
@@ -97,7 +126,7 @@ const OnboardingModal = ({ isOpen }) => {
                         type="text"
                         required
                         placeholder="John Doe"
-                        className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all"
+                        className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
@@ -112,7 +141,7 @@ const OnboardingModal = ({ isOpen }) => {
                         type="tel"
                         required
                         placeholder="6261265704"
-                        className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all"
+                        className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
                         value={formData.mobileNumber}
                         onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                       />
@@ -139,16 +168,38 @@ const OnboardingModal = ({ isOpen }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 block">Profile Photo</label>
-                    <div className="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer hover:bg-slate-100 transition-colors">
-                      <Camera size={24} />
-                      <span className="text-[0.6rem] font-bold uppercase tracking-widest">Optional</span>
+                    <div 
+                      onClick={() => profileInputRef.current.click()}
+                      className="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer hover:bg-slate-100 transition-colors relative overflow-hidden"
+                    >
+                      {uploading.profile ? (
+                        <Loader2 size={24} className="animate-spin text-red-500" />
+                      ) : formData.profilePhoto ? (
+                        <img src={formData.profilePhoto} className="w-full h-full object-cover" alt="p" />
+                      ) : (
+                        <>
+                          <Camera size={24} />
+                          <span className="text-[0.6rem] font-bold uppercase tracking-widest">Upload Photo</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 block">Business Logo</label>
-                    <div className="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer hover:bg-slate-100 transition-colors">
-                      <ImageIcon size={24} />
-                      <span className="text-[0.6rem] font-bold uppercase tracking-widest">Optional</span>
+                    <div 
+                      onClick={() => logoInputRef.current.click()}
+                      className="h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-2 cursor-pointer hover:bg-slate-100 transition-colors relative overflow-hidden"
+                    >
+                      {uploading.logo ? (
+                        <Loader2 size={24} className="animate-spin text-red-500" />
+                      ) : formData.logo ? (
+                        <img src={formData.logo} className="w-full h-full object-cover" alt="l" />
+                      ) : (
+                        <>
+                          <ImageIcon size={24} />
+                          <span className="text-[0.6rem] font-bold uppercase tracking-widest">Upload Logo</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -158,7 +209,7 @@ const OnboardingModal = ({ isOpen }) => {
                   <div className="relative flex items-center">
                     <Globe size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
                     <select
-                      className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 appearance-none focus:bg-white focus:border-[#ef4444]/20 transition-all cursor-pointer"
+                      className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 appearance-none focus:bg-white focus:border-[#ef4444]/20 transition-all cursor-pointer font-sans"
                       value={formData.contentLanguage}
                       onChange={(e) => setFormData({ ...formData, contentLanguage: e.target.value })}
                     >
@@ -176,7 +227,7 @@ const OnboardingModal = ({ isOpen }) => {
                     Back
                   </button>
                   <button
-                    disabled={loading}
+                    disabled={loading || uploading.profile || uploading.logo}
                     onClick={handleFinalSubmit}
                     className="flex-[2] h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all border-none cursor-pointer disabled:opacity-70"
                   >

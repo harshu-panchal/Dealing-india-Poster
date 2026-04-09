@@ -1,41 +1,77 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
   ArrowLeft, Phone, MapPin, Calendar, 
-  Award, Heart, Layout, Zap, 
-  ShieldCheck, Smartphone, Mail, MoreHorizontal,
-  Star, Clock, ChevronRight, Download, Share2, Music, Search
+  Heart, Layout, Zap, 
+  ShieldCheck, Smartphone, Mail,
+  Star, Clock, Download, Share2, Music, Search
 } from 'lucide-react';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
 const UserDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { admin: adminInfo } = useAdminAuth();
   const containerRef = useRef();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Entrance animations removed for immediate visibility
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  // Mock user fetching
-  const user = useMemo(() => ({
-    id: id,
-    name: 'Rahul Sharma',
-    phone: '+91 98765 43210',
-    email: 'rahul.sharma@example.com',
-    plan: 'Premium',
-    status: 'active',
-    joined: 'March 15, 2026',
-    likes: 24,
-    downloads: 156,
-    points: 2500,
-    business: 'Rahul Prints & Graphics',
-    location: 'Jaipur, Rajasthan',
-    lastLogin: '2 hours ago',
-    device: 'iPhone 15 Pro'
-  }), [id]);
+  const fetchUserDetails = async () => {
+    try {
+      setLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${adminInfo?.accessToken}`,
+        },
+      };
+
+      const { data } = await axios.get(`${API_URL}/admin/users/${id}`, config);
+      setUser(data);
+    } catch (error) {
+      console.error('Error fetching user detail:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (adminInfo?.accessToken && id) {
+      fetchUserDetails();
+    }
+  }, [id, adminInfo]);
+
+  const formatDate = (dateString, options = {}) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      ...options
+    });
+  };
+
+  if (loading) {
+     return (
+       <div className="flex items-center justify-center h-[60vh]">
+         <p className="text-xl font-black text-slate-300 animate-pulse uppercase tracking-[0.2em]">Retreiving Participant Profile...</p>
+       </div>
+     );
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-black text-slate-400">PARTICIPANT NOT FOUND</h2>
+        <Button onClick={() => navigate('/admin/users')} className="mt-4 rounded-xl">Back to Registry</Button>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className="space-y-8 pb-12">
@@ -52,12 +88,12 @@ const UserDetail = () => {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black tracking-tight text-[var(--admin-text-main)]">{user.name}</h1>
-              <Badge variant="success" className="text-[10px] font-black uppercase tracking-[0.1em]">
-                {user.plan} MEMBER
+              <h1 className="text-3xl font-black tracking-tight text-[var(--admin-text-main)]">{user.name || 'Anonymous User'}</h1>
+              <Badge variant={user.isVerified ? 'success' : 'warning'} className="text-[10px] font-black uppercase tracking-[0.1em]">
+                {user.isVerified ? 'VERIFIED' : 'UNVERIFIED'} MEMBER
               </Badge>
             </div>
-            <p className="text-[var(--admin-text-subtle)] text-[11px] font-black uppercase tracking-[0.2em] mt-1 opacity-70">REGISTRY ID: {user.id}</p>
+            <p className="text-[var(--admin-text-subtle)] text-[11px] font-black uppercase tracking-[0.2em] mt-1 opacity-70">REGISTRY ID: {user._id}</p>
           </div>
         </div>
 
@@ -65,7 +101,7 @@ const UserDetail = () => {
            <Button variant="outline" className="rounded-xl border-slate-200 px-6 font-bold text-slate-600">
              Deactivate Network
            </Button>
-           <Button className="rounded-xl shadow-lg shadow-red-500/20 px-6">
+           <Button className="rounded-xl shadow-lg shadow-red-500/20 px-6 bg-[#ef4444] text-white border-none font-bold">
              Update Profile
            </Button>
         </div>
@@ -74,53 +110,59 @@ const UserDetail = () => {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Left Column (Info Sidebar) */}
         <div className="xl:col-span-4 space-y-8 detail-card">
-          <Card className="border-none">
+          <Card className="border-none shadow-sm bg-white">
              <div className="p-8 flex flex-col items-center">
                 <div className="relative mb-8">
-                  <div className="w-40 h-40 rounded-[3rem] bg-red-50 dark:bg-red-500/15 flex items-center justify-center text-[#ef4444] text-6xl font-black border-4 border-[var(--admin-bg)] shadow-2xl shadow-slate-200/50 dark:shadow-none">
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-emerald-500 border-4 border-white dark:border-slate-800 rounded-2xl flex items-center justify-center text-white shadow-xl">
-                    <ShieldCheck size={24} />
-                  </div>
+                  {user.profilePhoto ? (
+                    <img src={user.profilePhoto} alt="" className="w-40 h-40 rounded-[3rem] object-cover border-4 border-[var(--admin-bg)] shadow-2xl shadow-slate-200/50" />
+                  ) : (
+                    <div className="w-40 h-40 rounded-[3rem] bg-red-50 flex items-center justify-center text-[#ef4444] text-6xl font-black border-4 border-[var(--admin-bg)] shadow-2xl shadow-slate-200/50">
+                      {user.name ? user.name.charAt(0) : '?'}
+                    </div>
+                  )}
+                  {user.isVerified && (
+                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-emerald-500 border-4 border-white rounded-2xl flex items-center justify-center text-white shadow-xl">
+                      <ShieldCheck size={24} />
+                    </div>
+                  )}
                 </div>
                 
-                <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-1 tracking-tight">{user.name}</h2>
+                <h2 className="text-2xl font-black text-slate-800 mb-1 tracking-tight">{user.name || 'Anonymous User'}</h2>
                 <div className="flex items-center gap-2 text-[var(--admin-text-subtle)] font-black text-[10px] uppercase tracking-[0.2em] mb-8">
-                  <Smartphone size={12} className="text-red-500" /> {user.device}
+                  <Smartphone size={12} className="text-red-500" /> TERMINAL: {user.contentLanguage || 'English'}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 w-full mb-10">
-                  <div className="bg-[var(--admin-bg)] p-5 rounded-3xl text-center border border-[var(--admin-border)] transition-colors">
-                    <p className="text-[10px] font-black text-[var(--admin-text-subtle)] uppercase tracking-widest mb-1.5">Engagement</p>
-                    <p className="text-2xl font-black text-[#ef4444] leading-none">{user.likes}</p>
+                  <div className="bg-slate-50 p-5 rounded-3xl text-center border border-slate-100 transition-colors">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Engagement</p>
+                    <p className="text-2xl font-black text-[#ef4444] leading-none">{user.likes || 0}</p>
                   </div>
-                  <div className="bg-[var(--admin-bg)] p-5 rounded-3xl text-center border border-[var(--admin-border)] transition-colors">
-                    <p className="text-[10px] font-black text-[var(--admin-text-subtle)] uppercase tracking-widest mb-1.5">Total Points</p>
-                    <p className="text-2xl font-black text-[#ef4444] leading-none">{user.points}</p>
+                  <div className="bg-slate-50 p-5 rounded-3xl text-center border border-slate-100 transition-colors">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Points</p>
+                    <p className="text-2xl font-black text-[#ef4444] leading-none">{user.points || 0}</p>
                   </div>
                 </div>
 
-                <div className="w-full space-y-4 pt-4 border-t border-slate-50 dark:border-slate-800/50">
-                  <div className="flex items-start gap-5 p-4 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
-                    <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-[#ef4444] shrink-0 shadow-sm group-hover:scale-110 transition-transform"><Phone size={20} /></div>
+                <div className="w-full space-y-4 pt-4 border-t border-slate-50">
+                  <div className="flex items-start gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-colors group text-left w-full">
+                    <div className="w-11 h-11 rounded-2xl bg-red-50 flex items-center justify-center text-[#ef4444] shrink-0 shadow-sm group-hover:scale-110 transition-transform"><Phone size={20} /></div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Authenticated Phone</p>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{user.phone}</p>
+                      <p className="text-sm font-bold text-slate-700 truncate">{user.mobileNumber || 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-5 p-4 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
-                    <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-[#ef4444] shrink-0 shadow-sm group-hover:scale-110 transition-transform"><Mail size={20} /></div>
+                  <div className="flex items-start gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-colors group text-left w-full">
+                    <div className="w-11 h-11 rounded-2xl bg-red-50 flex items-center justify-center text-[#ef4444] shrink-0 shadow-sm group-hover:scale-110 transition-transform"><Mail size={20} /></div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Email Connection</p>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{user.email}</p>
+                      <p className="text-sm font-bold text-slate-700 truncate">{user.email || 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-5 p-4 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
-                    <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-[#ef4444] shrink-0 shadow-sm group-hover:scale-110 transition-transform"><MapPin size={20} /></div>
+                  <div className="flex items-start gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-colors group text-left w-full">
+                    <div className="w-11 h-11 rounded-2xl bg-red-50 flex items-center justify-center text-[#ef4444] shrink-0 shadow-sm group-hover:scale-110 transition-transform"><MapPin size={20} /></div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Origin City</p>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{user.location}</p>
+                      <p className="text-sm font-bold text-slate-700 truncate">{user.location || 'Unknown'}</p>
                     </div>
                   </div>
                 </div>
@@ -133,9 +175,9 @@ const UserDetail = () => {
                 <Zap size={18} className="text-amber-400 group-hover:scale-125 transition-transform" />
              </div>
              <p className="text-xs text-slate-500 font-semibold mb-8 leading-relaxed relative z-10">
-                This user has been a <span className="text-[#ef4444] font-black uppercase tracking-widest text-[10px]">Premium Subscriber</span> for 120 days with consistent weekly activity.
+                This participant has been part of the network for {Math.floor((new Date() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24))} days with a {user.isVerified ? 'Verified' : 'Pending'} status.
              </p>
-             <Button className="w-full h-12 bg-slate-50 text-slate-900 rounded-2xl h-12 text-[10px] font-black uppercase tracking-[0.2em] border-none hover:bg-slate-100 transition-all relative z-10">
+             <Button className="w-full h-12 bg-slate-50 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-none hover:bg-slate-100 transition-all relative z-10">
                 Review Lifecycle
              </Button>
              <Zap size={140} className="absolute -bottom-10 -right-10 text-slate-50 pointer-events-none group-hover:rotate-12 transition-transform duration-700 opacity-50" />
@@ -144,84 +186,69 @@ const UserDetail = () => {
 
         {/* Right Column (Content) */}
         <div className="xl:col-span-8 space-y-8">
-           <Card className="border-none detail-card overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--admin-border)] bg-white px-8 py-6">
+           <Card className="border-none shadow-sm overflow-hidden bg-white">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-white px-8 py-6">
                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/15 flex items-center justify-center text-[#ef4444]">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-[#ef4444]">
                        <Layout size={20} />
                     </div>
-                    <CardTitle>Creative Log Summary</CardTitle>
+                    <CardTitle className="text-lg font-black tracking-tight">Creative Log Summary</CardTitle>
                  </div>
-                 <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase tracking-widest h-9 bg-white">
+                 <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase tracking-widest h-9 bg-white border-slate-200">
                     Download Full Audit
                  </Button>
               </CardHeader>
               <CardContent className="p-8">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                   {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                      <div key={i} className="aspect-[3/4] rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 overflow-hidden group relative cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500">
-                         <img 
-                          src={`https://images.unsplash.com/photo-${1500000000000 + (i * 100000000)}?q=80&w=400&fit=crop`} 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                          alt="Poster" 
-                          onError={(e) => {
-                            e.target.src = "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=400";
-                          }}
-                         />
-                         <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3">
-                            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-[#ef4444] shadow-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-500 font-black"><Search size={18} /></div>
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">Aug 24, 2024</span>
-                         </div>
-                      </div>
-                   ))}
-                </div>
+                 <div className="text-center py-12 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
+                    <p className="text-sm font-bold text-slate-400">Creative log data acquisition in progress...</p>
+                 </div>
               </CardContent>
            </Card>
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 detail-card">
-              <Card className="border-none">
+              <Card className="border-none shadow-sm bg-white">
                 <CardHeader className="flex flex-row items-center justify-between pb-4">
                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500">
+                      <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
                          <Heart size={20} fill="currentColor" />
                       </div>
-                      <CardTitle>Interaction Metrics</CardTitle>
+                      <CardTitle className="text-base font-black tracking-tight">Interaction Metrics</CardTitle>
                    </div>
                 </CardHeader>
                 <CardContent className="space-y-1">
                    {[
-                      { label: 'Asset Favorites', value: '42 items', icon: Heart },
-                      { label: 'Group Engagement', value: '78% High', icon: Star },
-                      { label: 'Audio Tracks Used', value: '15 tracks', icon: Music },
-                      { label: 'Distribution Share', value: '128 times', icon: Share2 },
+                      { label: 'Asset Favorites', value: `${user.likes || 0} items`, icon: Heart },
+                      { label: 'Group Engagement', value: user.isVerified ? '78% High' : 'Low Access', icon: Star },
+                      { label: 'Audio Tracks Used', value: '0 tracks', icon: Music },
+                      { label: 'Distribution Share', value: '0 times', icon: Share2 },
                    ].map((s, i) => (
-                      <div key={i} className="flex justify-between items-center py-4 border-b border-slate-50 dark:border-slate-800 last:border-0 last:pb-0 group">
-                         <span className="text-xs font-bold text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors">{s.label}</span>
-                         <span className="text-sm font-black text-slate-700 dark:text-slate-300">{s.value}</span>
+                      <div key={i} className="flex justify-between items-center py-4 border-b border-slate-50 last:border-0 last:pb-0 group">
+                         <span className="text-xs font-bold text-slate-400 group-hover:text-slate-600 transition-colors">{s.label}</span>
+                         <span className="text-sm font-black text-slate-700">{s.value}</span>
                       </div>
                    ))}
                 </CardContent>
               </Card>
 
-              <Card className="border-none">
+              <Card className="border-none shadow-sm bg-white">
                 <CardHeader className="flex flex-row items-center justify-between pb-4">
                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-500">
+                      <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500">
                          <Clock size={20} />
                       </div>
-                      <CardTitle>Lifecycle Audit</CardTitle>
+                      <CardTitle className="text-base font-black tracking-tight">Lifecycle Audit</CardTitle>
                    </div>
                 </CardHeader>
                 <CardContent className="space-y-1">
                    {[
-                      { label: 'Network Ingress', value: user.joined },
-                      { label: 'Inbound Channel', value: 'Direct Search' },
-                      { label: 'Verification Tier', value: 'Lvl 4 Secure' },
-                      { label: 'Terminal Access', value: user.lastLogin },
+                      { label: 'Network Ingress', value: formatDate(user.createdAt) },
+                      { label: 'Inbound Channel', value: 'Authenticated Link' },
+                      { label: 'Verification Tier', value: user.isVerified ? 'Lvl 4 Secure' : 'Lvl 1 Guest' },
+                      { label: 'Terminal Refresh', value: formatDate(user.updatedAt, { month: 'short' }) },
                    ].map((s, i) => (
-                      <div key={i} className="flex justify-between items-center py-4 border-b border-slate-50 dark:border-slate-800 last:border-0 last:pb-0 group">
-                         <span className="text-xs font-bold text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-colors">{s.label}</span>
-                         <span className="text-sm font-black text-slate-700 dark:text-slate-300">{s.value}</span>
+                      <div key={i} className="flex justify-between items-center py-4 border-b border-slate-50 last:border-0 last:pb-0 group">
+                         <span className="text-xs font-bold text-slate-400 group-hover:text-slate-600 transition-colors">{s.label}</span>
+                         <span className="text-sm font-black text-slate-700">{s.value}</span>
                       </div>
                    ))}
                 </CardContent>

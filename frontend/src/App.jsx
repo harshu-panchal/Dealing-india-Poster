@@ -37,6 +37,7 @@ import { EditorProvider, useEditor } from './modules/B2BUserApp/context/EditorCo
 import PosterEditor from './modules/B2BUserApp/components/editor/PosterEditor';
 import PosterDetail from './modules/B2BUserApp/components/posters/PosterDetail';
 import OnboardingModal from './modules/B2BUserApp/components/modals/OnboardingModal';
+import { AdminAuthProvider } from './modules/Admin/context/AdminAuthContext';
 
 // Protected Route for Admin
 const ProtectedAdminRoute = ({ children }) => {
@@ -72,24 +73,26 @@ function AppContent() {
   // Handle routing for Admin Panel separately
   if (isAdminPath) {
     return (
-      <Suspense fallback={<ShimmerLayout />}>
-        <Routes>
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
-             <Route index element={<Navigate to="/admin/dashboard" replace />} />
-             <Route path="dashboard" element={<AdminDashboard />} />
-             <Route path="users" element={<UserManager />} />
-             <Route path="users/:id" element={<UserDetail />} />
-             <Route path="music" element={<MusicLibrary />} />
-             <Route path="categories" element={<CategoryManager />} />
-             <Route path="templates" element={<TemplateManager />} />
-             <Route path="referrals" element={<ReferralManager />} />
-             <Route path="events" element={<EventManager />} />
-             <Route path="frames" element={<FrameManager />} />
-             <Route path="settings" element={<SystemSettings />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <AdminAuthProvider>
+        <Suspense fallback={<ShimmerLayout />}>
+          <Routes>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
+               <Route index element={<Navigate to="/admin/dashboard" replace />} />
+               <Route path="dashboard" element={<AdminDashboard />} />
+               <Route path="users" element={<UserManager />} />
+               <Route path="users/:id" element={<UserDetail />} />
+               <Route path="music" element={<MusicLibrary />} />
+               <Route path="categories" element={<CategoryManager />} />
+               <Route path="templates" element={<TemplateManager />} />
+               <Route path="referrals" element={<ReferralManager />} />
+               <Route path="events" element={<EventManager />} />
+               <Route path="frames" element={<FrameManager />} />
+               <Route path="settings" element={<SystemSettings />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </AdminAuthProvider>
     );
   }
 
@@ -129,6 +132,7 @@ function AppContent() {
 
                 {/* Private User Routes */}
                 <Route path="/" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Home /></UserPrivateRoute>} />
+                <Route path="/home" element={<Navigate to="/" replace />} />
                 <Route path="/trending" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Trending /></UserPrivateRoute>} />
                 <Route path="/categories" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Categories /></UserPrivateRoute>} />
                 <Route path="/category/:id" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><CategoryDetail /></UserPrivateRoute>} />
@@ -137,6 +141,9 @@ function AppContent() {
                 <Route path="/my-posters" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><MyPosters /></UserPrivateRoute>} />
                 <Route path="/profile" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Profile /></UserPrivateRoute>} />
                 <Route path="/dashboard" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Dashboard /></UserPrivateRoute>} />
+                
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
           </div>

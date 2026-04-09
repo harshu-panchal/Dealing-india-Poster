@@ -23,8 +23,13 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          logout();
-          window.location.href = '/login';
+          const isAdminPath = window.location.pathname.startsWith('/admin');
+          if (isAdminPath) {
+            window.location.href = '/admin/login';
+          } else {
+            logout();
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
