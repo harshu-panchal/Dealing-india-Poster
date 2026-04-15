@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Phone, Lock, ChevronRight, Chrome as Google, Share2 as Facebook, Mail, ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Phone, Lock, ChevronRight, Chrome as Google, Share2 as Facebook, Mail, ArrowLeft, Loader2, MessageSquare, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,10 +12,22 @@ const Login = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [showReferralInput, setShowReferralInput] = useState(false);
+  const [searchParams] = useSearchParams();
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
 
   const { sendOtp, login } = useAuth();
   const navigate = useNavigate();
+
+  // URL Referral Detect
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+      setShowReferralInput(true);
+    }
+  }, [searchParams]);
 
   // Timer Effect
   useEffect(() => {
@@ -64,7 +76,7 @@ const Login = () => {
     setIsError('');
     setIsVerifying(true);
     try {
-      await login(identifier, otp);
+      await login(identifier, otp, referralCode);
       navigate('/');
     } catch (err) {
       setIsError(err);
@@ -93,10 +105,10 @@ const Login = () => {
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">
             {step === 1 ? 'Welcome Back' : 'Verify Identity'}
           </h1>
-          <p className="text-slate-400 text-sm font-semibold mt-1 text-center">
+          <p className="text-slate-400 text-sm font-semibold mt-1 text-center font-sans">
             {step === 1 
               ? 'Ready to create more amazing posters?' 
-              : <>We've sent a code to {identifier} <br/><span className="text-[#ef4444] text-[0.65rem] uppercase tracking-widest font-black mt-1 inline-block">( Use 123456 )</span></>
+              : <>We've sent a code to {identifier}. Please enter it below.</>
             }
           </p>
         </div>
@@ -140,16 +152,45 @@ const Login = () => {
                   ) : (
                     <Phone size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
                   )}
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="Enter Email or Phone"
-                    className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 placeholder:text-slate-300 focus:bg-white focus:border-[#ef4444]/20 transition-all"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                  />
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Enter Email or Phone"
+                      className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 placeholder:text-slate-300 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                    />
                 </div>
               </div>
+
+              {!showReferralInput ? (
+                <button 
+                  type="button"
+                  onClick={() => setShowReferralInput(true)}
+                  className="text-[0.65rem] font-black text-[#ef4444] uppercase tracking-widest hover:underline bg-transparent border-none cursor-pointer flex items-center gap-1.5 ml-1"
+                >
+                  <Gift size={12} /> Have a referral code?
+                </button>
+              ) : (
+                <div className="relative group">
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Referral Code (Optional)</label>
+                  <div className="relative flex items-center">
+                    <Gift size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
+                    <input 
+                      type="text" 
+                      placeholder="Enter Referral Code"
+                      className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 placeholder:text-slate-300 focus:bg-white focus:border-[#ef4444]/20 transition-all uppercase"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value)}
+                    />
+                    {referralCode && (
+                      <div className="absolute right-4 px-2 py-1 bg-emerald-50 text-emerald-500 text-[10px] font-black rounded-lg border border-emerald-100 uppercase tracking-tighter">
+                        Applied
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <button 
                 disabled={isSending}

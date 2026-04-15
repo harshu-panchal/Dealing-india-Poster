@@ -1,61 +1,88 @@
-import React from 'react';
-import { ArrowLeft, Search, Heart, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { ArrowLeft, Search, Heart, ChevronRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const EventCalendar = () => {
   const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [featuredSubcategories, setFeaturedSubcategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
-  const featuredPosters = [
-    { id: 1, title: 'Navratri', image: 'https://images.unsplash.com/photo-1561059591-3230ceb10c9d?q=80&w=200&auto=format&fit=crop', tag: 'माँ कालरात्रि' },
-    { id: 2, title: 'Ramnavami', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop', tag: 'रामनवमी' },
-    { id: 3, title: 'AI Profile', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop', tag: 'SHRI RAM AI PROFILE', isAI: true },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [eventsRes, categoriesRes] = await Promise.all([
+          axios.get(`${API_URL}/user/events`),
+          axios.get(`${API_URL}/user/categories`)
+        ]);
+        
+        setEvents(eventsRes.data);
+        
+        // Flatten all subcategories from all categories
+        const allSubcats = categoriesRes.data.reduce((acc, cat) => {
+          return [...acc, ...(cat.subcategories || [])];
+        }, []);
+        
+        // Filter subcategories that have an image and shuffle/limit them
+        const withImages = allSubcats.filter(s => s.image);
+        setFeaturedSubcategories(withImages.slice(0, 10)); // Top 10 for the scroll
+        
+      } catch (error) {
+        console.error('Failed to fetch calendar data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [API_URL]);
 
-  const events = [
-    { day: '25', month: 'Mar', title: 'International Day of the Unborn Child' },
-    { day: '', month: '', title: 'Chaitra Navratri Saptami' },
-    { day: '', month: '', title: 'Bhai Subheg Singh & Bhai Shabaz Singh Shaheedi' },
-    { day: '26', month: 'Mar', title: 'Purple Day for Epilepsy' },
-    { day: '', month: '', title: 'Chaitra Navratri Ashtami' },
-    { day: '', month: '', title: 'Annapurna Ashtami', tag: 'COMING SOON' },
-    { day: '', month: '', title: 'Sandhi Puja' },
-  ];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fullMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const currentMonthName = fullMonths[new Date().getMonth()];
+  const currentYear = new Date().getFullYear();
+
+  if (isLoading) {
+    return (
+      <div className="bg-bg min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-red-500" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-bg min-h-screen">
-      {/* Header */}
-      <header className="bg-[#ef4444] text-white p-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <ArrowLeft className="cursor-pointer" onClick={() => navigate(-1)} />
-          <h1 className="text-xl font-bold">Event Calendar</h1>
-        </div>
-        <Search size={22} className="cursor-pointer" />
-      </header>
-
       <main className="pb-20">
-        {/* Featured Posters Horizontal Scroll */}
+        {/* Featured Subcategories Horizontal Scroll */}
         <div className="flex gap-3 px-4 py-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {featuredPosters.map(poster => (
+          {featuredSubcategories.map(sub => (
             <div 
-              key={poster.id} 
+              key={sub._id} 
               className="flex-shrink-0 w-[140px] cursor-pointer active:scale-95 transition-transform"
-              onClick={() => poster.isAI ? navigate('/') : null}
+              onClick={() => navigate(`/category/${sub._id}?type=subcategory`)}
             >
-              <div className="rounded-xl overflow-hidden shadow-md border-2 border-white aspect-[3/4] relative">
-                <img src={poster.image} alt={poster.title} className="w-full h-full object-cover" />
+              <div className="rounded-xl overflow-hidden shadow-md border-2 border-white aspect-[3/4] relative bg-slate-100">
+                <img src={sub.image} alt={sub.name} className="w-full h-full object-cover" />
                 <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm p-1 text-center">
-                  <span className="text-white text-[0.65rem] font-bold line-clamp-1">{poster.tag}</span>
+                  <span className="text-white text-[0.65rem] font-bold line-clamp-1 uppercase tracking-tight">{sub.name}</span>
                 </div>
               </div>
             </div>
           ))}
+          {featuredSubcategories.length === 0 && (
+            <div className="flex-shrink-0 w-full text-center py-4 bg-white rounded-xl border border-dashed border-slate-200">
+               <p className="text-[10px] font-bold text-slate-400">Add subcategory images to see them here</p>
+            </div>
+          )}
         </div>
 
         {/* Date Banner */}
         <div className="mx-4 mb-6 rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#4ade80] p-6 text-white relative overflow-hidden">
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold">March</h2>
-            <p className="text-lg opacity-90">Year 2026</p>
+            <h2 className="text-3xl font-bold">{currentMonthName}</h2>
+            <p className="text-lg opacity-90">Year {currentYear}</p>
           </div>
           {/* Abstract background shapes */}
           <div className="absolute -right-4 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -68,31 +95,41 @@ const EventCalendar = () => {
 
         {/* Events List */}
         <div className="px-4 flex flex-col gap-4">
-          {events.map((event, idx) => (
-            <div key={idx} className="flex gap-4">
-              <div className="w-12 pt-2 flex flex-col items-center">
-                 {event.day && (
-                   <>
-                     <span className="text-lg font-bold text-[#3b82f6]">{event.day}</span>
-                     <span className="text-xs font-bold text-[#64748b]">{event.month}</span>
-                   </>
-                 )}
-                 {!event.day && idx > 0 && <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] opacity-30 mt-4"></div>}
-              </div>
-              
-              <div className="flex-1 flex items-center gap-3">
-                <div className="flex-1 bg-white border border-[#bfdbfe] rounded-2xl p-4 shadow-sm active:bg-blue-50 transition-colors cursor-pointer group flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[0.9rem] font-bold text-[#1e40af] leading-tight">{event.title}</span>
-                    {event.tag && (
-                       <span className="text-[0.55rem] font-extrabold text-[#92400e] bg-[#fef3c7] px-2 py-0.5 rounded-full w-fit">{event.tag}</span>
-                    )}
-                  </div>
+          {events.map((event, idx) => {
+            const date = new Date(event.date);
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            
+            return (
+              <div 
+                key={event._id} 
+                className="flex gap-4 cursor-pointer active:opacity-70 transition-opacity"
+                onClick={() => navigate(`/event/${event._id}/templates`)}
+              >
+                <div className="w-12 pt-2 flex flex-col items-center">
+                   <span className="text-lg font-bold text-[#3b82f6]">{day}</span>
+                   <span className="text-xs font-bold text-[#64748b]">{month}</span>
                 </div>
-                <Heart size={20} className="text-[#64748b] cursor-pointer hover:text-red-500 transition-colors" />
+                
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="flex-1 bg-white border border-[#bfdbfe] rounded-2xl p-4 shadow-sm active:bg-blue-50 transition-colors group flex justify-between items-center">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[0.9rem] font-bold text-[#1e40af] leading-tight uppercase tracking-tight">{event.name}</span>
+                      <span className="text-[0.55rem] font-extrabold text-[#92400e] bg-[#fef3c7] px-2 py-0.5 rounded-full w-fit">{event.type}</span>
+                    </div>
+                    <ChevronRight size={18} className="text-slate-300" />
+                  </div>
+                  <Heart size={20} className="text-[#64748b] hover:text-red-500 transition-colors" />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+          
+          {events.length === 0 && (
+             <div className="text-center py-10">
+                <p className="text-slate-400 font-bold">No events scheduled for this month.</p>
+             </div>
+          )}
         </div>
       </main>
     </div>

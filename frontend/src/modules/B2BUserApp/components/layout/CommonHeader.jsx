@@ -8,7 +8,13 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
   const { user } = useAuth();
 
   return (
-    <nav className="bg-[#b91c1c] p-2.5 px-2 z-[1000] shadow-[0_2px_8px_rgba(0,0,0,0.1)] w-full flex-shrink-0">
+    <nav 
+      className="bg-[#b91c1c] px-3 z-[1000] shadow-[0_2px_8px_rgba(0,0,0,0.1)] w-full flex-shrink-0"
+      style={{ 
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'
+      }}
+    >
       <div className="flex items-center justify-between max-w-[1200px] mx-auto">
         <div className="flex items-center gap-1.5 md:gap-3">
           <div 

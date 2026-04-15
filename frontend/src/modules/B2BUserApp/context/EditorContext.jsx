@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import axios from 'axios';
 
 const EditorContext = createContext();
 
@@ -14,13 +15,21 @@ export const EditorProvider = ({ children }) => {
     website: 'www.yourwebsite.com',
     email: 'user@example.com',
     gst_number: '',
-    logo: 'https://ui-avatars.com/api/?name=U&background=ef4444&color=fff',
+    address: 'Your Business Address',
+    extraTexts: [],
+    extraPhotos: [],
+    stickers: [],
+    logo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ef4444'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='40' fill='white' font-weight='black'%3EL%3C/text%3E%3C/svg%3E",
     userPhoto: null,
     enabledFields: {
+      business_name: true,
       phone: true,
       website: true,
       email: true,
-      gst: false
+      address: true,
+      gst: false,
+      userPhoto: true,
+      logo: true
     }
   });
 
@@ -28,26 +37,43 @@ export const EditorProvider = ({ children }) => {
   useEffect(() => {
     if (authUser?.user) {
       const u = authUser.user;
+      // Filter out stale broken default logo URL
+      const cleanLogo = (u.logo && !u.logo.includes('default_logo.png')) ? u.logo : null;
+      
       setUserData(prev => ({
         ...prev,
         business_name: u.name || prev.business_name,
         phone_number: u.mobileNumber || prev.phone_number,
         email: u.email || prev.email,
-        logo: u.logo || prev.logo,
+        logo: cleanLogo || prev.logo,
         userPhoto: u.profilePhoto || prev.userPhoto
       }));
     }
   }, [authUser]);
 
-  const [frames] = useState(() => {
-    const saved = localStorage.getItem('admin_frames');
-    return saved ? JSON.parse(saved) : [
-       { id: 1, title: 'Festive Orange', type: 'footer', priceType: 'free', preview: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=200&auto=format&fit=crop' },
-       { id: 2, title: 'Deep Professional', type: 'footer', priceType: 'premium', preview: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=200&auto=format&fit=crop' }
-    ];
-  });
+  const [frames, setFrames] = useState([]);
+  const [selectedFrame, setSelectedFrame] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
-  const [selectedFrame, setSelectedFrame] = useState(frames[0]);
+  useEffect(() => {
+    const fetchFrames = async () => {
+      try {
+        const { data } = await axios.get(`${API_URL}/user/frames`);
+        setFrames(data);
+        // Don't auto-select any frame by default for user
+      } catch (error) {
+        console.error('Fetch frames error:', error);
+      }
+    };
+    fetchFrames();
+  }, [API_URL]);
+
+  const normalizeFrameValue = (frame) => {
+    if (!frame) return null;
+    if (typeof frame === 'string') return frame;
+    if (typeof frame === 'object') return frame.image || frame.url || null;
+    return null;
+  };
 
   const injectUserData = (template) => {
     const templateWithUserData = JSON.parse(JSON.stringify(template));
@@ -73,22 +99,52 @@ export const EditorProvider = ({ children }) => {
   };
 
   const openEditor = (template, initialTab = 'branding') => {
+    const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setEditingTemplate(injectUserData(template));
     setInitialEditorTab(initialTab);
+    if (normalizedFrame) {
+      setSelectedFrame(normalizedFrame);
+    }
     // Keep viewingDetail open
   };
 
   const openDetail = (template) => {
+    const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setViewingDetail(injectUserData(template));
+    if (normalizedFrame) {
+      setSelectedFrame(normalizedFrame);
+    }
   };
 
   const closeEditor = () => setEditingTemplate(null);
   const closeDetail = () => setViewingDetail(null);
 
+  const getTemplateId = (template) => {
+    if (!template) return null;
+    if (template.templateId && typeof template.templateId === 'object') return template.templateId._id;
+    return template._id || template.templateId || null;
+  };
+
+  const syncSavedEditsToDetail = (sourceTemplate, customData) => {
+    const sourceId = getTemplateId(sourceTemplate);
+    if (!sourceId) return;
+
+    setViewingDetail(prev => {
+      if (!prev) return prev;
+      const prevId = getTemplateId(prev);
+      if (!prevId || String(prevId) !== String(sourceId)) return prev;
+      return {
+        ...prev,
+        customData: { ...customData }
+      };
+    });
+  };
+
   return (
     <EditorContext.Provider value={{ 
       editingTemplate, openEditor, closeEditor, 
       viewingDetail, openDetail, closeDetail,
+      syncSavedEditsToDetail,
       userData, setUserData,
       frames, selectedFrame, setSelectedFrame,
       initialEditorTab

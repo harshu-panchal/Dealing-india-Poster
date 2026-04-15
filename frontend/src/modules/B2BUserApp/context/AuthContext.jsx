@@ -12,9 +12,29 @@ export const AuthProvider = ({ children }) => {
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
+    const fetchFreshProfile = async (storedData) => {
+      try {
+        const { data } = await axios.get(`${API_URL}/user/profile`, {
+          headers: { Authorization: `Bearer ${storedData.accessToken}` }
+        });
+        // Merge fresh user data with existing tokens
+        const updatedInfo = { ...storedData, user: data.user };
+        setUser(updatedInfo);
+        localStorage.setItem('userInfo', JSON.stringify(updatedInfo));
+      } catch (err) {
+        console.error('Failed to refresh profile:', err);
+        // If profile fetch fails (e.g. invalid token), logout
+        if (err.response?.status === 401) {
+          logout();
+        }
+      }
+    };
+
     const storedUser = localStorage.getItem('userInfo');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchFreshProfile(parsedUser);
     }
     setLoading(false);
 
@@ -38,10 +58,14 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
-  const login = async (identifier, otp) => {
+  const login = async (identifier, otp, referralCode) => {
     try {
       const isEmail = identifier.includes('@');
       const payload = isEmail ? { email: identifier, otp } : { mobileNumber: identifier, otp };
+      
+      if (referralCode) {
+        payload.referralCode = referralCode;
+      }
 
       const { data } = await axios.post(`${API_URL}/user/verify-otp`, payload);
 

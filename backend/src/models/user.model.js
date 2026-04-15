@@ -37,10 +37,37 @@ const userSchema = new mongoose.Schema(
     },
     savedTemplates: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Template',
+        templateId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Template',
+        },
+        customData: {
+          type: Object,
+          default: {}
+        },
+        savedAt: {
+          type: Date,
+          default: Date.now
+        }
       },
     ],
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    points: {
+      type: Number,
+      default: 0,
+    },
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    referralCount: {
+      type: Number,
+      default: 0,
+    },
     refreshToken: {
       type: String,
     },
@@ -49,6 +76,14 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre('save', async function () {
+  if (!this.referralCode) {
+    // Generate a simple referral code based on name or random string
+    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+    this.referralCode = randomStr;
+  }
+});
 
 const User = mongoose.model('User', userSchema);
 export default User;

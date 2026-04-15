@@ -1,11 +1,11 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { 
   Plus, Search, Image as ImageIcon, 
   Video, Star, Trash2, Edit2, CheckCircle,
   ChevronRight, Sparkles, Layers,
   X, AlertCircle, Save, Trash, Archive,
-  Loader2, Upload
+  Loader2, Upload, Calendar
 } from 'lucide-react';
 import axios from 'axios';
 import { Card, CardContent } from '../components/ui/Card';
@@ -20,6 +20,7 @@ const TemplateManager = () => {
   const { admin } = useAdminAuth();
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,6 +34,8 @@ const TemplateManager = () => {
   const fileInputRef = useRef();
   const API_URL = import.meta.env.VITE_API_URL;
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const eventFilter = searchParams.get('event');
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -57,14 +60,25 @@ const TemplateManager = () => {
     }
   }, [admin, API_URL]);
 
+  const fetchEvents = useCallback(async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${admin?.accessToken}` } };
+      const { data } = await axios.get(`${API_URL}/admin/events`, config);
+      setEvents(data);
+    } catch (error) {
+      console.error('Fetch events error:', error);
+    }
+  }, [admin, API_URL]);
+
   useEffect(() => {
     if (admin) {
       fetchTemplates();
       fetchCategories();
+      fetchEvents();
     } else {
       setLoading(false);
     }
-  }, [admin, fetchTemplates, fetchCategories]);
+  }, [admin, fetchTemplates, fetchCategories, fetchEvents]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -97,6 +111,7 @@ const TemplateManager = () => {
       name: formData.get('title'),
       categoryId: formData.get('category'),
       subcategoryId: formData.get('subcategory') || undefined,
+      eventId: formData.get('eventId') || undefined,
       type: formData.get('type'),
       image: previewUrl || formData.get('image_url'),
       isPremium: formData.get('isPremium') === 'true',
@@ -130,9 +145,10 @@ const TemplateManager = () => {
   const filteredTemplates = useMemo(() => {
     return templates.filter(t => 
        (activeType === 'all' || t.type === activeType) &&
+       (!eventFilter || (t.eventId?._id === eventFilter || t.eventId === eventFilter)) &&
        (t.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [templates, activeType, searchQuery]);
+  }, [templates, activeType, searchQuery, eventFilter]);
 
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
@@ -154,6 +170,17 @@ const TemplateManager = () => {
           <Plus size={16} className="mr-2" strokeWidth={3} /> Define Layout
         </Button>
       </div>
+
+      {eventFilter && (
+        <div className="flex items-center gap-3 bg-red-50 p-4 rounded-2xl border border-red-100">
+          <div className="p-2 bg-red-500 text-white rounded-lg"><Calendar size={14} /></div>
+          <div>
+            <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Active Event Filter</p>
+            <p className="text-xs font-bold text-slate-700">Showing templates for: <span className="font-black">{events.find(e => e._id === eventFilter)?.name || 'Specified Event'}</span></p>
+          </div>
+          <Link to="/admin/templates" className="ml-auto text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">Clear Filter</Link>
+        </div>
+      )}
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -185,6 +212,11 @@ const TemplateManager = () => {
                        <Trash2 size={18} />
                     </Button>
                  </div>
+                 {tpl.eventId && (
+                    <div className="absolute top-3 left-3 bg-red-500 text-white text-[8px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                       <Calendar size={10} /> {tpl.eventId.name || 'EVENT'}
+                    </div>
+                 )}
               </div>
               <div className="p-4">
                   <h4 className="font-bold text-sm text-slate-800">{tpl.name}</h4>
@@ -201,6 +233,11 @@ const TemplateManager = () => {
             </Card>
           </motion.div>
         ))}
+        {filteredTemplates.length === 0 && !loading && (
+           <div className="col-span-full py-20 text-center">
+              <p className="text-slate-400 font-bold">No templates found matches your criteria.</p>
+           </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
@@ -240,10 +277,21 @@ const TemplateManager = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <select name="type" defaultValue={editingTemplate?.type || 'image'} className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs">
                  <option value="image">Static Image</option>
                  <option value="video">Motion Graphics</option>
+              </select>
+
+              <select 
+                name="eventId" 
+                defaultValue={editingTemplate?.eventId?._id || ''} 
+                className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs"
+              >
+                 <option value="">Link to Event (Optional)</option>
+                 {events.map(event => (
+                   <option key={event._id} value={event._id}>{event.name}</option>
+                 ))}
               </select>
             </div>
 

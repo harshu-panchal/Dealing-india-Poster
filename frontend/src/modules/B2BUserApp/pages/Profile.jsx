@@ -6,9 +6,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { user, setUser, logout } = useAuth();
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,7 +49,7 @@ const Profile = () => {
   }, [user]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText('DI-REF-12345');
+    navigator.clipboard.writeText(user?.user?.referralCode || '');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -175,7 +177,7 @@ const Profile = () => {
                 <div>
                   <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em]">Points Balance</h3>
                   <div className="flex items-baseline gap-1.5 leading-none">
-                    <span className="text-3xl font-black text-slate-800 tracking-tighter">2,500</span>
+                    <span className="text-3xl font-black text-slate-800 tracking-tighter">{(user?.user?.points || 0).toLocaleString()}</span>
                     <span className="text-[0.65rem] font-black text-slate-400 uppercase">PTS</span>
                   </div>
                 </div>
@@ -197,11 +199,11 @@ const Profile = () => {
               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white backdrop-blur-sm border border-white/10">
                 <Share2 size={24} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 cursor-pointer" onClick={() => navigate('/referral')}>
                 <h3 className="text-[0.65rem] font-black text-white/50 uppercase tracking-[0.2em]">Refer & Earn</h3>
-                <p className="text-sm text-white font-bold leading-snug mt-1">Get 500 bonus points for every friend you refer!</p>
-                <div className="mt-5 flex items-center gap-2 bg-black/20 p-2 rounded-2xl border border-white/10">
-                  <code className="flex-1 font-black text-white text-center tracking-[0.15em] text-sm">DI-REF-{user?.user?.id?.slice(-5).toUpperCase() || '12345'}</code>
+                <p className="text-sm text-white font-bold leading-snug mt-1">Get bonus points for every friend you refer!</p>
+                <div className="mt-5 flex items-center gap-2 bg-black/20 p-2 rounded-2xl border border-white/10" onClick={(e) => e.stopPropagation()}>
+                  <code className="flex-1 font-black text-white text-center tracking-[0.15em] text-sm">{user?.user?.referralCode || 'NOT FOUND'}</code>
                   <button 
                     onClick={handleCopy}
                     className="bg-white text-red-700 px-5 py-2.5 rounded-xl text-[0.65rem] font-black shadow-md flex items-center gap-1.5 hover:bg-red-50 transition-colors uppercase tracking-widest active:scale-95 cursor-pointer border-none"

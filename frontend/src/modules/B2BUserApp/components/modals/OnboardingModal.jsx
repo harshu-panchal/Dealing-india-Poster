@@ -125,7 +125,7 @@ const OnboardingModal = ({ isOpen }) => {
                       <input
                         type="text"
                         required
-                        placeholder="John Doe"
+                        placeholder="Enter your full name"
                         className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -140,7 +140,7 @@ const OnboardingModal = ({ isOpen }) => {
                       <input
                         type="tel"
                         required
-                        placeholder="6261265704"
+                        placeholder="Enter mobile number"
                         className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
                         value={formData.mobileNumber}
                         onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}

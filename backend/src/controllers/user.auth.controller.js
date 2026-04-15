@@ -1,5 +1,6 @@
 import User from '../models/user.model.js';
 import OTP from '../models/otp.model.js';
+import Settings from '../models/settings.model.js';
 import * as otpService from '../services/otp.service.js';
 import { sendOTPEmail } from '../services/mail.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
@@ -45,7 +46,7 @@ export const sendOTP = async (req, res) => {
 // @desc    Verify OTP and Login/Register
 // @route   POST /api/user/verify-otp
 export const verifyOTP = async (req, res) => {
-  const { mobileNumber, email, otp } = req.body;
+  const { mobileNumber, email, otp, referralCode } = req.body;
 
   if ((!mobileNumber && !email) || !otp) {
     return res.status(400).json({ message: 'Identity and OTP are required' });
@@ -70,15 +71,71 @@ export const verifyOTP = async (req, res) => {
     if (email) filter.email = email;
 
     let user = await User.findOne(filter);
+    let isNewUser = false;
+
+    console.log(`[DEBUG]: Verifying OTP for identity: ${identifier}. isNew: ${!user}`);
 
     if (!user) {
-      user = await User.create({
+      isNewUser = true;
+      user = new User({
         mobileNumber: mobileNumber || undefined,
         email: email || undefined,
         isVerified: true,
       });
+
+      // Handle Referral
+      if (referralCode) {
+        console.log(`[DEBUG]: Attempting referral validation for code: ${referralCode}`);
+        const uppercaseCode = referralCode.toUpperCase().trim();
+        const referrer = await User.findOne({ referralCode: uppercaseCode });
+        
+        if (!referrer) {
+           console.log(`[DEBUG]: REFERRAL FAILED - No user found with code: ${uppercaseCode}`);
+        } else {
+          console.log(`[DEBUG]: Referrer found: ${referrer.name || 'Unnamed'} (${referrer._id})`);
+          console.log(`[DEBUG]: Referrer Identifiers - Mobile: ${referrer.mobileNumber}, Email: ${referrer.email}`);
+          console.log(`[DEBUG]: Current Registrant - Mobile: ${mobileNumber}, Email: ${email}`);
+          
+          const isSelfReferral = referrer.mobileNumber === mobileNumber || (email && referrer.email === email);
+          
+          if (!isSelfReferral) {
+            console.log(`[DEBUG]: REFERRAL SUCCESS - Applying points...`);
+            user.referredBy = referrer._id;
+            
+            const referralPointsSetting = await Settings.findOne({ key: 'referralPoints' });
+            const pointsValue = referralPointsSetting ? referralPointsSetting.value : 10;
+            const pointsToAdd = isNaN(parseInt(pointsValue)) ? 10 : parseInt(pointsValue);
+            
+            // Referrer gets points
+            referrer.points = (Number(referrer.points) || 0) + pointsToAdd;
+            referrer.referralCount = (Number(referrer.referralCount) || 0) + 1;
+            
+            // New user also gets points
+            user.points = (Number(user.points) || 0) + pointsToAdd;
+            
+            await referrer.save();
+            console.log(`[DEBUG]: Referrer awarded ${pointsToAdd} pts. Total: ${referrer.points}, Count: ${referrer.referralCount}`);
+            console.log(`[DEBUG]: New user awarded ${pointsToAdd} pts. Total: ${user.points}`);
+          } else {
+            console.log(`[DEBUG]: REFERRAL REJECTED - Self-referral detected.`);
+          }
+        }
+      }
+      await user.save();
     } else {
       user.isVerified = true;
+      // Ensure existing users get a referral code if they don't have one
+      if (!user.referralCode) {
+        const generateCode = () => 'DI' + Math.random().toString(36).substring(2, 9).toUpperCase();
+        user.referralCode = generateCode();
+        try {
+          await user.save();
+        } catch (e) {
+          console.warn('[RETRY]: Referral code collision, retrying...');
+          user.referralCode = generateCode();
+          await user.save();
+        }
+      }
     }
 
     const accessToken = generateAccessToken(user._id);
@@ -104,6 +161,61 @@ export const verifyOTP = async (req, res) => {
         website: user.website,
         businessName: user.businessName,
         isVerified: user.isVerified,
+        referralCode: user.referralCode,
+        points: Number(user.points) || 0,
+        referralCount: Number(user.referralCount) || 0,
+      },
+    });
+  } catch (error) {
+    console.error(`[DEBUG ERROR]: verifyOTP failed:`, error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Generate referral code if missing (legacy users)
+    if (!user.referralCode) {
+      try {
+        // Generate a more robust code
+        const generateCode = () => {
+          return 'DI' + Math.random().toString(36).substring(2, 9).toUpperCase();
+        };
+        user.referralCode = generateCode();
+        try {
+          await user.save();
+        } catch (saveErr) {
+          if (saveErr.code === 11000) {
+            // Retry once on collision
+            user.referralCode = generateCode();
+            await user.save();
+          } else {
+            throw saveErr;
+          }
+        }
+      } catch (saveErr) {
+        console.error('[REFERRAL ERROR]: Failed to generate referral code during profile fetch:', saveErr);
+      }
+    }
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        mobileNumber: user.mobileNumber,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+        logo: user.logo,
+        contentLanguage: user.contentLanguage,
+        website: user.website,
+        businessName: user.businessName,
+        isVerified: user.isVerified,
+        referralCode: user.referralCode,
+        points: user.points || 0,
+        referralCount: user.referralCount || 0,
       },
     });
   } catch (error) {
@@ -156,6 +268,11 @@ export const updateProfile = async (req, res) => {
     user.website = website || user.website;
     user.businessName = businessName || user.businessName;
 
+    // Ensure referral code exists
+    if (!user.referralCode) {
+      user.referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
     const updatedUser = await user.save();
 
     res.status(200).json({
@@ -172,6 +289,9 @@ export const updateProfile = async (req, res) => {
         website: updatedUser.website,
         businessName: updatedUser.businessName,
         isVerified: updatedUser.isVerified,
+        referralCode: updatedUser.referralCode,
+        points: updatedUser.points,
+        referralCount: updatedUser.referralCount,
       },
     });
   } catch (error) {
@@ -185,23 +305,30 @@ export const updateProfile = async (req, res) => {
 // @desc    Add template to user's saved history
 // @route   POST /api/user/save-template
 export const saveTemplate = async (req, res) => {
-  const { templateId } = req.body;
+  const { templateId, customData } = req.body;
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Avoid duplicates using set-like check
-    if (!user.savedTemplates.includes(templateId)) {
-        user.savedTemplates.unshift(templateId); // Add to beginning (most recent first)
-        // Keep only last 50 for performance
-        if (user.savedTemplates.length > 50) {
-            user.savedTemplates = user.savedTemplates.slice(0, 50);
-        }
-        await user.save();
+    // Move existing to top if found, otherwise add new
+    const existingIndex = user.savedTemplates.findIndex(
+      (t) => t.templateId?.toString() === templateId
+    );
+
+    if (existingIndex > -1) {
+        user.savedTemplates.splice(existingIndex, 1);
     }
     
+    user.savedTemplates.unshift({ templateId, customData, savedAt: new Date() });
+
+    if (user.savedTemplates.length > 50) {
+        user.savedTemplates = user.savedTemplates.slice(0, 50);
+    }
+    
+    await user.save();
     res.status(200).json({ message: 'Template saved to history', savedTemplates: user.savedTemplates });
   } catch (error) {
+    console.error('Save template error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -211,13 +338,40 @@ export const saveTemplate = async (req, res) => {
 export const getSavedTemplates = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate({
-        path: 'savedTemplates',
-        match: { isActive: true } // Only show active templates
+        path: 'savedTemplates.templateId',
+        match: { isActive: true }
     });
     
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json(user.savedTemplates);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get public app settings
+// @route   GET /api/user/settings
+export const getPublicSettings = async (req, res) => {
+  try {
+    const referralPointsSetting = await Settings.findOne({ key: 'referralPoints' });
+    const supportContact = await Settings.findOne({ key: 'supportContact' });
+    const socialLinks = await Settings.findOne({ key: 'socialLinks' });
+    
+    res.status(200).json({
+      referralPoints: referralPointsSetting ? parseInt(referralPointsSetting.value) : 10,
+      supportContact: supportContact ? supportContact.value : {
+        email: 'support@appzeto.com',
+        phone: '+91 9111111111',
+        whatsapp: '+91 9111111111',
+        helpUrl: 'https://help.appzeto.com'
+      },
+      socialLinks: socialLinks ? socialLinks.value : {
+        instagram: '',
+        facebook: '',
+        youtube: ''
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

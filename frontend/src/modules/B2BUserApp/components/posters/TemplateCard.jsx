@@ -11,15 +11,43 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
+  const cleanUrl = (url) => {
+    if (!url || url.includes('default_logo.png')) return null;
+    return url;
+  };
+  const normalizeFrameValue = (frame) => {
+    if (!frame) return null;
+    if (typeof frame === 'string') return frame;
+    if (typeof frame === 'object') return frame.image || frame.url || null;
+    return null;
+  };
+
+  const getTemplateData = () => {
+    if (template.templateId && typeof template.templateId === 'object') return template.templateId;
+    return template;
+  };
+  
+  const currentTemplate = getTemplateData();
+  const rawUserData = template.customData || userData;
+  const effectiveUserData = {
+    ...rawUserData,
+    logo: cleanUrl(rawUserData.logo),
+    userPhoto: cleanUrl(rawUserData.userPhoto)
+  };
+  const activeFrame = normalizeFrameValue(effectiveUserData.selectedFrame);
+
   const handleImageError = (e) => {
     e.target.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=400';
   };
 
   const recordActivity = async () => {
     try {
-      if (user?.accessToken && template?._id) {
+      if (user?.accessToken && currentTemplate?._id) {
         await axios.post(`${API_URL}/user/save-template`, 
-          { templateId: template._id },
+          { 
+            templateId: currentTemplate._id,
+            customData: effectiveUserData
+          },
           { headers: { Authorization: `Bearer ${user.accessToken}` } }
         );
       }
@@ -28,29 +56,62 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     }
   };
 
+  const cardRef = React.useRef(null);
+  
+  const fixUnsupportedColors = (rootElement) => {
+    if (!rootElement) return;
+
+    const elements = [rootElement, ...rootElement.querySelectorAll('*')];
+
+    elements.forEach((el) => {
+      const computedStyle = window.getComputedStyle(el);
+      const color = computedStyle.color;
+      const bgColor = computedStyle.backgroundColor;
+
+      if (color && (color.includes('oklab') || color.includes('oklch'))) {
+        el.style.color = '#000000';
+      }
+
+      if (bgColor && (bgColor.includes('oklab') || bgColor.includes('oklch'))) {
+        el.style.backgroundColor = '#ffffff';
+      }
+    });
+  };
+
   const handleDownload = async (e) => {
     e.stopPropagation();
+    if (!cardRef.current || !window.html2canvas) {
+      window.open(currentTemplate.image, '_blank');
+      return;
+    }
+
     recordActivity();
     try {
-      const response = await fetch(template.image);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      fixUnsupportedColors(cardRef.current);
+      // Capture the actual card content (image + overlay)
+      const canvas = await window.html2canvas(cardRef.current, {
+        useCORS: true,
+        scale: 3,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      
       const link = document.createElement('a');
-      link.href = url;
-      link.download = `poster-${template._id}.jpg`;
+      link.download = `my-design-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      // Fallback: Open in new tab if blob fetch fails
-      window.open(template.image, '_blank');
+      console.error('Card download failed:', err);
+      window.open(currentTemplate.image, '_blank');
     }
   };
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     recordActivity();
-    const text = encodeURIComponent(`Check out this professional poster: ${template.image}`);
+    const text = encodeURIComponent(`Check out this professional poster: ${currentTemplate.image}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
@@ -60,7 +121,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     if (navigator.share) {
       try {
         await navigator.share({
-          title: template.name || 'Professional Poster',
+          title: currentTemplate.name || 'Professional Poster',
           text: 'Check out this design from Dealing India Poster',
           url: window.location.href,
         });
@@ -68,7 +129,6 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
         console.log('Share failed');
       }
     } else {
-      // Fallback
       handleWhatsApp(e);
     }
   };
@@ -76,7 +136,11 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   const handleAction = (e, callback) => {
     e.stopPropagation();
     recordActivity();
-    if (callback) callback();
+    // Use currentTemplate for onClick if it opens detail/editor
+    if (callback) {
+       // We pass the full template (saved or regular) to maintain context
+       callback();
+    }
   };
 
   if (variant === 'compact') {
@@ -86,12 +150,20 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
         onClick={() => handleAction(new Event('click'), onClick)}
       >
         <img 
-          src={template.image} 
-          alt={template.title} 
-          className="w-full h-full object-cover" 
+          src={currentTemplate.image} 
+          alt={currentTemplate.title} 
+          className="w-full h-full object-cover relative z-[1]" 
           onError={handleImageError}
         />
-        {overlay || <BrandingOverlay userData={userData} size="compact" />}
+        {activeFrame && (
+          <img 
+            src={activeFrame} 
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
+            alt="Frame Overlay"
+            crossOrigin="anonymous"
+          />
+        )}
+        {overlay || <BrandingOverlay userData={effectiveUserData} size="compact" />}
       </div>
     );
   }
@@ -99,18 +171,28 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   return (
     <div className="bg-white mb-1 overflow-hidden">
       <div 
-        className="w-full aspect-square overflow-hidden rounded-xl relative bg-[#f8fafc] cursor-pointer" 
+        ref={cardRef}
+        className="w-full aspect-square overflow-hidden rounded-xl relative cursor-pointer" 
+        style={{ backgroundColor: '#f8fafc' }}
         onClick={() => handleAction(new Event('click'), onClick)}
       >
         <img 
-          src={template.image} 
-          alt={template.title} 
+          src={currentTemplate.image} 
+          alt={currentTemplate.title} 
           loading="lazy" 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover relative z-[1]"
           onError={handleImageError}
         />
-        {overlay || <BrandingOverlay userData={userData} size="regular" />}
-        {template.isVideo && (
+        {activeFrame && (
+          <img 
+            src={activeFrame} 
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
+            alt="Frame Overlay"
+            crossOrigin="anonymous"
+          />
+        )}
+        {overlay || <BrandingOverlay userData={effectiveUserData} size="regular" />}
+        {currentTemplate.isVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10">
             <PlayCircle size={48} className="text-white fill-white/20 opacity-80" />
             <div className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/40 backdrop-blur-sm">

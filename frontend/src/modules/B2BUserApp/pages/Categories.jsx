@@ -98,21 +98,36 @@ const Categories = () => {
                      showViewAll={true} 
                      onViewAll={() => navigate(`/category/${section.id}?type=subcategory`)}
                   />
-                  <HorizontalScrollList>
+                  {/* Tablet & Desktop Grid View */}
+                  <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6 px-6 py-6 pb-10">
                     {section.items.map(tpl => (
                       <TemplateCard 
                         key={tpl._id} 
                         template={tpl} 
-                        variant="compact" 
+                        variant="regular" 
                         onClick={() => openDetail(tpl)} 
                       />
                     ))}
-                  </HorizontalScrollList>
+                  </div>
+
+                  {/* Mobile Slider View */}
+                  <div className="md:hidden">
+                    <HorizontalScrollList>
+                      {section.items.map(tpl => (
+                        <TemplateCard 
+                          key={tpl._id} 
+                          template={tpl} 
+                          variant="compact" 
+                          onClick={() => openDetail(tpl)} 
+                        />
+                      ))}
+                    </HorizontalScrollList>
+                  </div>
                 </div>
 
-                {/* Standalone cards between sliders */}
+                {/* Standalone cards between sliders - Mobile Only */}
                 {featureTemplates.length > 0 && (
-                  <div className="bg-white p-4 mb-1 space-y-4">
+                  <div className="bg-white p-4 mb-1 space-y-4 md:hidden">
                     {featureTemplates.map((tpl, i) => (
                       <div key={`feat-${tpl._id}-${i}`} className="relative">
                         <div className="flex items-center gap-2 mb-2">

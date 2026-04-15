@@ -1,6 +1,7 @@
 import Category from '../models/category.model.js';
 import Subcategory from '../models/subcategory.model.js';
 import Template from '../models/template.model.js';
+import Event from '../models/event.model.js';
 
 // @desc    Get all active categories with subcategories
 // @route   GET /api/user/categories
@@ -46,6 +47,81 @@ export const getPublicTemplates = async (req, res) => {
       total,
       pages: Math.ceil(total / limit)
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get "What's New" content (recent categories, events, and templates)
+// @route   GET /api/user/whats-new
+export const getWhatsNewContent = async (req, res) => {
+  try {
+    const limit = 15;
+
+    // Fetch recent categories
+    const categories = await Category.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Fetch recent events
+    const events = await Event.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Fetch recent templates
+    const templates = await Template.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    const formattedUpdates = [];
+
+    // Process Categories
+    for (const cat of categories) {
+      const count = await Template.countDocuments({ categoryId: cat._id, isActive: true });
+      formattedUpdates.push({
+        id: cat._id,
+        title: cat.name,
+        subtitle: `${count} new posters uploaded`,
+        image: cat.image,
+        date: cat.createdAt,
+        type: 'category',
+        rawType: cat.type
+      });
+    }
+
+    // Process Events
+    for (const event of events) {
+      const count = await Template.countDocuments({ eventId: event._id, isActive: true });
+      formattedUpdates.push({
+        id: event._id,
+        title: event.name,
+        subtitle: `${count} templates available`,
+        image: event.image,
+        date: event.createdAt,
+        type: 'event'
+      });
+    }
+
+    // Process Templates
+    for (const temp of templates) {
+      formattedUpdates.push({
+        id: temp._id,
+        title: temp.name,
+        subtitle: temp.isVideo ? 'New video template' : 'New image template',
+        image: temp.image,
+        date: temp.createdAt,
+        type: 'template',
+        isVideo: temp.isVideo,
+        templateData: temp
+      });
+    }
+
+    // Sort by date and limit
+    const sortedUpdates = formattedUpdates
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, limit);
+
+    res.status(200).json(sortedUpdates);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Globe, LayoutGrid, FolderPlus, Heart, 
   CalendarDays, Settings, Share2, HelpCircle, 
-  ThumbsUp, Info, User, X, LogOut, AlertCircle
+  ThumbsUp, Info, User, X, LogOut, AlertCircle, Award, Briefcase, 
+  MessageSquare, Instagram, Facebook, Youtube
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,9 +16,23 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [appSettings, setAppSettings] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   const userName = user?.user?.name || "User";
   const identifier = user?.user?.mobileNumber || user?.user?.email || "No Identifier";
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await axios.get(`${API_URL}/user/settings`);
+        setAppSettings(data);
+      } catch (error) {
+        console.error('Failed to fetch sidebar settings:', error);
+      }
+    };
+    fetchSettings();
+  }, [API_URL]);
 
   const handleActualLogout = async () => {
     await logout();
@@ -29,28 +45,19 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
     { icon: <LayoutGrid size={20} />, label: "Home", path: "/" },
     { icon: <User size={20} />, label: "Profile", path: "/profile" },
     { icon: <Globe size={20} />, label: "Make Your Website", color: "text-blue-600", path: "/dashboard" },
-    { icon: <LayoutGrid size={20} />, label: "Categories", path: "/categories" },
+    { icon: <Briefcase size={20} />, label: "Business", path: "/categories" },
     { icon: <FolderPlus size={20} />, label: "Collections", path: "/my-posters" },
     { icon: <Heart size={20} />, label: "Trending", path: "/trending" },
     { icon: <CalendarDays size={20} />, label: "Events Calendar", path: "/calendar" },
     { icon: <ThumbsUp size={20} />, label: "What's New", path: "/whats-new" },
+    { icon: <Award size={20} />, label: "Refer & Earn", path: "/referral" },
     { icon: <Settings size={20} />, label: "Settings", path: "/dashboard" },
+
     { 
-        icon: <Share2 size={20} />, 
-        label: "Share App", 
-        onClick: () => {
-          if (navigator.share) {
-            navigator.share({
-              title: 'Posters App',
-              text: 'Check out this amazing posters app!',
-              url: window.location.origin,
-            });
-          } else {
-            alert('Sharing is not supported on this browser');
-          }
-        }
+        icon: <HelpCircle size={20} />, 
+        label: "Help Center", 
+        path: "/help"
     },
-    { icon: <HelpCircle size={20} />, label: "Help Center", path: "/dashboard" },
     { icon: <LogOut size={20} />, label: "Logout", color: "text-red-500", onClick: () => setShowLogoutModal(true) },
   ];
 
@@ -89,7 +96,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
       </div>
 
       {/* Menu List */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="flex-1 overflow-y-auto py-2">
         <div className="flex flex-col">
           {menuItems.map((item, index) => (
             <button 
@@ -105,27 +112,44 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
                   if (!isPersistent) onClose();
                 }
               }}
-              className={`flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group ${location.pathname === item.path ? 'bg-gray-50' : ''}`}
+              className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group ${location.pathname === item.path ? 'bg-gray-50' : ''}`}
             >
               <div className="flex items-center gap-4">
                 <div className={`${item.color || (location.pathname === item.path ? 'text-[#ef4444]' : "text-[#64748b]")} transition-colors`}>
                   {item.icon}
                 </div>
-                <span className={`text-[0.95rem] font-bold ${location.pathname === item.path ? 'text-[#ef4444]' : "text-[#334155]"} transition-colors`}>
+                <span className={`text-[0.92rem] font-bold ${location.pathname === item.path ? 'text-[#ef4444]' : "text-[#334155]"} transition-colors`}>
                   {item.label}
                 </span>
               </div>
-              {item.expandable && (
-                <span className="text-gray-400 text-lg font-light">+</span>
-              )}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-6 border-t border-gray-100">
-         <span className="text-[0.75rem] font-bold text-gray-400">V2.15.10</span>
+      {/* Social & Version Footer */}
+      <div className="p-6 border-t border-gray-100 space-y-5 bg-gray-50/30">
+         <div className="flex flex-col gap-3">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Connect with us</span>
+            <div className="flex items-center gap-4">
+               {appSettings?.socialLinks?.instagram && (
+                 <a href={appSettings.socialLinks.instagram} target="_blank" rel="noreferrer" className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-rose-500 shadow-sm border border-gray-100 hover:scale-110 active:scale-95 transition-all">
+                    <Instagram size={18} />
+                 </a>
+               )}
+               {appSettings?.socialLinks?.facebook && (
+                 <a href={appSettings.socialLinks.facebook} target="_blank" rel="noreferrer" className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-gray-100 hover:scale-110 active:scale-95 transition-all">
+                    <Facebook size={18} />
+                 </a>
+               )}
+               {appSettings?.socialLinks?.youtube && (
+                 <a href={appSettings.socialLinks.youtube} target="_blank" rel="noreferrer" className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-red-600 shadow-sm border border-gray-100 hover:scale-110 active:scale-95 transition-all">
+                    <Youtube size={18} />
+                 </a>
+               )}
+            </div>
+         </div>
+
       </div>
     </div>
   );
@@ -216,8 +240,6 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
       {logoutModal}
     </>
   );
-
-
 };
 
 export default Sidebar;

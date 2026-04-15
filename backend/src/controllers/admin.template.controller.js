@@ -18,6 +18,7 @@ export const getAdminTemplates = async (req, res) => {
     const templates = await Template.find(filter)
       .populate('categoryId', 'name')
       .populate('subcategoryId', 'name')
+      .populate('eventId', 'name')
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .sort({ createdAt: -1 });
@@ -38,13 +39,14 @@ export const getAdminTemplates = async (req, res) => {
 // @route   POST /api/admin/templates
 export const createTemplate = async (req, res) => {
   try {
-    const { name, image, categoryId, subcategoryId, type, isVideo, videoUrl, isPremium, tags } = req.body;
+    const { name, image, categoryId, subcategoryId, eventId, type, isVideo, videoUrl, isPremium, tags } = req.body;
     
     const template = await Template.create({
       name,
       image,
       categoryId,
       subcategoryId: subcategoryId || undefined,
+      eventId: eventId || undefined,
       type,
       isVideo: isVideo === true || type === 'video',
       videoUrl,

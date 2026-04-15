@@ -1,55 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   ShieldCheck, Phone, Mail, Save, 
   HelpCircle, Globe, MessageSquare, 
-  Settings as SettingsIcon, AlertCircle, Check
+  Settings as SettingsIcon, AlertCircle, Check,
+  Instagram, Facebook, Youtube, Share2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 
+import { useAdminAuth } from '../context/AdminAuthContext';
+
 const SystemSettings = () => {
+  const { admin } = useAdminAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState(null);
   
   const [settings, setSettings] = useState({
-    supportEmail: 'support@dealingindiaposter.com',
-    supportPhone: '+91 98765 43210',
-    whatsappSupport: '+91 98765 43210',
-    helpCenterUrl: 'https://help.dealingindiaposter.com',
-    businessAddress: '123 Business Hub, New Delhi, India',
-    maintenanceMode: false
+    supportContact: {
+      email: '',
+      phone: '',
+      whatsapp: '',
+      helpUrl: ''
+    },
+    socialLinks: {
+      instagram: '',
+      facebook: '',
+      youtube: ''
+    },
+    appConfig: {
+      maintenanceMode: false,
+      appVersion: '2.15.10'
+    }
   });
 
-  const handleSave = () => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await axios.get(`${API_URL}/admin/settings`, {
+          headers: { Authorization: `Bearer ${admin?.accessToken}` }
+        });
+        
+        if (Object.keys(data).length > 0) {
+          setSettings(prev => ({
+            ...prev,
+            supportContact: data.supportContact || prev.supportContact,
+            socialLinks: data.socialLinks || prev.socialLinks,
+            appConfig: data.appConfig || prev.appConfig,
+          }));
+        }
+      } catch (error) {
+        console.error('Fetch settings error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSettings();
+  }, [API_URL]);
+
+  const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      await axios.post(`${API_URL}/admin/settings`, settings, {
+        headers: { Authorization: `Bearer ${admin?.accessToken}` }
+      });
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
-    }, 1500);
+    } catch (error) {
+      console.error('Save settings error:', error);
+      setSaveStatus('error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleChange = (field, value) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+  const handleNestedChange = (category, field, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [field]: value
+      }
+    }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-10 text-center">
+         <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+         <p className="text-slate-400 font-bold uppercase tracking-widest text-xs animate-pulse">Syncing System Config...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
+    <div className="p-6 max-w-5xl mx-auto space-y-8 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-           <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-             <SettingsIcon className="text-[#ef4444]" /> System Configuration
+           <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+             <div className="p-2 bg-red-50 rounded-lg"><SettingsIcon className="text-[#ef4444]" size={20} /></div> System Configuration
            </h1>
-           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Manage global platform settings and support channels</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Manage global platform settings and support channels</p>
         </div>
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-8 h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2"
+          className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-8 h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 border-none"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -58,115 +120,93 @@ const SystemSettings = () => {
           ) : (
             <Save size={18} />
           )}
-          {isSaving ? 'Saving Changes...' : saveStatus === 'success' ? 'Settings Saved' : 'Save All Settings'}
+          {isSaving ? 'Processing...' : saveStatus === 'success' ? 'Changes Applied' : 'Update Platform Settings'}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Support Channels Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="p-6 overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl">
-             <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-[#ef4444]">
-                   <HelpCircle size={20} />
+      <div className="grid grid-cols-1 gap-8">
+        {/* Main Settings Body */}
+        <div className="space-y-8">
+          {/* Support Channels */}
+          <Card className="p-8 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] bg-white">
+             <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-[#ef4444] shadow-sm">
+                   <HelpCircle size={24} />
                 </div>
-                <h3 className="text-lg font-black text-slate-800 tracking-tight">Help & Support Center</h3>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight">Help & Support Center</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Contact info shown to end-users</p>
+                </div>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <SettingsField 
                   label="Support Email Address" 
-                  value={settings.supportEmail} 
-                  onChange={(v) => handleChange('supportEmail', v)}
+                  value={settings.supportContact.email} 
+                  onChange={(v) => handleNestedChange('supportContact', 'email', v)}
                   icon={<Mail size={18} />} 
-                  placeholder="e.g. support@app.com"
+                  placeholder="e.g. support@appzeto.com"
                 />
                 <SettingsField 
                   label="Support Phone Line" 
-                  value={settings.supportPhone} 
-                  onChange={(v) => handleChange('supportPhone', v)}
+                  value={settings.supportContact.phone} 
+                  onChange={(v) => handleNestedChange('supportContact', 'phone', v)}
                   icon={<Phone size={18} />} 
                   placeholder="+91 XXXXX XXXXX"
                 />
                 <SettingsField 
                   label="WhatsApp Business No." 
-                  value={settings.whatsappSupport} 
-                  onChange={(v) => handleChange('whatsappSupport', v)}
+                  value={settings.supportContact.whatsapp} 
+                  onChange={(v) => handleNestedChange('supportContact', 'whatsapp', v)}
                   icon={<MessageSquare size={18} />} 
-                  placeholder="International format (+91...)"
+                  placeholder="Include country code"
                 />
                 <SettingsField 
                   label="Help Center Portal Link" 
-                  value={settings.helpCenterUrl} 
-                  onChange={(v) => handleChange('helpCenterUrl', v)}
+                  value={settings.supportContact.helpUrl} 
+                  onChange={(v) => handleNestedChange('supportContact', 'helpUrl', v)}
                   icon={<Globe size={18} />} 
-                  placeholder="https://..."
+                  placeholder="https://help.yoursite.com"
                 />
              </div>
           </Card>
 
-          <Card className="p-6 overflow-hidden border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl">
-             <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                   <ShieldCheck size={20} />
+          {/* Social Presence */}
+          <Card className="p-8 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] bg-white">
+             <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+                   <Share2 size={24} />
                 </div>
-                <h3 className="text-lg font-black text-slate-800 tracking-tight">Security & Compliance</h3>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight">Social Presence</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Links for sidebar icons</p>
+                </div>
              </div>
-             
-             <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:border-red-100 transition-all cursor-pointer" onClick={() => handleChange('maintenanceMode', !settings.maintenanceMode)}>
-                   <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 ${settings.maintenanceMode ? 'bg-amber-100 text-amber-600' : 'bg-slate-200 text-slate-400'} rounded-xl flex items-center justify-center transition-colors`}>
-                        <AlertCircle size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-700">Maintenance Mode</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Disable app access for users</p>
-                      </div>
-                   </div>
-                   <div className={`w-12 h-6 rounded-full relative transition-colors ${settings.maintenanceMode ? 'bg-[#ef4444]' : 'bg-slate-300'}`}>
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.maintenanceMode ? 'left-7' : 'left-1'}`}></div>
-                   </div>
-                </div>
+
+             <div className="space-y-6">
+                <SettingsField 
+                  label="Instagram Profile" 
+                  value={settings.socialLinks.instagram} 
+                  onChange={(v) => handleNestedChange('socialLinks', 'instagram', v)}
+                  icon={<Instagram size={18} className="text-rose-500" />} 
+                  placeholder="https://instagram.com/your-brand"
+                />
+                <SettingsField 
+                  label="Facebook Page" 
+                  value={settings.socialLinks.facebook} 
+                  onChange={(v) => handleNestedChange('socialLinks', 'facebook', v)}
+                  icon={<Facebook size={18} className="text-blue-600" />} 
+                  placeholder="https://facebook.com/your-brand"
+                />
+                <SettingsField 
+                  label="YouTube Channel" 
+                  value={settings.socialLinks.youtube} 
+                  onChange={(v) => handleNestedChange('socialLinks', 'youtube', v)}
+                  icon={<Youtube size={18} className="text-red-600" />} 
+                  placeholder="https://youtube.com/@your-brand"
+                />
              </div>
           </Card>
-        </div>
-
-        {/* Info/Quick Settings Sidebar */}
-        <div className="space-y-6">
-           <Card className="p-6 bg-slate-900 border-none shadow-xl rounded-3xl text-white overflow-hidden relative">
-              <div className="absolute top-[-20px] right-[-20px] w-32 h-32 bg-[#ef4444]/20 rounded-full blur-3xl"></div>
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4 relative z-10">System Info</h3>
-              <div className="space-y-4 relative z-10">
-                 <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-xs font-bold text-white/50 uppercase tracking-widest">App Version</span>
-                    <span className="text-xs font-black">2.4.0-PRO</span>
-                 </div>
-                 <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Server Status</span>
-                    <span className="flex items-center gap-1.5 text-xs font-black text-emerald-400">
-                       <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-                       OPERATIONAL
-                    </span>
-                 </div>
-                 <div className="flex justify-between items-center py-2">
-                    <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Last Backup</span>
-                    <span className="text-xs font-black">2 Hours Ago</span>
-                 </div>
-              </div>
-           </Card>
-
-           <div className="bg-amber-50 border border-amber-200 p-5 rounded-3xl">
-              <div className="flex gap-3">
-                 <AlertCircle className="text-amber-600 shrink-0" size={20} />
-                 <div>
-                    <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Administrator Note</h4>
-                    <p className="text-xs font-bold text-amber-700/80 leading-relaxed mt-1">
-                      Changes made here will reflect globally across all user applications. Ensure contact details are verified before saving.
-                    </p>
-                 </div>
-              </div>
-           </div>
         </div>
       </div>
     </div>
@@ -174,16 +214,16 @@ const SystemSettings = () => {
 };
 
 const SettingsField = ({ label, value, onChange, icon, placeholder }) => (
-  <div className="space-y-2">
-    <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{label}</label>
+  <div className="space-y-2.5">
+    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">{label}</label>
     <div className="relative group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#ef4444] transition-colors">{icon}</div>
+      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#ef4444] transition-all transform group-focus-within:scale-110">{icon}</div>
       <input 
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-red-100 focus:bg-white focus:ring-4 focus:ring-red-500/5 transition-all shadow-inner"
+        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-14 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-red-100 focus:bg-white focus:ring-8 focus:ring-red-500/5 transition-all shadow-sm group-hover:bg-slate-100/50"
       />
     </div>
   </div>

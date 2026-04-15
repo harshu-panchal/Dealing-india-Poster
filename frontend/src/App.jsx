@@ -17,6 +17,9 @@ const Profile = lazy(() => import('./modules/B2BUserApp/pages/Profile'));
 const Dashboard = lazy(() => import('./modules/B2BUserApp/pages/Dashboard'));
 const Login = lazy(() => import('./modules/B2BUserApp/pages/Login'));
 const Trending = lazy(() => import('./modules/B2BUserApp/pages/Trending'));
+const Referral = lazy(() => import('./modules/B2BUserApp/pages/Referral'));
+const HelpCenter = lazy(() => import('./modules/B2BUserApp/pages/HelpCenter'));
+const EventTemplates = lazy(() => import('./modules/B2BUserApp/pages/EventTemplates'));
 
 // Lazy loading Admin pages
 const AdminLayout = lazy(() => import('./modules/Admin/components/AdminLayout'));
@@ -67,7 +70,7 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
   const showSearchInHeaderPages = ['/', '/trending', '/categories'];
   const showSearch = showSearchInHeaderPages.includes(location.pathname);
-  const hideBarsPaths = ['/calendar', '/whats-new', '/login', '/register'];
+  const hideBarsPaths = ['/login', '/register'];
   const showBars = !hideBarsPaths.includes(location.pathname) && !isAdminPath;
 
   // Handle routing for Admin Panel separately
@@ -140,7 +143,10 @@ function AppContent() {
                 <Route path="/whats-new" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><WhatsNew /></UserPrivateRoute>} />
                 <Route path="/my-posters" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><MyPosters /></UserPrivateRoute>} />
                 <Route path="/profile" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Profile /></UserPrivateRoute>} />
+                <Route path="/referral" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Referral /></UserPrivateRoute>} />
                 <Route path="/dashboard" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Dashboard /></UserPrivateRoute>} />
+                <Route path="/help" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><HelpCenter /></UserPrivateRoute>} />
+                <Route path="/event/:id/templates" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><EventTemplates /></UserPrivateRoute>} />
                 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
