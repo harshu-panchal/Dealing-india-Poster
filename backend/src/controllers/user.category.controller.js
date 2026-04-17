@@ -27,13 +27,15 @@ export const getPublicCategories = async (req, res) => {
 // @route   GET /api/user/templates
 export const getPublicTemplates = async (req, res) => {
   try {
-    const { category, subcategory, type, isPremium, limit = 20, page = 1 } = req.query;
+    const { category, subcategory, type, isPremium, featured, potd, limit = 20, page = 1 } = req.query;
     const filter = { isActive: true };
 
     if (category) filter.categoryId = category;
     if (subcategory) filter.subcategoryId = subcategory;
     if (type) filter.type = type;
     if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
+    if (featured === 'true') filter.isPosterOfTheDay = true;
+    if (potd === 'true') filter.isPosterOfTheDay = true;
 
     const templates = await Template.find(filter)
       .limit(Number(limit))

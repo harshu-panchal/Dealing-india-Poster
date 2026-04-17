@@ -21,20 +21,29 @@ export const getSystemSettings = async (req, res) => {
 // @desc    Update system settings (bulk)
 // @route   POST /api/admin/settings
 export const updateSystemSettings = async (req, res) => {
-  const settingsData = req.body; // Expecting an object of { key: value }
+  const settingsData = req.body;
+  console.log('[SETTINGS UPDATE]: Received data keys:', Object.keys(settingsData));
 
   try {
     const updatePromises = Object.entries(settingsData).map(async ([key, value]) => {
+      // Skip undefined or null to avoid validation errors if they aren't intended to be saved
+      if (value === undefined || value === null) return null;
+      
+      console.log(`[SETTINGS UPDATE]: Saving ${key} with value type: ${Array.isArray(value) ? 'Array' : typeof value}`);
+      if (Array.isArray(value)) console.log(`[SETTINGS UPDATE]: ${key} has ${value.length} items`);
+
       return await Settings.findOneAndUpdate(
         { key },
-        { value },
-        { upsert: true, new: true }
+        { $set: { value } },
+        { upsert: true, new: true, runValidators: true }
       );
     });
 
     await Promise.all(updatePromises);
+    console.log('[SETTINGS UPDATE]: Success');
     res.status(200).json({ message: 'System settings updated successfully' });
   } catch (error) {
+    console.error('[SETTINGS UPDATE ERROR]:', error);
     res.status(500).json({ message: error.message });
   }
 };

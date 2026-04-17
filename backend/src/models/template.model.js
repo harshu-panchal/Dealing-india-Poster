@@ -44,6 +44,14 @@ const templateSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  likeCount: {
+    type: Number,
+    default: 0,
+  },
+  isPosterOfTheDay: {
+    type: Boolean,
+    default: false,
+  },
   tags: [String],
 }, {
   timestamps: true,

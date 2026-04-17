@@ -19,7 +19,7 @@ import {
 import { uploadFile } from '../controllers/upload.controller.js';
 import upload from '../middlewares/upload.middleware.js';
 import { protectAdmin } from '../middlewares/admin.middleware.js';
-import { createFrame, getFrames, deleteFrame } from '../controllers/frame.controller.js';
+import { createFrame, getFrames, deleteFrame, updateFrame } from '../controllers/frame.controller.js';
 
 const router = express.Router();
 
@@ -82,6 +82,7 @@ router.get('/referrals/leaderboard', protectAdmin, getReferralLeaderboard);
 // Frame Overlay Routes
 router.get('/frames', protectAdmin, getFrames);
 router.post('/frames/create', protectAdmin, createFrame);
+router.put('/frames/:id', protectAdmin, updateFrame);
 router.delete('/frames/:id', protectAdmin, deleteFrame);
 
 export default router;

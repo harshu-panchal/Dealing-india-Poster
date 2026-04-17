@@ -20,6 +20,8 @@ const Trending = lazy(() => import('./modules/B2BUserApp/pages/Trending'));
 const Referral = lazy(() => import('./modules/B2BUserApp/pages/Referral'));
 const HelpCenter = lazy(() => import('./modules/B2BUserApp/pages/HelpCenter'));
 const EventTemplates = lazy(() => import('./modules/B2BUserApp/pages/EventTemplates'));
+const TermsAndConditions = lazy(() => import('./modules/B2BUserApp/pages/TermsAndConditions'));
+const LikedPosters = lazy(() => import('./modules/B2BUserApp/pages/LikedPosters'));
 
 // Lazy loading Admin pages
 const AdminLayout = lazy(() => import('./modules/Admin/components/AdminLayout'));
@@ -70,7 +72,7 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
   const showSearchInHeaderPages = ['/', '/trending', '/categories'];
   const showSearch = showSearchInHeaderPages.includes(location.pathname);
-  const hideBarsPaths = ['/login', '/register'];
+  const hideBarsPaths = ['/login', '/register', '/terms'];
   const showBars = !hideBarsPaths.includes(location.pathname) && !isAdminPath;
 
   // Handle routing for Admin Panel separately
@@ -132,6 +134,7 @@ function AppContent() {
               <Routes>
                 {/* Public Routes */}
                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+                <Route path="/terms" element={<TermsAndConditions />} />
 
                 {/* Private User Routes */}
                 <Route path="/" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Home /></UserPrivateRoute>} />
@@ -146,6 +149,7 @@ function AppContent() {
                 <Route path="/referral" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Referral /></UserPrivateRoute>} />
                 <Route path="/dashboard" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Dashboard /></UserPrivateRoute>} />
                 <Route path="/help" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><HelpCenter /></UserPrivateRoute>} />
+                <Route path="/liked-posters" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><LikedPosters /></UserPrivateRoute>} />
                 <Route path="/event/:id/templates" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><EventTemplates /></UserPrivateRoute>} />
                 
                 {/* Fallback */}

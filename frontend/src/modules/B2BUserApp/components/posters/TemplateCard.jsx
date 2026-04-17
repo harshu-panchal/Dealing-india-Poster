@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Volume2 } from 'lucide-react';
+import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Volume2, Heart } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
 import BrandingOverlay from './BrandingOverlay';
@@ -8,6 +8,14 @@ import BrandingOverlay from './BrandingOverlay';
 const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showActions = true }) => {
   const { openEditor, userData } = useEditor();
   const { user } = useAuth();
+  const [isLiked, setIsLiked] = React.useState(false);
+  const [localLikeCount, setLocalLikeCount] = React.useState(template.likeCount || 0);
+
+  React.useEffect(() => {
+    if (template.isLiked !== undefined) {
+      setIsLiked(template.isLiked);
+    }
+  }, [template]);
   
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
@@ -56,25 +64,31 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     }
   };
 
+  const handleLike = async (e) => {
+    e.stopPropagation();
+    if (!user?.accessToken) return;
+    try {
+      const { data } = await axios.post(`${API_URL}/user/templates/${currentTemplate._id}/like`, {}, {
+        headers: { Authorization: `Bearer ${user.accessToken}` }
+      });
+      setIsLiked(data.liked);
+      setLocalLikeCount(prev => data.liked ? prev + 1 : prev - 1);
+    } catch (err) {
+      console.error('Like failed:', err);
+    }
+  };
+
   const cardRef = React.useRef(null);
   
   const fixUnsupportedColors = (rootElement) => {
     if (!rootElement) return;
-
     const elements = [rootElement, ...rootElement.querySelectorAll('*')];
-
     elements.forEach((el) => {
       const computedStyle = window.getComputedStyle(el);
       const color = computedStyle.color;
       const bgColor = computedStyle.backgroundColor;
-
-      if (color && (color.includes('oklab') || color.includes('oklch'))) {
-        el.style.color = '#000000';
-      }
-
-      if (bgColor && (bgColor.includes('oklab') || bgColor.includes('oklch'))) {
-        el.style.backgroundColor = '#ffffff';
-      }
+      if (color && (color.includes('oklab') || color.includes('oklch'))) el.style.color = '#000000';
+      if (bgColor && (bgColor.includes('oklab') || bgColor.includes('oklch'))) el.style.backgroundColor = '#ffffff';
     });
   };
 
@@ -84,18 +98,15 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
       window.open(currentTemplate.image, '_blank');
       return;
     }
-
     recordActivity();
     try {
       fixUnsupportedColors(cardRef.current);
-      // Capture the actual card content (image + overlay)
       const canvas = await window.html2canvas(cardRef.current, {
         useCORS: true,
         scale: 3,
         backgroundColor: '#ffffff',
         logging: false
       });
-      
       const link = document.createElement('a');
       link.download = `my-design-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
@@ -136,11 +147,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   const handleAction = (e, callback) => {
     e.stopPropagation();
     recordActivity();
-    // Use currentTemplate for onClick if it opens detail/editor
-    if (callback) {
-       // We pass the full template (saved or regular) to maintain context
-       callback();
-    }
+    if (callback) callback();
   };
 
   if (variant === 'compact') {
@@ -170,6 +177,21 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
 
   return (
     <div className="bg-white mb-1 overflow-hidden">
+      {/* Poster Heading with Like Button */}
+      <div className="flex items-center justify-between px-3 py-2 bg-white">
+        <h3 className="text-[0.75rem] font-black text-slate-800 uppercase tracking-wider truncate max-w-[70%]">
+          {currentTemplate.title || currentTemplate.name || 'New Design'}
+        </h3>
+        <button 
+          onClick={handleLike}
+          className="flex items-center gap-1 hover:scale-105 active:scale-95 transition-all"
+        >
+          <Heart size={16} className={isLiked ? 'fill-red-500 text-red-500' : 'text-slate-300'} />
+          {localLikeCount > 0 && (
+            <span className={`text-[10px] font-black ${isLiked ? 'text-red-500' : 'text-slate-400'}`}>{localLikeCount}</span>
+          )}
+        </button>
+      </div>
       <div 
         ref={cardRef}
         className="w-full aspect-square overflow-hidden rounded-xl relative cursor-pointer" 
@@ -192,6 +214,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
           />
         )}
         {overlay || <BrandingOverlay userData={effectiveUserData} size="regular" />}
+
         {currentTemplate.isVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10">
             <PlayCircle size={48} className="text-white fill-white/20 opacity-80" />
@@ -230,6 +253,4 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   );
 };
 
-
 export default TemplateCard;
-

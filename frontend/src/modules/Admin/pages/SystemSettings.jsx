@@ -4,7 +4,7 @@ import {
   ShieldCheck, Phone, Mail, Save, 
   HelpCircle, Globe, MessageSquare, 
   Settings as SettingsIcon, AlertCircle, Check,
-  Instagram, Facebook, Youtube, Share2
+  Instagram, Facebook, Youtube, Share2, Plus, Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
@@ -18,6 +18,8 @@ const SystemSettings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState(null);
+  
+  const [newFaq, setNewFaq] = useState({ q: '', a: '' });
   
   const [settings, setSettings] = useState({
     supportContact: {
@@ -34,24 +36,29 @@ const SystemSettings = () => {
     appConfig: {
       maintenanceMode: false,
       appVersion: '2.15.10'
-    }
+    },
+    termsAndConditions: '',
+    faqs: []
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
     const fetchSettings = async () => {
+      if (!admin?.accessToken) return;
       try {
         const { data } = await axios.get(`${API_URL}/admin/settings`, {
           headers: { Authorization: `Bearer ${admin?.accessToken}` }
         });
         
-        if (Object.keys(data).length > 0) {
+        if (data && Object.keys(data).length > 0) {
           setSettings(prev => ({
             ...prev,
             supportContact: data.supportContact || prev.supportContact,
             socialLinks: data.socialLinks || prev.socialLinks,
             appConfig: data.appConfig || prev.appConfig,
+            termsAndConditions: data.termsAndConditions || prev.termsAndConditions || '',
+            faqs: (data.faqs && data.faqs.length > 0) ? data.faqs : prev.faqs
           }));
         }
       } catch (error) {
@@ -61,18 +68,33 @@ const SystemSettings = () => {
       }
     };
     fetchSettings();
-  }, [API_URL]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
 
   const handleSave = async () => {
     setIsSaving(true);
+    
+    // Auto-add pending FAQ if user typed but forgot to click '+' button
+    let finalSettings = { ...settings };
+    if (newFaq.q.trim() && newFaq.a.trim()) {
+      console.log('[SYSTEM-SETTINGS]: Auto-adding pending FAQ to save payload');
+      finalSettings.faqs = [...settings.faqs, { ...newFaq }];
+      // Update local state too so UI reflects it
+      setSettings(finalSettings);
+      setNewFaq({ q: '', a: '' });
+    }
+
+    console.log('[SYSTEM-SETTINGS]: Attempting to save:', finalSettings);
+    
     try {
-      await axios.post(`${API_URL}/admin/settings`, settings, {
+      const { data } = await axios.post(`${API_URL}/admin/settings`, finalSettings, {
         headers: { Authorization: `Bearer ${admin?.accessToken}` }
       });
+      console.log('[SYSTEM-SETTINGS]: Save response success:', data);
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      console.error('Save settings error:', error);
+      console.error('[SYSTEM-SETTINGS]: Save error details:', error.response?.data || error.message);
       setSaveStatus('error');
     } finally {
       setIsSaving(false);
@@ -171,6 +193,74 @@ const SystemSettings = () => {
              </div>
           </Card>
 
+          {/* FAQ Management */}
+          <Card className="p-8 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] bg-white">
+             <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shadow-sm">
+                       <HelpCircle size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-800 tracking-tight">Platform FAQs</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Manage frequently asked questions</p>
+                    </div>
+                </div>
+             </div>
+
+             <div className="space-y-6">
+                {/* Existing FAQs */}
+                <div className="space-y-4">
+                   {settings.faqs.map((faq, index) => (
+                      <div key={index} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 flex items-start justify-between group">
+                         <div className="space-y-1">
+                            <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Q: {faq.q}</p>
+                            <p className="text-[11px] font-bold text-slate-500 leading-relaxed italic">A: {faq.a}</p>
+                         </div>
+                         <button 
+                           onClick={() => setSettings(prev => ({ ...prev, faqs: prev.faqs.filter((_, i) => i !== index) }))}
+                           className="p-2 text-slate-300 hover:text-red-500 transition-colors border-none bg-transparent cursor-pointer"
+                         >
+                            <Trash2 size={16} />
+                         </button>
+                      </div>
+                   ))}
+                </div>
+
+                {/* Add New FAQ */}
+                <div className="p-6 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/50 space-y-4">
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">New Question</label>
+                      <Input 
+                        placeholder="Enter question text..." 
+                        value={newFaq.q}
+                        onChange={(e) => setNewFaq(prev => ({ ...prev, q: e.target.value }))}
+                        className="rounded-2xl h-11 border-none bg-white shadow-sm font-bold text-xs"
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Answer</label>
+                      <textarea 
+                        placeholder="Provide a clear, helpful answer..."
+                        value={newFaq.a}
+                        onChange={(e) => setNewFaq(prev => ({ ...prev, a: e.target.value }))}
+                        className="w-full bg-white border-none rounded-2xl py-3 px-4 text-xs font-bold text-slate-700 h-24 outline-none focus:ring-4 focus:ring-red-500/5 transition-all shadow-sm"
+                      />
+                   </div>
+                   <Button 
+                     onClick={() => {
+                        if (newFaq.q && newFaq.a) {
+                           setSettings(prev => ({ ...prev, faqs: [...prev.faqs, newFaq] }));
+                           setNewFaq({ q: '', a: '' });
+                        }
+                     }}
+                     className="w-full h-11 rounded-2xl bg-white border border-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 flex items-center justify-center gap-2"
+                   >
+                      <Plus size={16} /> Add FAQ to List
+                   </Button>
+                </div>
+             </div>
+          </Card>
+
           {/* Social Presence */}
           <Card className="p-8 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] bg-white">
              <div className="flex items-center gap-3 mb-8">
@@ -205,6 +295,31 @@ const SystemSettings = () => {
                   icon={<Youtube size={18} className="text-red-600" />} 
                   placeholder="https://youtube.com/@your-brand"
                 />
+             </div>
+          </Card>
+
+          {/* Policy & Terms */}
+          <Card className="p-8 border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2.5rem] bg-white">
+             <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+                   <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight">Legal & Privacy</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Platform terms and user agreements</p>
+                </div>
+             </div>
+
+             <div className="space-y-6">
+                <div className="space-y-2.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Terms & Conditions</label>
+                  <textarea 
+                    value={settings.termsAndConditions}
+                    onChange={(e) => setSettings(prev => ({ ...prev, termsAndConditions: e.target.value }))}
+                    placeholder="Enter your terms and conditions here..."
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 outline-none focus:border-red-100 focus:bg-white focus:ring-8 focus:ring-red-500/5 transition-all shadow-sm min-h-[300px] font-sans"
+                  />
+                </div>
              </div>
           </Card>
         </div>

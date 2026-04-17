@@ -297,7 +297,7 @@ const Login = () => {
       {/* Footer Disclaimer */}
       <p className="mt-8 text-[0.6rem] text-slate-400 font-bold uppercase tracking-widest leading-loose text-center max-w-[300px]">
         By signing in, you agree to our<br/>
-        <span className="text-slate-600">Privacy Policy</span> & <span className="text-slate-600">Terms of Service</span>
+        <span className="text-slate-600">Privacy Policy</span> & <Link to="/terms" className="text-slate-600 underline">Terms of Service</Link>
       </p>
     </div>
   );

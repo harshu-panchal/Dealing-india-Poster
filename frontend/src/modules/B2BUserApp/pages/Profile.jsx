@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Camera, User, Phone, MapPin, Globe, CreditCard, 
   Share2, LogOut, ShieldCheck, Mail, Building2, 
-  Copy, Check, Loader2, Save, X, Upload
+  Copy, Check, Loader2, Save, X, Upload, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -329,6 +329,43 @@ const Profile = () => {
               </div>
             </div>
           </form>
+        </motion.section>
+
+        {/* Legal & Help */}
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
+        >
+          <div className="flex items-center gap-3 mb-6 border-b border-slate-50 pb-5">
+            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+              <ShieldCheck size={20} />
+            </div>
+            <h2 className="text-lg font-black text-slate-800 tracking-tight">Legal & Policies</h2>
+          </div>
+
+          <div className="space-y-3">
+            <button 
+              onClick={() => navigate('/terms')}
+              className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all group border-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <ShieldCheck size={18} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                <span className="text-sm font-bold text-slate-700">Terms & Conditions</span>
+              </div>
+              <ArrowLeft size={16} className="text-slate-300 group-hover:text-slate-500 rotate-180 transition-all" />
+            </button>
+            <button 
+              className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all group border-none cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <ShieldCheck size={18} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                <span className="text-sm font-bold text-slate-700">Privacy Policy</span>
+              </div>
+              <ArrowLeft size={16} className="text-slate-300 group-hover:text-slate-500 rotate-180 transition-all" />
+            </button>
+          </div>
         </motion.section>
 
         {/* Logout Section */}

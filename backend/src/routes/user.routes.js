@@ -4,6 +4,7 @@ import { getPublicEvents, getEventTemplates } from '../controllers/admin.event.c
 import { getPublicCategories, getPublicTemplates, getWhatsNewContent } from '../controllers/user.category.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { getFrames } from '../controllers/frame.controller.js';
+import { toggleLikeTemplate, getLikedTemplates, checkLikedStatus } from '../controllers/like.controller.js';
 
 const router = express.Router();
 
@@ -15,6 +16,11 @@ router.put('/profile', protect, updateProfile);
 router.post('/save-template', protect, saveTemplate);
 router.get('/my-posters', protect, getSavedTemplates);
 router.get('/settings', getPublicSettings);
+
+// Like Routes
+router.post('/templates/:id/like', protect, toggleLikeTemplate);
+router.get('/templates/liked', protect, getLikedTemplates);
+router.post('/templates/check-likes', protect, checkLikedStatus);
 
 // Public Content Routes
 router.get('/categories', getPublicCategories);

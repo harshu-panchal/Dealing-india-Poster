@@ -106,16 +106,39 @@ const PosterEditor = ({ template, onClose }) => {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
   const hasFrameApplied = !!effectiveSelectedFrame;
-  const nameFontClass = hasFrameApplied ? 'text-[0.65rem] lg:text-[1rem]' : 'text-[0.75rem] lg:text-2xl';
-  const detailFontClass = hasFrameApplied ? 'text-[0.45rem] lg:text-[0.7rem]' : 'text-[0.5rem] lg:text-base';
+
+  // Find the full frame object to get text styles
+  const activeFrameObj = frames.find(f => normalizeFrameValue(f) === effectiveSelectedFrame);
+  const frameStyle = activeFrameObj?.textStyle || {};
+
+  const getStyle = (type) => {
+    const isName = type === 'name';
+    return {
+      color: frameStyle.color || '#ffffff',
+      fontSize: isName ? (frameStyle.nameSize || (hasFrameApplied ? '0.65rem' : '0.75rem')) : (frameStyle.detailSize || (hasFrameApplied ? '0.45rem' : '0.5rem')),
+      fontWeight: frameStyle.fontWeight || (isName ? '900' : '700'),
+      textShadow: frameStyle.textShadow || '0 2px 4px rgba(0,0,0,0.8)',
+      textTransform: frameStyle.textTransform || 'uppercase',
+      letterSpacing: frameStyle.letterSpacing === 'tight' ? '-0.02em' : frameStyle.letterSpacing === 'wide' ? '0.05em' : frameStyle.letterSpacing === 'widest' ? '0.1em' : 'normal',
+      whiteSpace: 'nowrap'
+    };
+  };
+
+  const nameFontClass = ''; // Managed via inline style now
+  const detailFontClass = ''; // Managed via inline style now
   
-  // New poster-relative defaults (shifted lower)
-  const nameDefaultY = hasFrameApplied ? '82%' : '80%';
-  const phoneDefaultY = hasFrameApplied ? '86%' : '85%';
-  const websiteDefaultY = hasFrameApplied ? '88%' : '88%';
-  const emailDefaultY = hasFrameApplied ? '90%' : '91%';
-  const addressDefaultY = hasFrameApplied ? '92%' : '94%';
-  const gstDefaultY = hasFrameApplied ? '94%' : '97%';
+  // Frame-defined per-field positions (admin set via drag)
+  const framePos = frameStyle.positions || {};
+
+  // New poster-relative defaults — frame positions take priority
+  const nameDefault      = { x: framePos.name?.x      || '5%', y: framePos.name?.y      || (hasFrameApplied ? '82%' : '80%') };
+  const phoneDefault     = { x: framePos.phone?.x     || '5%', y: framePos.phone?.y     || (hasFrameApplied ? '86%' : '85%') };
+  const websiteDefault   = { x: framePos.website?.x   || '5%', y: framePos.website?.y   || (hasFrameApplied ? '88%' : '88%') };
+  const emailDefault     = { x: framePos.email?.x     || '5%', y: framePos.email?.y     || (hasFrameApplied ? '90%' : '91%') };
+  const addressDefault   = { x: framePos.address?.x   || '5%', y: framePos.address?.y   || (hasFrameApplied ? '92%' : '94%') };
+  const gstDefault       = { x: framePos.gst?.x       || '5%', y: framePos.gst?.y       || (hasFrameApplied ? '94%' : '97%') };
+  const userPhotoDefault = { x: framePos.userPhoto?.x || '70%', y: framePos.userPhoto?.y || (hasFrameApplied ? '74%' : '70%') };
+  const logoDefault      = { x: framePos.logo?.x      || '10%', y: framePos.logo?.y      || (hasFrameApplied ? '80%' : '75%') };
 
   // Migration helper for old pixel-based data
   const migratePos = (val, defaultVal) => {
@@ -128,12 +151,12 @@ const PosterEditor = ({ template, onClose }) => {
     return val;
   };
 
-  const effectiveNamePos = migratePos(localUserData.namePos, { x: '5%', y: nameDefaultY });
-  const effectivePhonePos = migratePos(localUserData.phonePos, { x: '5%', y: phoneDefaultY });
-  const effectiveWebsitePos = migratePos(localUserData.websitePos, { x: '5%', y: websiteDefaultY });
-  const effectiveEmailPos = migratePos(localUserData.emailPos, { x: '5%', y: emailDefaultY });
-  const effectiveAddressPos = migratePos(localUserData.addressPos, { x: '5%', y: addressDefaultY });
-  const effectiveGstPos = migratePos(localUserData.gstPos, { x: '5%', y: gstDefaultY });
+  const effectiveNamePos    = migratePos(localUserData.namePos,    nameDefault);
+  const effectivePhonePos   = migratePos(localUserData.phonePos,   phoneDefault);
+  const effectiveWebsitePos = migratePos(localUserData.websitePos, websiteDefault);
+  const effectiveEmailPos   = migratePos(localUserData.emailPos,   emailDefault);
+  const effectiveAddressPos = migratePos(localUserData.addressPos, addressDefault);
+  const effectiveGstPos     = migratePos(localUserData.gstPos,     gstDefault);
 
   const toPx = (value, axis = 'x', customRef = null) => {
     if (value === undefined || value === null) return 0;
@@ -290,7 +313,12 @@ const PosterEditor = ({ template, onClose }) => {
                          zIndex: 95
                        }}
                      >
-                        <div className={`text-white ${nameFontClass} font-black leading-tight uppercase ${hasFrameApplied ? 'tracking-wide' : 'tracking-wider'} whitespace-nowrap`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                        <div 
+                          className="whitespace-nowrap leading-tight" 
+                          style={{ 
+                            ...getStyle('name')
+                          }}
+                        >
                             {localUserData.business_name || 'Your Business Name'}
                         </div>
                      </motion.div>
@@ -310,7 +338,7 @@ const PosterEditor = ({ template, onClose }) => {
                             zIndex: 95
                           }}
                         >
-                          <div className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-wider'} whitespace-nowrap`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                             {localUserData.phone_number || '9876543210'}
                           </div>
                         </motion.div>
@@ -328,7 +356,7 @@ const PosterEditor = ({ template, onClose }) => {
                             zIndex: 95
                           }}
                         >
-                          <div className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-wider'} whitespace-nowrap`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                             {localUserData.website}
                           </div>
                         </motion.div>
@@ -346,7 +374,7 @@ const PosterEditor = ({ template, onClose }) => {
                             zIndex: 95
                           }}
                         >
-                          <div className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-wider'} whitespace-nowrap`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                             {localUserData.email}
                           </div>
                         </motion.div>
@@ -364,7 +392,7 @@ const PosterEditor = ({ template, onClose }) => {
                             zIndex: 95
                           }}
                         >
-                          <div className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-wider'} whitespace-nowrap`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                             {localUserData.address}
                           </div>
                         </motion.div>
@@ -382,7 +410,7 @@ const PosterEditor = ({ template, onClose }) => {
                             zIndex: 95
                           }}
                         >
-                          <div className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-wider'} whitespace-nowrap`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                             {localUserData.gst_number}
                           </div>
                         </motion.div>
@@ -404,12 +432,12 @@ const PosterEditor = ({ template, onClose }) => {
                {/* Non-Text Interactive Overlays (Stickers, Photos) */}
                <div className="absolute inset-0 z-[80] pointer-events-none">
                  {localUserData.enabledFields?.userPhoto && (
-                   <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('userPhotoPos', getNextPosition(e, info, localUserData.userPhotoPos, { x: '70%', y: hasFrameApplied ? '74%' : '70%' }))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.userPhotoPos?.x || '70%', top: localUserData.userPhotoPos?.y || (hasFrameApplied ? '74%' : '70%'), width: hasFrameApplied ? 62 : 80, height: hasFrameApplied ? 62 : 80, zIndex: 85 }}>
+                   <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('userPhotoPos', getNextPosition(e, info, localUserData.userPhotoPos, userPhotoDefault))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.userPhotoPos?.x || userPhotoDefault.x, top: localUserData.userPhotoPos?.y || userPhotoDefault.y, width: hasFrameApplied ? 62 : 80, height: hasFrameApplied ? 62 : 80, zIndex: 85 }}>
                      <div className="w-full h-full p-1 bg-white rounded-full shadow-2xl border-2 border-white overflow-hidden relative"><img src={localUserData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} className="w-full h-full object-cover rounded-full" crossOrigin="anonymous" /></div>
                    </motion.div>
                  )}
                  {localUserData.enabledFields?.logo && localUserData.logo && (
-                   <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('logoPos', getNextPosition(e, info, localUserData.logoPos, { x: '10%', y: hasFrameApplied ? '80%' : '75%' }))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.logoPos?.x || '10%', top: localUserData.logoPos?.y || (hasFrameApplied ? '80%' : '75%'), width: hasFrameApplied ? 44 : 60, height: hasFrameApplied ? 44 : 60, zIndex: 85 }}>
+                   <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('logoPos', getNextPosition(e, info, localUserData.logoPos, logoDefault))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.logoPos?.x || logoDefault.x, top: localUserData.logoPos?.y || logoDefault.y, width: hasFrameApplied ? 44 : 60, height: hasFrameApplied ? 44 : 60, zIndex: 85 }}>
                      <div className="w-full h-full p-2 bg-white rounded-xl shadow-xl border border-white overflow-hidden"><img src={localUserData.logo} className="w-full h-full object-contain" crossOrigin="anonymous" /></div>
                    </motion.div>
                  )}

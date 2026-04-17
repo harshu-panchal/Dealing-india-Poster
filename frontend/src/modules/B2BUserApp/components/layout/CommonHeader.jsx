@@ -66,8 +66,53 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
              <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-[#3b82f6] text-white px-1.5 py-0.2 rounded-sm text-[0.45rem] font-bold uppercase whitespace-nowrap border-[1px] border-[#b91c1c]">New</div>
           </div>
           
-          <div className="relative text-white flex items-center cursor-pointer">
-             <HelpCircle size={20} />
+          <div className="relative group">
+             <div className="relative text-white flex items-center cursor-pointer p-1">
+                <HelpCircle size={20} />
+             </div>
+             
+             {/* Header Help Dropdown */}
+             <div className="absolute top-[120%] right-0 w-[200px] bg-white rounded-2xl shadow-2xl p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[1001] translate-y-2 group-hover:translate-y-0 border border-slate-100">
+                <button 
+                  onClick={() => navigate('/help')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-slate-600 hover:text-red-600 border-none transition-colors cursor-pointer"
+                >
+                   <div className="w-8 h-8 bg-slate-100 group-hover:bg-red-100 rounded-lg flex items-center justify-center">
+                      <HelpCircle size={16} />
+                   </div>
+                   <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-tight">Help Center</p>
+                      <p className="text-[8px] font-bold opacity-60">Guides & Tutorials</p>
+                   </div>
+                </button>
+
+                <button 
+                  onClick={() => navigate('/help')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 border-none transition-colors cursor-pointer"
+                >
+                   <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                      <Mic size={16} />
+                   </div>
+                   <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-tight">Support</p>
+                      <p className="text-[8px] font-bold opacity-60">Connect with us</p>
+                   </div>
+                </button>
+
+                <div className="h-[1px] bg-slate-100 my-1 mx-2" />
+
+                <button 
+                  onClick={() => navigate('/terms')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 text-slate-600 border-none transition-colors cursor-pointer"
+                >
+                   <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                      <CalendarCheck size={16} />
+                   </div>
+                   <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-tight">Terms</p>
+                   </div>
+                </button>
+             </div>
           </div>
         </div>
       </div>

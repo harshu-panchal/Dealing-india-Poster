@@ -4,7 +4,7 @@ import {
   Globe, LayoutGrid, FolderPlus, Heart, 
   CalendarDays, Settings, Share2, HelpCircle, 
   ThumbsUp, Info, User, X, LogOut, AlertCircle, Award, Briefcase, 
-  MessageSquare, Instagram, Facebook, Youtube
+  MessageSquare, Instagram, Facebook, Youtube, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -46,6 +46,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
     { icon: <User size={20} />, label: "Profile", path: "/profile" },
     { icon: <Globe size={20} />, label: "Make Your Website", color: "text-blue-600", path: "/dashboard" },
     { icon: <Briefcase size={20} />, label: "Business", path: "/categories" },
+    { icon: <Heart size={20} />, label: "Liked Posters", path: "/liked-posters" },
     { icon: <FolderPlus size={20} />, label: "Collections", path: "/my-posters" },
     { icon: <Heart size={20} />, label: "Trending", path: "/trending" },
     { icon: <CalendarDays size={20} />, label: "Events Calendar", path: "/calendar" },
@@ -54,12 +55,27 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
     { icon: <Settings size={20} />, label: "Settings", path: "/dashboard" },
 
     { 
+        id: 'help-group',
         icon: <HelpCircle size={20} />, 
-        label: "Help Center", 
-        path: "/help"
+        label: "Help & Support", 
+        isGroup: true,
+        subItems: [
+           { 
+               icon: <HelpCircle size={16} />, 
+               label: "How to use app", 
+               path: "/help?tab=faq"
+           },
+           { 
+               icon: <MessageSquare size={16} />, 
+               label: "Direct Support", 
+               path: "/help?tab=support"
+           }
+        ]
     },
     { icon: <LogOut size={20} />, label: "Logout", color: "text-red-500", onClick: () => setShowLogoutModal(true) },
   ];
+
+  const [isHelpExpanded, setIsHelpExpanded] = useState(false);
 
   const sidebarContent = (
     <div className={`${isPersistent ? 'relative h-full' : 'fixed top-0 left-0 bottom-0'} w-[280px] bg-white z-[2001] shadow-xl flex flex-col border-r border-[#f1f5f9]`}>
@@ -98,32 +114,84 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
       {/* Menu List */}
       <div className="flex-1 overflow-y-auto py-2">
         <div className="flex flex-col">
-          {menuItems.map((item, index) => (
-            <button 
-              key={index}
-              onClick={() => {
-                if (item.onClick) {
-                  item.onClick();
-                  if (!isPersistent && !item.label.includes('Logout')) onClose();
-                  return;
-                }
-                if (item.path) {
-                  navigate(item.path);
-                  if (!isPersistent) onClose();
-                }
-              }}
-              className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group ${location.pathname === item.path ? 'bg-gray-50' : ''}`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`${item.color || (location.pathname === item.path ? 'text-[#ef4444]' : "text-[#64748b]")} transition-colors`}>
-                  {item.icon}
+          {menuItems.map((item, index) => {
+            if (item.isGroup) {
+               return (
+                  <div key={index} className="flex flex-col">
+                     <button 
+                       onClick={() => setIsHelpExpanded(!isHelpExpanded)}
+                       className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group`}
+                     >
+                        <div className="flex items-center gap-4 text-[#334155]">
+                           <div className="text-[#64748b] group-hover:text-[#ef4444] transition-colors">
+                             {item.icon}
+                           </div>
+                           <span className="text-[0.92rem] font-bold group-hover:text-[#ef4444] transition-colors">
+                             {item.label}
+                           </span>
+                        </div>
+                        <ChevronDown size={16} className={`text-[#64748b] transition-transform duration-300 ${isHelpExpanded ? 'rotate-180' : ''}`} />
+                     </button>
+                     
+                     <AnimatePresence>
+                        {isHelpExpanded && (
+                           <motion.div 
+                             initial={{ height: 0, opacity: 0 }}
+                             animate={{ height: 'auto', opacity: 1 }}
+                             exit={{ height: 0, opacity: 0 }}
+                             className="overflow-hidden bg-slate-50/50"
+                           >
+                              {item.subItems.map((sub, sIdx) => (
+                                 <button 
+                                   key={sIdx}
+                                   onClick={() => {
+                                      navigate(sub.path);
+                                      if (!isPersistent) onClose();
+                                   }}
+                                   className={`flex items-center gap-4 pl-14 pr-6 py-2.5 hover:bg-red-50/50 transition-colors border-none bg-transparent group`}
+                                 >
+                                    <div className={`text-[#94a3b8] group-hover:text-[#ef4444] transition-colors`}>
+                                       {sub.icon}
+                                    </div>
+                                    <span className="text-[0.85rem] font-bold text-slate-500 group-hover:text-[#ef4444] transition-colors">
+                                       {sub.label}
+                                    </span>
+                                 </button>
+                              ))}
+                           </motion.div>
+                        )}
+                     </AnimatePresence>
+                  </div>
+               );
+            }
+
+            return (
+              <button 
+                key={index}
+                onClick={() => {
+                  if (item.onClick) {
+                    item.onClick();
+                    if (!isPersistent && !item.label.includes('Logout')) onClose();
+                    return;
+                  }
+                  if (item.path) {
+                    navigate(item.path);
+                    if (!isPersistent) onClose();
+                  }
+                }}
+                className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group ${location.pathname === item.path ? 'bg-gray-50' : ''}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`${item.color || (location.pathname === item.path ? 'text-[#ef4444]' : "text-[#64748b]")} transition-colors`}>
+                    {item.icon}
+                  </div>
+                  <span className={`text-[0.92rem] font-bold ${location.pathname === item.path ? 'text-[#ef4444]' : "text-[#334155]"} transition-colors`}>
+                    {item.label}
+                  </span>
                 </div>
-                <span className={`text-[0.92rem] font-bold ${location.pathname === item.path ? 'text-[#ef4444]' : "text-[#334155]"} transition-colors`}>
-                  {item.label}
-                </span>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
 

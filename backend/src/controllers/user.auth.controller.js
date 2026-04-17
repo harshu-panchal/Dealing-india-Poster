@@ -356,10 +356,14 @@ export const getPublicSettings = async (req, res) => {
   try {
     const referralPointsSetting = await Settings.findOne({ key: 'referralPoints' });
     const supportContact = await Settings.findOne({ key: 'supportContact' });
+    const termsAndConditions = await Settings.findOne({ key: 'termsAndConditions' });
     const socialLinks = await Settings.findOne({ key: 'socialLinks' });
+    const faqs = await Settings.findOne({ key: 'faqs' });
     
     res.status(200).json({
       referralPoints: referralPointsSetting ? parseInt(referralPointsSetting.value) : 10,
+      termsAndConditions: termsAndConditions ? termsAndConditions.value : '',
+      faqs: faqs ? faqs.value : [],
       supportContact: supportContact ? supportContact.value : {
         email: 'support@appzeto.com',
         phone: '+91 9111111111',

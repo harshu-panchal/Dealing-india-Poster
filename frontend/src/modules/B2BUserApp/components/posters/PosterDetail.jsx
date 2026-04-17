@@ -1,8 +1,10 @@
-import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star, Mail, MapPin, Hash, Palette } from 'lucide-react';
+import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star, Mail, MapPin, Hash, Palette, Move, Save, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
+import { useAuth } from '../../context/AuthContext';
 import VideoEditor from '../editor/VideoEditor';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import axios from 'axios';
 
 const ActionIcon = ({ icon: Icon, label, color, onClick }) => (
   <div 
@@ -18,8 +20,90 @@ const ActionIcon = ({ icon: Icon, label, color, onClick }) => (
 
 const PosterDetail = ({ template, onEdit, onClose }) => {
   const { userData: globalUserData, frames, selectedFrame, setSelectedFrame } = useEditor();
+  const { user } = useAuth();
   const [showVideoEditor, setShowVideoEditor] = useState(false);
-  const posterRef = useRef(null);
+  const posterRef = useRef(null);         // for html2canvas
+  const posterContainerRef = useRef(null); // for drag coordinate system
+  const dragRef = useRef(null);           // active drag tracking
+  const [containerWidth, setContainerWidth] = useState(500);
+
+  useEffect(() => {
+    if (!posterContainerRef.current) return;
+    const obs = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    obs.observe(posterContainerRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  // Tracks positions the user has manually dragged in this view
+  const [localPos, setLocalPos] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const hasDragged = Object.keys(localPos).length > 0;
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+
+  // ── Pointer-based drag handlers (no framer-motion, no snapping) ──────────
+  const onPointerDown = useCallback((e, field, currentPos) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      field,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startXPct: parseFloat(currentPos.x) || 0,
+      startYPct: parseFloat(currentPos.y) || 0,
+    };
+  }, []);
+
+  const onPointerMove = useCallback((e, field) => {
+    const d = dragRef.current;
+    if (!d || d.field !== field || !posterContainerRef.current) return;
+    e.preventDefault();
+    const { width, height } = posterContainerRef.current.getBoundingClientRect();
+    const dx = ((e.clientX - d.startClientX) / width) * 100;
+    const dy = ((e.clientY - d.startClientY) / height) * 100;
+    const newX = Math.max(0, Math.min(92, d.startXPct + dx));
+    const newY = Math.max(0, Math.min(96, d.startYPct + dy));
+    setLocalPos(prev => ({ ...prev, [field]: { x: `${newX.toFixed(1)}%`, y: `${newY.toFixed(1)}%` } }));
+  }, []);
+
+  const onPointerUp = useCallback(() => { dragRef.current = null; }, []);
+
+  // Merge user-dragged positions into customData and persist
+  const saveLayout = async () => {
+    if (!user?.accessToken) { alert('Please log in to save'); return; }
+    const currentTemplate = template.templateId && typeof template.templateId === 'object' ? template.templateId : template;
+    const existingCustom = template.customData || {};
+    const merged = {
+      ...existingCustom,
+      ...(localPos.name    && { namePos:    localPos.name }),
+      ...(localPos.phone   && { phonePos:   localPos.phone }),
+      ...(localPos.website && { websitePos: localPos.website }),
+      ...(localPos.email   && { emailPos:   localPos.email }),
+      ...(localPos.address && { addressPos: localPos.address }),
+      ...(localPos.gst     && { gstPos:     localPos.gst }),
+      ...(localPos.photo   && { userPhotoPos: localPos.photo }),
+      ...(localPos.logo    && { logoPos:    localPos.logo }),
+    };
+    try {
+      setIsSaving(true);
+      await axios.post(`${API_URL}/user/save-template`, {
+        templateId: currentTemplate._id,
+        customData: merged,
+      }, { headers: { Authorization: `Bearer ${user.accessToken}` } });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      alert('Save failed. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const cleanUrl = (url) => {
     if (!url || url.includes('default_logo.png')) return null;
@@ -43,16 +127,42 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   };
   const activeFrame = normalizeFrameValue(userData.selectedFrame) || normalizeFrameValue(selectedFrame);
   const hasFrameApplied = !!activeFrame;
-  const nameFontClass = hasFrameApplied ? 'text-[0.65rem] lg:text-[1rem]' : 'text-[0.75rem] lg:text-2xl';
-  const detailFontClass = hasFrameApplied ? 'text-[0.45rem] lg:text-[0.7rem]' : 'text-[0.5rem] lg:text-base';
-  
-  // Poster-relative defaults (shifted lower)
-  const nameDefaultY = hasFrameApplied ? '82%' : '80%';
-  const phoneDefaultY = hasFrameApplied ? '86%' : '85%';
-  const websiteDefaultY = hasFrameApplied ? '88%' : '88%';
-  const emailDefaultY = hasFrameApplied ? '90%' : '91%';
-  const addressDefaultY = hasFrameApplied ? '92%' : '94%';
-  const gstDefaultY = hasFrameApplied ? '93%' : '96%';
+
+  // Find the full frame object to get text styles
+  const activeFrameObj = frames.find(f => normalizeFrameValue(f) === activeFrame);
+  const frameStyle = activeFrameObj?.textStyle || {};
+
+  const getStyle = (type) => {
+    const isName = type === 'name';
+    const scale = containerWidth / 500;
+    const baseSize = isName ? (frameStyle.nameSize || '0.8rem') : (frameStyle.detailSize || '0.6rem');
+    
+    return {
+      color: frameStyle.color || '#ffffff',
+      fontSize: `calc(${baseSize} * ${scale})`,
+      fontWeight: frameStyle.fontWeight || (isName ? '900' : '700'),
+      textShadow: frameStyle.textShadow || '0 2px 4px rgba(0,0,0,0.8)',
+      textTransform: frameStyle.textTransform || 'uppercase',
+      letterSpacing: frameStyle.letterSpacing === 'tight' ? '-0.02em' : frameStyle.letterSpacing === 'wide' ? '0.05em' : frameStyle.letterSpacing === 'widest' ? '0.1em' : 'normal',
+      whiteSpace: 'nowrap'
+    };
+  };
+
+  const nameFontClass = ''; // Managed via inline style now
+  const detailFontClass = ''; // Managed via inline style now
+
+  // Frame-defined per-field positions (admin set via drag)
+  const framePos = frameStyle.positions || {};
+
+  // Poster-relative defaults — frame positions take priority over hardcoded fallbacks
+  const nameDefault      = { x: framePos.name?.x      || '5%', y: framePos.name?.y      || (hasFrameApplied ? '82%' : '80%') };
+  const phoneDefault     = { x: framePos.phone?.x     || '5%', y: framePos.phone?.y     || (hasFrameApplied ? '86%' : '85%') };
+  const websiteDefault   = { x: framePos.website?.x   || '5%', y: framePos.website?.y   || (hasFrameApplied ? '88%' : '88%') };
+  const emailDefault     = { x: framePos.email?.x     || '5%', y: framePos.email?.y     || (hasFrameApplied ? '90%' : '91%') };
+  const addressDefault   = { x: framePos.address?.x   || '5%', y: framePos.address?.y   || (hasFrameApplied ? '92%' : '94%') };
+  const gstDefault       = { x: framePos.gst?.x       || '5%', y: framePos.gst?.y       || (hasFrameApplied ? '93%' : '96%') };
+  const userPhotoDefault = { x: framePos.userPhoto?.x || '70%', y: framePos.userPhoto?.y || (hasFrameApplied ? '74%' : '70%') };
+  const logoDefault      = { x: framePos.logo?.x      || '10%', y: framePos.logo?.y      || (hasFrameApplied ? '80%' : '75%') };
 
   // Migration helper for old pixel-based data
   const migratePos = (val, defaultVal) => {
@@ -65,12 +175,12 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     return val;
   };
 
-  const effectiveNamePos = migratePos(userData.namePos, { x: '5%', y: nameDefaultY });
-  const effectivePhonePos = migratePos(userData.phonePos, { x: '5%', y: phoneDefaultY });
-  const effectiveWebsitePos = migratePos(userData.websitePos, { x: '5%', y: websiteDefaultY });
-  const effectiveEmailPos = migratePos(userData.emailPos, { x: '5%', y: emailDefaultY });
-  const effectiveAddressPos = migratePos(userData.addressPos, { x: '5%', y: addressDefaultY });
-  const effectiveGstPos = migratePos(userData.gstPos, { x: '5%', y: gstDefaultY });
+  const effectiveNamePos    = migratePos(userData.namePos,    nameDefault);
+  const effectivePhonePos   = migratePos(userData.phonePos,   phoneDefault);
+  const effectiveWebsitePos = migratePos(userData.websitePos, websiteDefault);
+  const effectiveEmailPos   = migratePos(userData.emailPos,   emailDefault);
+  const effectiveAddressPos = migratePos(userData.addressPos, addressDefault);
+  const effectiveGstPos     = migratePos(userData.gstPos,     gstDefault);
 
   const inlineSafeColorsForHtml2Canvas = (rootElement) => {
     if (!rootElement) return () => {};
@@ -214,151 +324,192 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
 
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-slate-50">
           <div className="bg-[#f1f5f9] flex items-center justify-center p-4 min-h-[400px]">
-             {/* Captured Area */}
-            <div ref={posterRef} className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl flex items-center justify-center border border-[#e2e8f0]" style={{ backgroundColor: '#ffffff' }}>
+             {/* Captured Area — dual refs: posterRef for canvas export, posterContainerRef for drag math */}
+            <div
+              ref={(el) => { posterRef.current = el; posterContainerRef.current = el; }}
+              className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl flex items-center justify-center border border-[#e2e8f0]"
+              style={{ backgroundColor: '#ffffff' }}
+            >
                {/* Poster Background */}
-               <img 
-                 src={currentTemplate.image} 
-                 alt={currentTemplate.title} 
+               <img
+                 src={currentTemplate.image}
+                 alt={currentTemplate.title}
                  crossOrigin="anonymous"
-                 className="w-full h-full object-cover relative z-[1]" 
+                 className="w-full h-full object-cover relative z-[1]"
                />
-               
-               {/* Frame Layer (Middle) */}
+
+               {/* Frame Layer */}
                {activeFrame && (
-                 <img 
-                   src={activeFrame} 
-                   className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
+                 <img
+                   src={activeFrame}
+                   className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]"
                    alt="Frame Overlay"
                    crossOrigin="anonymous"
                  />
                )}
 
-               {/* Dedicated Content Layer (Top) */}
-               <div className="text-layer absolute inset-0 z-[75] pointer-events-none">
-                   {/* Branding items - relative to whole poster */}
-                   {userData.enabledFields?.business_name !== false && (
-                     <div 
-                       className={`text-white ${nameFontClass} font-black leading-tight uppercase ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`} 
-                       style={{ 
-                         left: effectiveNamePos.x, 
-                         top: effectiveNamePos.y, 
-                         textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-                         whiteSpace: 'nowrap'
-                       }}
+               {/* ── Draggable Text Layer ── */}
+               <div className="text-layer absolute inset-0 z-[75]">
+
+                 {/* Name */}
+                 {userData.enabledFields?.business_name !== false && (() => {
+                   const pos = localPos.name || effectiveNamePos;
+                   return (
+                     <div
+                       className="absolute leading-tight"
+                       style={{ ...getStyle('name'), left: pos.x, top: pos.y, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'name', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'name')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
                      >
-                         {userData.business_name || 'Your Business Name'}
+                       {userData.business_name || 'Your Business Name'}
                      </div>
-                   )}
-                   <div className="flex flex-col relative h-full">
-                      {userData.enabledFields?.phone && (
-                        <div 
-                          className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} uppercase absolute`} 
-                          style={{ 
-                            left: effectivePhonePos.x, 
-                            top: effectivePhonePos.y, 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
-                            whiteSpace: 'nowrap' 
-                          }}
-                        >
-                          {userData.phone_number || '9876543210'}
-                        </div>
-                      )}
-                      {userData.enabledFields?.website && userData.website && (
-                        <div 
-                          className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`} 
-                          style={{ 
-                            left: effectiveWebsitePos.x, 
-                            top: effectiveWebsitePos.y, 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
-                            whiteSpace: 'nowrap' 
-                          }}
-                        >
-                          {userData.website}
-                        </div>
-                      )}
-                      {userData.enabledFields?.email && userData.email && (
-                        <div 
-                          className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`} 
-                          style={{ 
-                            left: effectiveEmailPos.x, 
-                            top: effectiveEmailPos.y, 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
-                            whiteSpace: 'nowrap' 
-                          }}
-                        >
-                          {userData.email}
-                        </div>
-                      )}
-                      {userData.enabledFields?.address && userData.address && (
-                        <div 
-                          className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`} 
-                          style={{ 
-                            left: effectiveAddressPos.x, 
-                            top: effectiveAddressPos.y, 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
-                            whiteSpace: 'nowrap' 
-                          }}
-                        >
-                          {userData.address}
-                        </div>
-                      )}
-                      {(userData.enabledFields?.gst || (userData.gst_number || '').trim()) && (
-                        <div 
-                          className={`text-white ${detailFontClass} font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} uppercase absolute`} 
-                          style={{ 
-                            left: effectiveGstPos.x, 
-                            top: effectiveGstPos.y, 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
-                            whiteSpace: 'nowrap' 
-                          }}
-                        >
-                          {userData.gst_number}
-                        </div>
-                      )}
-                   </div>
+                   );
+                 })()}
 
-                   {/* Visual Reference Only branding bar */}
-                   <div className="absolute bottom-0 left-0 right-0 h-[50px] lg:h-[100px] flex items-center px-4 lg:px-8 pointer-events-none">
-                   </div>
+                 {/* Phone */}
+                 {userData.enabledFields?.phone && (() => {
+                   const pos = localPos.phone || effectivePhonePos;
+                   return (
+                     <div
+                       className="absolute"
+                       style={{ ...getStyle('phone'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'phone', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'phone')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       {userData.phone_number || '9876543210'}
+                     </div>
+                   );
+                 })()}
 
-                  {/* Extra Texts */}
-                  {userData.extraTexts?.map(t => (
-                    <div key={t.id} className="absolute font-black" style={{ left: t.x || '40%', top: t.y || '40%', color: t.color, fontSize: `${t.size}px`, textShadow: '0 2px 4px rgba(0,0,0,0.8)', zIndex: 90, whiteSpace: 'nowrap' }}>
-                      {t.text}
-                    </div>
-                  ))}
+                 {/* Website */}
+                 {userData.enabledFields?.website && userData.website && (() => {
+                   const pos = localPos.website || effectiveWebsitePos;
+                   return (
+                     <div
+                       className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`}
+                       style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'website', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'website')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       {userData.website}
+                     </div>
+                   );
+                 })()}
+
+                 {/* Email */}
+                 {userData.enabledFields?.email && userData.email && (() => {
+                   const pos = localPos.email || effectiveEmailPos;
+                   return (
+                     <div
+                       className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`}
+                       style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'email', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'email')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       {userData.email}
+                     </div>
+                   );
+                 })()}
+
+                 {/* Address */}
+                 {userData.enabledFields?.address && userData.address && (() => {
+                   const pos = localPos.address || effectiveAddressPos;
+                   return (
+                     <div
+                       className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`}
+                       style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'address', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'address')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       {userData.address}
+                     </div>
+                   );
+                 })()}
+
+                 {/* GST */}
+                 {(userData.enabledFields?.gst || (userData.gst_number || '').trim()) && (() => {
+                   const pos = localPos.gst || effectiveGstPos;
+                   return (
+                     <div
+                       className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} uppercase absolute`}
+                       style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'gst', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'gst')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       {userData.gst_number}
+                     </div>
+                   );
+                 })()}
+
+                 {/* Extra Texts (non-draggable, managed via editor) */}
+                 {userData.extraTexts?.map(t => (
+                   <div key={t.id} className="absolute font-black pointer-events-none" style={{ left: t.x || '40%', top: t.y || '40%', color: t.color, fontSize: `${t.size}px`, textShadow: '0 2px 4px rgba(0,0,0,0.8)', zIndex: 90, whiteSpace: 'nowrap' }}>
+                     {t.text}
+                   </div>
+                 ))}
                </div>
 
-               {/* Stickers & Photos Layer */}
-               <div className="absolute inset-0 z-[80] pointer-events-none">
-                 {userData.enabledFields?.userPhoto && (
-                   <div className="absolute" style={{ left: userData.userPhotoPos?.x || '70%', top: userData.userPhotoPos?.y || (hasFrameApplied ? '74%' : '70%'), width: hasFrameApplied ? '14%' : '18%', height: hasFrameApplied ? '14%' : '18%', zIndex: 85 }}>
-                     <img 
-                       src={userData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} 
-                       className="w-full h-full rounded-full border-2 border-white object-cover shadow-xl" 
-                       crossOrigin="anonymous" 
-                     />
+               {/* ── Draggable Photos Layer ── */}
+               <div className="absolute inset-0 z-[80]">
+
+                 {/* Profile Photo */}
+                 {userData.enabledFields?.userPhoto && (() => {
+                   const pos = localPos.photo || { x: userData.userPhotoPos?.x || userPhotoDefault.x, y: userData.userPhotoPos?.y || userPhotoDefault.y };
+                   const dim = hasFrameApplied ? '14%' : '18%';
+                   return (
+                     <div
+                       className="absolute"
+                       style={{ left: pos.x, top: pos.y, width: dim, height: dim, zIndex: 85, cursor: 'grab', touchAction: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'photo', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'photo')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       <img
+                         src={userData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}
+                         className="w-full h-full rounded-full border-2 border-white object-cover shadow-xl"
+                         crossOrigin="anonymous"
+                       />
+                     </div>
+                   );
+                 })()}
+
+                 {/* Logo */}
+                 {userData.enabledFields?.logo && userData.logo && (() => {
+                   const pos = localPos.logo || { x: userData.logoPos?.x || logoDefault.x, y: userData.logoPos?.y || logoDefault.y };
+                   const dim = hasFrameApplied ? '9%' : '12%';
+                   return (
+                     <div
+                       className="absolute"
+                       style={{ left: pos.x, top: pos.y, width: dim, height: dim, zIndex: 85, cursor: 'grab', touchAction: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'logo', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'logo')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       <img src={userData.logo} className="w-full h-full object-contain bg-white rounded-lg p-1 shadow-lg" crossOrigin="anonymous" />
+                     </div>
+                   );
+                 })()}
+
+                 {/* Extra Photos (non-draggable here) */}
+                 {userData.extraPhotos?.map(p => (
+                   <div key={p.id} className="absolute pointer-events-none" style={{ left: p.x || '50%', top: p.y || '30%', width: p.size, height: p.size, zIndex: 82 }}>
+                     <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
                    </div>
-                 )}
-                 {userData.enabledFields?.logo && userData.logo && (
-                   <div className="absolute" style={{ left: userData.logoPos?.x || '10%', top: userData.logoPos?.y || (hasFrameApplied ? '80%' : '75%'), width: hasFrameApplied ? '9%' : '12%', height: hasFrameApplied ? '9%' : '12%', zIndex: 85 }}>
-                     <img src={userData.logo} className="w-full h-full object-contain bg-white rounded-lg p-1 shadow-lg" crossOrigin="anonymous" />
+                 ))}
+                 {userData.stickers?.map(s => (
+                   <div key={s.id} className="absolute pointer-events-none" style={{ left: s.x || '20%', top: s.y || '20%', width: s.size, height: s.size, zIndex: 80 }}>
+                     <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />
                    </div>
-                 )}
-                  {userData.extraPhotos?.map(p => (
-                    <div key={p.id} className="absolute" style={{ left: p.x || '50%', top: p.y || '30%', width: p.size, height: p.size, zIndex: 82 }}>
-                      <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
-                    </div>
-                  ))}
-                  {userData.stickers?.map(s => (
-                    <div key={s.id} className="absolute" style={{ left: s.x || '20%', top: s.y || '20%', width: s.size, height: s.size, zIndex: 80 }}>
-                      <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />
-                    </div>
-                  ))}
+                 ))}
                </div>
 
-               {/* Fallback Branding Bar (only if no frame) */}
+               {/* Fallback Branding Bar */}
                {!hasFrameApplied && (
                  <div className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-none w-full">
                    <div 

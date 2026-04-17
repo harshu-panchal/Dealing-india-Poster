@@ -3,14 +3,17 @@ import { Heart, ChevronRight, Video, User, MessageCircle, Search, Mic, Layers } 
 import SectionHeader from '../components/common/SectionHeader';
 import HorizontalScrollList from '../components/common/HorizontalScrollList';
 import TemplateCard from '../components/posters/TemplateCard';
+import POTDCard from '../components/posters/POTDCard';
 import ShimmerLoader from '../components/common/ShimmerLoader';
 import SearchBar from '../components/common/SearchBar';
 import axios from 'axios';
 import { useEditor } from '../context/EditorContext';
+import { useAuth } from '../context/AuthContext';
 import SubcategoryCard from '../components/posters/SubcategoryCard';
 
 const ForYou = () => {
   const { openDetail } = useEditor();
+  const { user } = useAuth();
   const [categories, setCategories] = useState([]);
   const [sections, setSections] = useState([]);
   const [specialItems, setSpecialItems] = useState([]);
@@ -20,6 +23,8 @@ const ForYou = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [videoPosters, setVideoPosters] = useState([]);
   const [allTemplates, setAllTemplates] = useState([]);
+  const [potdTemplate, setPotdTemplate] = useState(null);
+  const [showAllSpecials, setShowAllSpecials] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -45,6 +50,19 @@ const ForYou = () => {
       setAllTemplates(templates);
       setVideoPosters(templates.filter(t => t.isVideo));
       
+      // Fetch Poster of the Day
+      try {
+        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=1`);
+        if (potdData.templates && potdData.templates.length > 0) {
+          setPotdTemplate(potdData.templates[0]);
+        } else {
+          // Fallback to most liked or first template
+          setPotdTemplate(templates[0]);
+        }
+      } catch (e) {
+        setPotdTemplate(templates[0]);
+      }
+
       // Organize Sections
       const organizedSections = catData.map(cat => ({
         id: cat._id,
@@ -65,25 +83,47 @@ const ForYou = () => {
     fetchData();
   }, [fetchData]);
 
-  const renderPOTDCard = (tpl, index) => {
+  const handleLikePOTD = async (e) => {
+    e.stopPropagation();
+    if (!user?.accessToken || !potdTemplate) return;
+
+    try {
+      const { data } = await axios.post(`${API_URL}/user/templates/${potdTemplate._id}/like`, {}, {
+        headers: { Authorization: `Bearer ${user.accessToken}` }
+      });
+      setPotdTemplate(prev => ({
+        ...prev,
+        isLiked: data.liked,
+        likeCount: data.liked ? (prev.likeCount || 0) + 1 : (prev.likeCount || 0) - 1
+      }));
+    } catch (err) {
+      console.error('POTD Like failed:', err);
+    }
+  };
+
+  const renderPOTDCard = (tpl) => {
     if (!tpl) return null;
     return (
-      <div className="potd-card-wrapper mb-2 lg:mb-0 lg:max-w-full lg:m-0 overflow-hidden" key={`potd-${tpl._id}-${index}`}>
-        <section className="bg-white py-2 mb-1 lg:p-0 lg:m-0 lg:bg-transparent">
-          <SectionHeader
-            title="Poster of the Day"
-            rightContent={
-              <div className="flex items-center gap-1.5 text-slate-500 text-[0.85rem] lg:text-base font-bold">
-                <Heart size={18} className="lg:w-5 lg:h-5" /> <span>{Math.floor(Math.random() * 500) + 200}</span>
-                <ChevronRight size={18} className="ml-2 lg:w-6 lg:h-6" />
-              </div>
-            }
-          />
-          <div className="px-2 lg:p-0 relative group">
-            <TemplateCard template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
+      <div className="potd-card-wrapper mb-8 lg:mb-12 lg:max-w-4xl lg:mx-auto px-4 lg:px-0">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] leading-none mb-2">Featured Collection</p>
+              <h2 className="text-2xl lg:text-3xl font-black text-slate-800 tracking-tight">Poster of the Day</h2>
+            </div>
+            
+            {tpl && (
+               <button 
+                 onClick={handleLikePOTD}
+                 className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-all"
+               >
+                 <Heart size={20} className={tpl.isLiked ? 'fill-red-500 text-red-500' : 'text-slate-300'} />
+                 <span className="font-black text-slate-700">{tpl.likeCount || 0}</span>
+               </button>
+            )}
           </div>
-        </section>
-        <div className="h-2 bg-[#f1f5f9] lg:hidden"></div>
+          <POTDCard poster={tpl} onEdit={openDetail} />
+        </div>
       </div>
     );
   };
@@ -191,31 +231,60 @@ const ForYou = () => {
              {/* 1. Today's Special (Mixed subcategories with Category Name overlay) */}
              <section className="bg-white py-6 mb-2 border-b border-slate-50">
                 <div className="w-full lg:px-4">
-                  <SectionHeader title="Today's Special" showViewAll={true} />
-                  <HorizontalScrollList className="pt-2">
-                     {specialItems.length > 0 ? specialItems.map((sub, i) => (
+                  <SectionHeader 
+                    title="Today's Special" 
+                    showViewAll={true} 
+                    onViewAll={() => setShowAllSpecials(!showAllSpecials)}
+                  />
+                  <div className="px-4 lg:px-0">
+                    <HorizontalScrollList className="pt-2">
+                       {specialItems.length > 0 ? specialItems.map((sub, i) => (
+                          <div 
+                            key={`${sub._id}-${i}`} 
+                            onClick={() => {
+                               setActiveCategory(sub.parentId);
+                               setActiveSubcategory(sub._id);
+                            }}
+                            className="min-w-[140px] w-[140px] aspect-square rounded-2xl overflow-hidden bg-slate-100 relative cursor-pointer group shadow-sm active:scale-95 transition-all"
+                          >
+                             <img src={sub.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={sub.name} />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3">
+                                <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none mb-1 opacity-70">{sub.parentName}</p>
+                                <h4 className="text-[0.7rem] font-bold text-white truncate">{sub.name}</h4>
+                             </div>
+                          </div>
+                       )) : (
+                          <div className="flex flex-col items-center justify-center w-full py-10 opacity-40">
+                             <p className="text-[0.6rem] font-black uppercase tracking-widest">No Features Today</p>
+                          </div>
+                       )}
+                    </HorizontalScrollList>
+                  </div>
+
+                  {showAllSpecials && (
+                    <div className="mt-6 px-4 lg:px-0 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      {specialItems.map((sub, i) => (
                         <div 
-                          key={`${sub._id}-${i}`} 
-                          onClick={() => {
-                             setActiveCategory(sub.parentId);
-                             setActiveSubcategory(sub._id);
-                          }}
-                          className="min-w-[140px] w-[140px] aspect-square rounded-2xl overflow-hidden bg-slate-100 relative cursor-pointer group shadow-sm active:scale-95 transition-all"
+                           key={`grid-${sub._id}-${i}`}
+                           onClick={() => {
+                              setActiveCategory(sub.parentId);
+                              setActiveSubcategory(sub._id);
+                           }}
+                           className="flex flex-col gap-2 cursor-pointer group"
                         >
-                           <img src={sub.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={sub.name} />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3">
-                              <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none mb-1 opacity-70">{sub.parentName}</p>
-                              <h4 className="text-[0.7rem] font-bold text-white truncate">{sub.name}</h4>
+                           <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-50">
+                              <img src={sub.image} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500" alt="" />
                            </div>
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{sub.name}</span>
                         </div>
-                     )) : (
-                        <div className="flex flex-col items-center justify-center w-full py-10 opacity-40">
-                           <p className="text-[0.6rem] font-black uppercase tracking-widest">No Features Today</p>
-                        </div>
-                     )}
-                  </HorizontalScrollList>
+                      ))}
+                    </div>
+                  )}
                 </div>
              </section>
+
+             {/* 1.5 Poster of the Day */}
+             {renderPOTDCard(potdTemplate)}
 
              {/* 2. Initial High-Impact Posters (Grid of 3 on desktop) */}
              <div className="bg-white py-4 lg:px-4 mb-2 border-b border-slate-50">
