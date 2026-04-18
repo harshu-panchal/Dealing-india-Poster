@@ -25,18 +25,34 @@ const BrandingOverlay = ({ userData = {}, size = 'regular' }) => {
       >
         {/* Left Details */}
         <div className={`flex-1 flex flex-col justify-center ${isCompact ? 'px-1.5' : 'px-2 lg:px-4'} min-w-0 relative`}>
-          <div 
-            className={`${nameSizeClass} font-black text-white leading-tight uppercase tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-            style={{ 
-              textShadow: hasFrame ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-              left: hasFrame && userData.namePos ? userData.namePos.x : 'auto',
-              top: hasFrame && userData.namePos ? userData.namePos.y : 'auto',
-              whiteSpace: 'nowrap',
-              zIndex: 95
-            }}
-          >
-            {userData.business_name || ''}
-          </div>
+          {userData.enabledFields?.name !== false && (
+            <div 
+              className={`${nameSizeClass} font-black text-white leading-tight uppercase tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
+              style={{ 
+                textShadow: hasFrame ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
+                left: hasFrame && userData.namePos ? userData.namePos.x : 'auto',
+                top: hasFrame && userData.namePos ? userData.namePos.y : 'auto',
+                whiteSpace: 'nowrap',
+                zIndex: 95
+              }}
+            >
+              {userData.name || ''}
+            </div>
+          )}
+          {userData.enabledFields?.business_name !== false && (
+            <div 
+              className={`${nameSizeClass} font-black text-white leading-tight uppercase tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
+              style={{ 
+                textShadow: hasFrame ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
+                left: hasFrame && userData.businessNamePos ? userData.businessNamePos.x : 'auto',
+                top: hasFrame && userData.businessNamePos ? userData.businessNamePos.y : 'auto',
+                whiteSpace: 'nowrap',
+                zIndex: 95
+              }}
+            >
+              {userData.business_name || ''}
+            </div>
+          )}
            <div className="flex flex-col mt-0.5 relative h-full">
              <span 
                className={`${phoneSizeClass} text-white font-bold tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 

@@ -15,14 +15,15 @@ import axios from 'axios';
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const DEFAULT_POSITIONS = {
-  name:      { x: '5%',  y: '82%' },
-  phone:     { x: '5%',  y: '86%' },
-  website:   { x: '5%',  y: '88%' },
-  email:     { x: '5%',  y: '90%' },
-  address:   { x: '5%',  y: '92%' },
-  gst:       { x: '5%',  y: '94%' },
-  userPhoto: { x: '70%', y: '74%' },
-  logo:      { x: '5%',  y: '74%' },
+  name:          { x: '5%',  y: '82%' },
+  businessName:  { x: '5%',  y: '84%' },
+  phone:         { x: '5%',  y: '86%' },
+  website:       { x: '5%',  y: '88%' },
+  email:         { x: '5%',  y: '90%' },
+  address:       { x: '5%',  y: '92%' },
+  gst:           { x: '5%',  y: '94%' },
+  userPhoto:     { x: '70%', y: '74%' },
+  logo:          { x: '5%',  y: '74%' },
 };
 
 const DEFAULT_TEXT_STYLE = {
@@ -37,14 +38,15 @@ const DEFAULT_TEXT_STYLE = {
 };
 
 const FIELD_META = [
-  { key: 'name',      sample: 'Sheetal Sharma',   isName: true,  dot: '#ef4444', type: 'text' },
-  { key: 'phone',     sample: '6261265704',        isName: false, dot: '#3b82f6', type: 'text' },
-  { key: 'website',   sample: 'www.example.com',   isName: false, dot: '#8b5cf6', type: 'text' },
-  { key: 'email',     sample: 'user@example.com',  isName: false, dot: '#10b981', type: 'text' },
-  { key: 'address',   sample: 'Business Address',  isName: false, dot: '#f59e0b', type: 'text' },
-  { key: 'gst',       sample: 'GST: 12ABCDE1234', isName: false, dot: '#ec4899', type: 'text' },
-  { key: 'userPhoto', sample: null,                isName: false, dot: '#06b6d4', type: 'photo', size: '12%' },
-  { key: 'logo',      sample: null,                isName: false, dot: '#84cc16', type: 'logo',  size: '10%' },
+  { key: 'name',         sample: 'Sheetal Sharma',   isName: true,  dot: '#ef4444', type: 'text' },
+  { key: 'businessName', sample: 'Appzeto Tech',     isName: true,  dot: '#f59e0b', type: 'text' },
+  { key: 'phone',        sample: '6261265704',        isName: false, dot: '#3b82f6', type: 'text' },
+  { key: 'website',      sample: 'www.example.com',   isName: false, dot: '#8b5cf6', type: 'text' },
+  { key: 'email',        sample: 'user@example.com',  isName: false, dot: '#10b981', type: 'text' },
+  { key: 'address',      sample: 'Business Address',  isName: false, dot: '#6366f1', type: 'text' },
+  { key: 'gst',          sample: 'GST: 12ABCDE1234', isName: false, dot: '#ec4899', type: 'text' },
+  { key: 'userPhoto',    sample: null,                isName: false, dot: '#06b6d4', type: 'photo', size: '12%' },
+  { key: 'logo',         sample: null,                isName: false, dot: '#84cc16', type: 'logo',  size: '10%' },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -275,14 +277,15 @@ const FrameManager = () => {
     letterSpacing: savedStyle.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing,
     textTransform: savedStyle.textTransform ?? DEFAULT_TEXT_STYLE.textTransform,
     positions: {
-      name:      savedStyle.positions?.name      || DEFAULT_POSITIONS.name,
-      phone:     savedStyle.positions?.phone     || DEFAULT_POSITIONS.phone,
-      website:   savedStyle.positions?.website   || DEFAULT_POSITIONS.website,
-      email:     savedStyle.positions?.email     || DEFAULT_POSITIONS.email,
-      address:   savedStyle.positions?.address   || DEFAULT_POSITIONS.address,
-      gst:       savedStyle.positions?.gst       || DEFAULT_POSITIONS.gst,
-      userPhoto: savedStyle.positions?.userPhoto || DEFAULT_POSITIONS.userPhoto,
-      logo:      savedStyle.positions?.logo      || DEFAULT_POSITIONS.logo,
+      name:         savedStyle.positions?.name         || DEFAULT_POSITIONS.name,
+      businessName: savedStyle.positions?.businessName || DEFAULT_POSITIONS.businessName,
+      phone:        savedStyle.positions?.phone        || DEFAULT_POSITIONS.phone,
+      website:      savedStyle.positions?.website      || DEFAULT_POSITIONS.website,
+      email:        savedStyle.positions?.email        || DEFAULT_POSITIONS.email,
+      address:      savedStyle.positions?.address      || DEFAULT_POSITIONS.address,
+      gst:          savedStyle.positions?.gst          || DEFAULT_POSITIONS.gst,
+      userPhoto:    savedStyle.positions?.userPhoto    || DEFAULT_POSITIONS.userPhoto,
+      logo:         savedStyle.positions?.logo         || DEFAULT_POSITIONS.logo,
     },
   });
 

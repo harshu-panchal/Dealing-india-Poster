@@ -1,14 +1,59 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Edit2, Download, MessageCircle, Share2, Flame, Heart } from 'lucide-react';
+import { Edit2, Download, MessageCircle, Share2, Flame, Heart, Video, PlayCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useEditor } from '../../context/EditorContext';
 
 const POTDCard = ({ poster, onEdit }) => {
   const { user } = useAuth();
+  const { openEditor } = useEditor();
   const [isLiked, setIsLiked] = useState(poster.isLiked || false);
   const [likeCount, setLikeCount] = useState(poster.likeCount || 0);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+
+  const recordActivity = async () => {
+    try {
+      if (user?.accessToken && poster?._id) {
+        await axios.post(`${API_URL}/user/save-template`, 
+          { templateId: poster._id },
+          { headers: { Authorization: `Bearer ${user.accessToken}` } }
+        );
+      }
+    } catch (err) {
+      console.error('Failed to record activity:', err);
+    }
+  };
+
+  const handleDownload = async (e) => {
+    e.stopPropagation();
+    recordActivity();
+    // Fallback if html2canvas not available, or just open image
+    window.open(poster.image, '_blank');
+  };
+
+  const handleWhatsApp = (e) => {
+    e.stopPropagation();
+    recordActivity();
+    const text = encodeURIComponent(`Check out this Poster of the Day: ${poster.image}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  const handleShare = async (e) => {
+    e.stopPropagation();
+    recordActivity();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Poster of the Day',
+          text: 'Check out this design from Dealing India Poster',
+          url: window.location.href,
+        });
+      } catch (err) { }
+    } else {
+      handleWhatsApp(e);
+    }
+  };
 
   const handleLike = async (e) => {
     e.stopPropagation();
@@ -26,9 +71,9 @@ const POTDCard = ({ poster, onEdit }) => {
   };
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex flex-col w-full bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100">
       <div 
-        className="relative aspect-square lg:aspect-[4/5] rounded-[32px] overflow-hidden cursor-pointer shadow-2xl group border border-white/20" 
+        className="relative aspect-square overflow-hidden cursor-pointer group" 
         onClick={() => onEdit(poster)}
       >
         <img src={poster.image} alt={poster.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -43,26 +88,30 @@ const POTDCard = ({ poster, onEdit }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
       
-      <div className="flex justify-around items-center px-2 py-4 bg-white rounded-[24px] shadow-sm border border-slate-50">
-        <div className="flex flex-col items-center gap-1.5 cursor-pointer group" onClick={(e) => { e.stopPropagation(); onEdit(poster); }}>
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 group-hover:bg-red-50 group-hover:text-red-500 transition-all text-slate-400 shadow-inner">
-            <Edit2 size={20} />
-          </div>
-          <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Edit</span>
+      <div className="flex justify-around py-3 lg:py-4 border-t border-slate-50 bg-white">
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => { e.stopPropagation(); onEdit(poster); }}>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-primary"><Edit2 size={20} /></div>
+          <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-primary uppercase tracking-widest">Edit</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => { e.stopPropagation(); openEditor(poster, 'video'); }}>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#ef4444] group-hover:text-red-600"><Video size={20} /></div>
+          <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-red-600 uppercase tracking-widest">Video</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={handleDownload}>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-primary"><Download size={20} /></div>
+          <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-primary uppercase tracking-widest">Save</span>
         </div>
         
-        <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 group-hover:bg-green-50 group-hover:text-green-500 transition-all text-slate-400 shadow-inner">
-            <MessageCircle size={20} />
-          </div>
-          <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Wa</span>
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={handleWhatsApp}>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-green-500"><MessageCircle size={20} /></div>
+          <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-green-500 uppercase tracking-widest">WhatsApp</span>
         </div>
         
-        <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all text-slate-400 shadow-inner">
-            <Share2 size={20} />
-          </div>
-          <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Share</span>
+        <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={handleShare}>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-blue-500"><Share2 size={20} /></div>
+          <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-blue-500 uppercase tracking-widest">Share</span>
         </div>
       </div>
     </div>

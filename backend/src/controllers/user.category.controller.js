@@ -27,7 +27,7 @@ export const getPublicCategories = async (req, res) => {
 // @route   GET /api/user/templates
 export const getPublicTemplates = async (req, res) => {
   try {
-    const { category, subcategory, type, isPremium, featured, potd, limit = 20, page = 1 } = req.query;
+    const { category, subcategory, type, isPremium, featured, potd, search, limit = 20, page = 1 } = req.query;
     const filter = { isActive: true };
 
     if (category) filter.categoryId = category;
@@ -36,16 +36,56 @@ export const getPublicTemplates = async (req, res) => {
     if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
     if (featured === 'true') filter.isPosterOfTheDay = true;
     if (potd === 'true') filter.isPosterOfTheDay = true;
+    
+    if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
+      
+      // Find matching active categories, subcategories, and events to include their templates in results
+      const [matchingCats, matchingSubs, matchingEvents] = await Promise.all([
+        Category.find({ name: searchRegex, isActive: true }).select('_id'),
+        Subcategory.find({ name: searchRegex, isActive: true }).select('_id'),
+        Event.find({ name: searchRegex, isActive: true }).select('_id')
+      ]);
+
+      const catIds = matchingCats.map(c => c._id);
+      const subIds = matchingSubs.map(s => s._id);
+      const eventIds = matchingEvents.map(e => e._id);
+
+      filter.$or = [
+        { name: searchRegex },
+        { tags: searchRegex },
+        { categoryId: { $in: catIds } },
+        { subcategoryId: { $in: subIds } },
+        { eventId: { $in: eventIds } }
+      ];
+    }
 
     const templates = await Template.find(filter)
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate('categoryId', 'name image')
+      .populate('subcategoryId', 'name image');
 
+    // Find total count for templates
     const total = await Template.countDocuments(filter);
+
+    // If searching, also return matching categories and subcategories
+    let foundCategories = [];
+    let foundSubcategories = [];
+    
+    if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
+      [foundCategories, foundSubcategories] = await Promise.all([
+        Category.find({ name: searchRegex, isActive: true }).limit(5),
+        Subcategory.find({ name: searchRegex, isActive: true }).limit(5)
+      ]);
+    }
 
     res.status(200).json({
       templates,
+      categories: foundCategories,
+      subcategories: foundSubcategories,
       total,
       pages: Math.ceil(total / limit)
     });

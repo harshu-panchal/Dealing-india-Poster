@@ -33,6 +33,7 @@ const frameSchema = new mongoose.Schema(
       // Per-field absolute positions stored as % strings
       positions: {
         name:      { ...positionSchema, y: { type: String, default: '82%' } },
+        businessName: { ...positionSchema, y: { type: String, default: '84%' } },
         phone:     { ...positionSchema, y: { type: String, default: '86%' } },
         website:   { ...positionSchema, y: { type: String, default: '88%' } },
         email:     { ...positionSchema, y: { type: String, default: '90%' } },

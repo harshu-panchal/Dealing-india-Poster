@@ -35,7 +35,11 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/music', musicRoutes);
 
 // Static folders
-app.use('/uploads', express.static(path.join(path.dirname(__dirname), 'uploads')));
+app.use('/uploads', express.static(path.join(path.dirname(__dirname), 'uploads'), {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
 
 // Test Route
 app.get('/', (req, res) => {

@@ -19,9 +19,16 @@ const ActionIcon = ({ icon: Icon, label, color, onClick }) => (
 );
 
 const PosterDetail = ({ template, onEdit, onClose }) => {
-  const { userData: globalUserData, frames, selectedFrame, setSelectedFrame } = useEditor();
+  const { userData: globalUserData, frames, selectedFrame, setSelectedFrame, initialEditorTab, closeEditor } = useEditor();
   const { user } = useAuth();
   const [showVideoEditor, setShowVideoEditor] = useState(false);
+
+  useEffect(() => {
+    if (initialEditorTab === 'video') {
+      setShowVideoEditor(true);
+      closeEditor(); // Prevent PosterEditor from also opening behind it
+    }
+  }, [initialEditorTab, closeEditor]);
   const posterRef = useRef(null);         // for html2canvas
   const posterContainerRef = useRef(null); // for drag coordinate system
   const dragRef = useRef(null);           // active drag tracking
@@ -44,7 +51,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const hasDragged = Object.keys(localPos).length > 0;
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   // ── Pointer-based drag handlers (no framer-motion, no snapping) ──────────
   const onPointerDown = useCallback((e, field, currentPos) => {
@@ -82,6 +89,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     const merged = {
       ...existingCustom,
       ...(localPos.name    && { namePos:    localPos.name }),
+      ...(localPos.business_name && { businessNamePos: localPos.business_name }),
       ...(localPos.phone   && { phonePos:   localPos.phone }),
       ...(localPos.website && { websitePos: localPos.website }),
       ...(localPos.email   && { emailPos:   localPos.email }),
@@ -155,7 +163,8 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const framePos = frameStyle.positions || {};
 
   // Poster-relative defaults — frame positions take priority over hardcoded fallbacks
-  const nameDefault      = { x: framePos.name?.x      || '5%', y: framePos.name?.y      || (hasFrameApplied ? '82%' : '80%') };
+  const nameDefault      = { x: framePos.name?.x      || '5%', y: framePos.name?.y      || (hasFrameApplied ? '80%' : '78%') };
+  const businessNameDefault = { x: framePos.businessName?.x || '5%', y: framePos.businessName?.y || (hasFrameApplied ? '84%' : '82%') };
   const phoneDefault     = { x: framePos.phone?.x     || '5%', y: framePos.phone?.y     || (hasFrameApplied ? '86%' : '85%') };
   const websiteDefault   = { x: framePos.website?.x   || '5%', y: framePos.website?.y   || (hasFrameApplied ? '88%' : '88%') };
   const emailDefault     = { x: framePos.email?.x     || '5%', y: framePos.email?.y     || (hasFrameApplied ? '90%' : '91%') };
@@ -175,12 +184,13 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     return val;
   };
 
-  const effectiveNamePos    = migratePos(userData.namePos,    nameDefault);
-  const effectivePhonePos   = migratePos(userData.phonePos,   phoneDefault);
-  const effectiveWebsitePos = migratePos(userData.websitePos, websiteDefault);
-  const effectiveEmailPos   = migratePos(userData.emailPos,   emailDefault);
-  const effectiveAddressPos = migratePos(userData.addressPos, addressDefault);
-  const effectiveGstPos     = migratePos(userData.gstPos,     gstDefault);
+  const effectiveNamePos         = migratePos(userData.namePos,         nameDefault);
+  const effectiveBusinessNamePos = migratePos(userData.businessNamePos, businessNameDefault);
+  const effectivePhonePos        = migratePos(userData.phonePos,        phoneDefault);
+  const effectiveWebsitePos      = migratePos(userData.websitePos,      websiteDefault);
+  const effectiveEmailPos        = migratePos(userData.emailPos,        emailDefault);
+  const effectiveAddressPos      = migratePos(userData.addressPos,      addressDefault);
+  const effectiveGstPos          = migratePos(userData.gstPos,          gstDefault);
 
   const inlineSafeColorsForHtml2Canvas = (rootElement) => {
     if (!rootElement) return () => {};
@@ -352,7 +362,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                <div className="text-layer absolute inset-0 z-[75]">
 
                  {/* Name */}
-                 {userData.enabledFields?.business_name !== false && (() => {
+                 {userData.enabledFields?.name !== false && (() => {
                    const pos = localPos.name || effectiveNamePos;
                    return (
                      <div
@@ -360,6 +370,22 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                        style={{ ...getStyle('name'), left: pos.x, top: pos.y, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
                        onPointerDown={(e) => onPointerDown(e, 'name', pos)}
                        onPointerMove={(e) => onPointerMove(e, 'name')}
+                       onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                     >
+                       {userData.name || 'Your Name'}
+                     </div>
+                   );
+                 })()}
+
+                 {/* Business Name */}
+                 {userData.enabledFields?.business_name !== false && (() => {
+                   const pos = localPos.business_name || effectiveBusinessNamePos;
+                   return (
+                     <div
+                       className="absolute leading-tight"
+                       style={{ ...getStyle('name'), left: pos.x, top: pos.y, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
+                       onPointerDown={(e) => onPointerDown(e, 'business_name', pos)}
+                       onPointerMove={(e) => onPointerMove(e, 'business_name')}
                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
                      >
                        {userData.business_name || 'Your Business Name'}

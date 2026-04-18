@@ -17,7 +17,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     }
   }, [template]);
   
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   const cleanUrl = (url) => {
     if (!url || url.includes('default_logo.png')) return null;

@@ -10,7 +10,8 @@ export const EditorProvider = ({ children }) => {
   const [initialEditorTab, setInitialEditorTab] = useState('branding');
   const [viewingDetail, setViewingDetail] = useState(null);
   const [userData, setUserData] = useState({
-    business_name: 'Your Name',
+    name: 'Your Name',
+    business_name: 'Your Business',
     phone_number: '0000000000', 
     website: 'www.yourwebsite.com',
     email: 'user@example.com',
@@ -22,6 +23,7 @@ export const EditorProvider = ({ children }) => {
     logo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ef4444'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='40' fill='white' font-weight='black'%3EL%3C/text%3E%3C/svg%3E",
     userPhoto: null,
     enabledFields: {
+      name: true,
       business_name: true,
       phone: true,
       website: true,
@@ -42,7 +44,8 @@ export const EditorProvider = ({ children }) => {
       
       setUserData(prev => ({
         ...prev,
-        business_name: u.name || prev.business_name,
+        name: u.name || prev.name,
+        business_name: u.businessName || prev.business_name,
         phone_number: u.mobileNumber || prev.phone_number,
         email: u.email || prev.email,
         logo: cleanLogo || prev.logo,
@@ -53,7 +56,7 @@ export const EditorProvider = ({ children }) => {
 
   const [frames, setFrames] = useState([]);
   const [selectedFrame, setSelectedFrame] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   useEffect(() => {
     const fetchFrames = async () => {
@@ -79,6 +82,9 @@ export const EditorProvider = ({ children }) => {
     const templateWithUserData = JSON.parse(JSON.stringify(template));
     if (templateWithUserData.layout) {
       templateWithUserData.layout = templateWithUserData.layout.map(item => {
+        if (item.placeholderKey === '{{name}}' && userData.name) {
+          return { ...item, defaultValue: userData.name, text: userData.name };
+        }
         if (item.placeholderKey === '{{business_name}}' && userData.business_name) {
           return { ...item, defaultValue: userData.business_name, text: userData.business_name };
         }

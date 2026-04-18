@@ -7,19 +7,28 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
+import VideoEditor from './VideoEditor';
 import axios from 'axios';
 
 const PosterEditor = ({ template, onClose }) => {
   const { userData, setUserData, initialEditorTab, frames, selectedFrame, setSelectedFrame, syncSavedEditsToDetail } = useEditor();
   const [activeTab, setActiveTab] = useState(initialEditorTab || 'text');
+  const [showVideoEditor, setShowVideoEditor] = useState(false);
   const tabs = [
     { id: 'text', icon: Type, label: 'Text' },
     { id: 'branding', icon: Sparkles, label: 'Logo' },
-    { id: 'frames', icon: Layers, label: 'Frames' }
+    { id: 'frames', icon: Layers, label: 'Frames' },
+    { id: 'video', icon: Video, label: 'Video' }
   ];
   const [subTab, setSubTab] = useState('Personal');
   const [musicList, setMusicList] = useState([]);
   const [activeMusicId, setActiveMusicId] = useState(userData.musicId || null);
+
+  useEffect(() => {
+    if (activeTab === 'video') {
+      setShowVideoEditor(true);
+    }
+  }, [activeTab]);
   
   const currentTemplate = template.templateId && typeof template.templateId === 'object' ? template.templateId : template;
   const normalizeFrameValue = (frame) => {
@@ -33,6 +42,7 @@ const PosterEditor = ({ template, onClose }) => {
   const [localUserData, setLocalUserData] = useState(() => {
     const savedData = template.customData || userData;
     return {
+      name: savedData.name || '',
       business_name: savedData.business_name || '',
       phone_number: savedData.phone_number || '',
       website: savedData.website || '',
@@ -104,7 +114,7 @@ const PosterEditor = ({ template, onClose }) => {
     setLocalUserData(prev => ({ ...prev, [type]: prev[type].filter(item => item.id !== id) }));
   };
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
   const hasFrameApplied = !!effectiveSelectedFrame;
 
   // Find the full frame object to get text styles
@@ -132,6 +142,7 @@ const PosterEditor = ({ template, onClose }) => {
 
   // New poster-relative defaults — frame positions take priority
   const nameDefault      = { x: framePos.name?.x      || '5%', y: framePos.name?.y      || (hasFrameApplied ? '82%' : '80%') };
+  const businessNameDefault = { x: framePos.businessName?.x || '5%', y: framePos.businessName?.y || (hasFrameApplied ? '84%' : '82%') };
   const phoneDefault     = { x: framePos.phone?.x     || '5%', y: framePos.phone?.y     || (hasFrameApplied ? '86%' : '85%') };
   const websiteDefault   = { x: framePos.website?.x   || '5%', y: framePos.website?.y   || (hasFrameApplied ? '88%' : '88%') };
   const emailDefault     = { x: framePos.email?.x     || '5%', y: framePos.email?.y     || (hasFrameApplied ? '90%' : '91%') };
@@ -151,12 +162,13 @@ const PosterEditor = ({ template, onClose }) => {
     return val;
   };
 
-  const effectiveNamePos    = migratePos(localUserData.namePos,    nameDefault);
-  const effectivePhonePos   = migratePos(localUserData.phonePos,   phoneDefault);
-  const effectiveWebsitePos = migratePos(localUserData.websitePos, websiteDefault);
-  const effectiveEmailPos   = migratePos(localUserData.emailPos,   emailDefault);
-  const effectiveAddressPos = migratePos(localUserData.addressPos, addressDefault);
-  const effectiveGstPos     = migratePos(localUserData.gstPos,     gstDefault);
+  const effectiveNamePos         = migratePos(localUserData.namePos,         nameDefault);
+  const effectiveBusinessNamePos = migratePos(localUserData.businessNamePos, businessNameDefault);
+  const effectivePhonePos        = migratePos(localUserData.phonePos,        phoneDefault);
+  const effectiveWebsitePos      = migratePos(localUserData.websitePos,      websiteDefault);
+  const effectiveEmailPos        = migratePos(localUserData.emailPos,        emailDefault);
+  const effectiveAddressPos      = migratePos(localUserData.addressPos,      addressDefault);
+  const effectiveGstPos          = migratePos(localUserData.gstPos,          gstDefault);
 
   const toPx = (value, axis = 'x', customRef = null) => {
     if (value === undefined || value === null) return 0;
@@ -230,7 +242,8 @@ const PosterEditor = ({ template, onClose }) => {
   const handleApplyEdits = async () => {
     const savedCustomData = {
       ...localUserData,
-      business_name: localUserData.business_name || 'Your Name',
+      name: localUserData.name || 'Your Name',
+      business_name: localUserData.business_name || 'Your Business',
       musicId: activeMusicId,
       selectedFrame: effectiveSelectedFrame
     };
@@ -300,29 +313,53 @@ const PosterEditor = ({ template, onClose }) => {
                {/* Dedicated Text & Content Layer (Top) */}
                <div className="text-layer absolute inset-0 z-[75]">
                    {/* Branding Items - Now directly in text-layer, relative to whole poster */}
-                   {localUserData.enabledFields?.business_name !== false && (
-                     <motion.div 
-                       drag
-                       dragMomentum={false}
-                       dragConstraints={previewBoundsRef}
-                       onDragEnd={(e, info) => updateLocalField('namePos', getNextPosition(e, info, effectiveNamePos, { x: '5%', y: nameDefaultY }))}
-                       className="inline-block pointer-events-auto absolute cursor-move touch-none"
-                       style={{ 
-                         left: effectiveNamePos.x,
-                         top: effectiveNamePos.y,
-                         zIndex: 95
-                       }}
-                     >
-                        <div 
-                          className="whitespace-nowrap leading-tight" 
-                          style={{ 
-                            ...getStyle('name')
-                          }}
-                        >
-                            {localUserData.business_name || 'Your Business Name'}
-                        </div>
-                     </motion.div>
-                   )}
+                   {localUserData.enabledFields?.name !== false && (
+                      <motion.div 
+                        drag
+                        dragMomentum={false}
+                        dragConstraints={previewBoundsRef}
+                        onDragEnd={(e, info) => updateLocalField('namePos', getNextPosition(e, info, effectiveNamePos, nameDefault))}
+                        className="inline-block pointer-events-auto absolute cursor-move touch-none"
+                        style={{ 
+                          left: effectiveNamePos.x,
+                          top: effectiveNamePos.y,
+                          zIndex: 95
+                        }}
+                      >
+                         <div 
+                           className="whitespace-nowrap leading-tight" 
+                           style={{ 
+                             ...getStyle('name')
+                           }}
+                         >
+                             {localUserData.name || 'Your Name'}
+                         </div>
+                      </motion.div>
+                    )}
+
+                    {localUserData.enabledFields?.business_name !== false && (
+                      <motion.div 
+                        drag
+                        dragMomentum={false}
+                        dragConstraints={previewBoundsRef}
+                        onDragEnd={(e, info) => updateLocalField('businessNamePos', getNextPosition(e, info, effectiveBusinessNamePos, businessNameDefault))}
+                        className="inline-block pointer-events-auto absolute cursor-move touch-none"
+                        style={{ 
+                          left: effectiveBusinessNamePos.x,
+                          top: effectiveBusinessNamePos.y,
+                          zIndex: 95
+                        }}
+                      >
+                         <div 
+                           className="whitespace-nowrap leading-tight" 
+                           style={{ 
+                             ...getStyle('name')
+                           }}
+                         >
+                             {localUserData.business_name || 'Your Business Name'}
+                         </div>
+                      </motion.div>
+                    )}
 
                    <div className="flex flex-col relative h-full pointer-events-none">
                       {localUserData.enabledFields?.phone && (
@@ -492,7 +529,13 @@ const PosterEditor = ({ template, onClose }) => {
               <button 
                 key={tab.id}
                 className={`flex-1 py-5 text-[0.85rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 border-none bg-transparent transition-all ${activeTab === tab.id ? 'text-red-500 bg-red-50/10' : 'text-gray-400'}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.id === 'video') {
+                    setShowVideoEditor(true);
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
               >
                 <tab.icon size={18} strokeWidth={activeTab === tab.id ? 3 : 2} /> {tab.label}
                 {activeTab === tab.id && <div className="absolute bottom-0 h-[4px] bg-red-500 rounded-t-full" style={{ width: '33.33%', left: `${idx * 33.33}%` }} />}
@@ -537,10 +580,10 @@ const PosterEditor = ({ template, onClose }) => {
                   {subTab === 'Personal' && (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Name / Business Name</label>
+                        <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Personal Name</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.business_name || ''} onChange={e => updateLocalField('business_name', e.target.value)} />
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.business_name !== false ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('business_name')}>{localUserData.enabledFields?.business_name !== false && <Check size={16} className="text-white" />}</div>
+                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.name || ''} onChange={e => updateLocalField('name', e.target.value)} />
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.name !== false ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('name')}>{localUserData.enabledFields?.name !== false && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -568,6 +611,13 @@ const PosterEditor = ({ template, onClose }) => {
                   )}
                   {subTab === 'Business' && (
                     <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Business Name</label>
+                        <div className="flex items-center gap-3">
+                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.business_name || ''} onChange={e => updateLocalField('business_name', e.target.value)} />
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.business_name !== false ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('business_name')}>{localUserData.enabledFields?.business_name !== false && <Check size={16} className="text-white" />}</div>
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Business Address</label>
                         <div className="flex items-center gap-3">
@@ -702,6 +752,17 @@ const PosterEditor = ({ template, onClose }) => {
                 </div>
               </div>
             )}
+            {activeTab === 'video' && (
+              <div className="p-10 flex flex-col items-center justify-center gap-6 text-center">
+                 <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 shadow-inner">
+                    <Video size={40} />
+                 </div>
+                 <div className="animate-pulse">
+                    <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">Redirecting to Video Editor...</h3>
+                    <p className="text-[0.75rem] font-bold text-gray-400 uppercase tracking-widest mt-2">Opening specialized tools</p>
+                 </div>
+              </div>
+            )}
           </div>
           
           <div className="p-4 px-6 border-t border-gray-100 bg-white flex items-center justify-between gap-6" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
@@ -778,6 +839,16 @@ const PosterEditor = ({ template, onClose }) => {
               <div className="h-8 shrink-0 lg:hidden" />
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {showVideoEditor && (
+          <VideoEditor 
+            template={template}
+            userData={userData}
+            onClose={() => setShowVideoEditor(false)}
+          />
         )}
       </AnimatePresence>
     </div>

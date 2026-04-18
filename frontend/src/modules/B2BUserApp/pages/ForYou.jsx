@@ -23,10 +23,53 @@ const ForYou = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [videoPosters, setVideoPosters] = useState([]);
   const [allTemplates, setAllTemplates] = useState([]);
-  const [potdTemplate, setPotdTemplate] = useState(null);
+  const [potdTemplates, setPotdTemplates] = useState([]);
   const [showAllSpecials, setShowAllSpecials] = useState(false);
+  const [searchData, setSearchData] = useState({ templates: [], categories: [], subcategories: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   const API_URL = import.meta.env.VITE_API_URL;
+
+  // Debounce logic
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handle Dynamic Search
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!debouncedQuery.trim()) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      try {
+        setIsSearching(true);
+        const params = { search: debouncedQuery, limit: 50 };
+        if (activeCategory === 'Video') {
+          params.type = 'video';
+        } else if (activeCategory !== 'All') {
+          params.category = activeCategory;
+        }
+        
+        const { data } = await axios.get(`${API_URL}/user/templates`, { params });
+        setSearchData({
+          templates: data.templates || [],
+          categories: data.categories || [],
+          subcategories: data.subcategories || []
+        });
+      } catch (err) {
+        console.error('Search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    performSearch();
+  }, [debouncedQuery, API_URL]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -52,15 +95,15 @@ const ForYou = () => {
       
       // Fetch Poster of the Day
       try {
-        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=1`);
+        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=3`);
         if (potdData.templates && potdData.templates.length > 0) {
-          setPotdTemplate(potdData.templates[0]);
+          setPotdTemplates(potdData.templates);
         } else {
-          // Fallback to most liked or first template
-          setPotdTemplate(templates[0]);
+          // Fallback to first 3 templates
+          setPotdTemplates(templates.slice(0, 3));
         }
       } catch (e) {
-        setPotdTemplate(templates[0]);
+        setPotdTemplates(templates.slice(0, 3));
       }
 
       // Organize Sections
@@ -83,48 +126,55 @@ const ForYou = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleLikePOTD = async (e) => {
-    e.stopPropagation();
-    if (!user?.accessToken || !potdTemplate) return;
+  const handleLikePOTD = async (posterId) => {
+    if (!user?.accessToken) return;
 
     try {
-      const { data } = await axios.post(`${API_URL}/user/templates/${potdTemplate._id}/like`, {}, {
+      const { data } = await axios.post(`${API_URL}/user/templates/${posterId}/like`, {}, {
         headers: { Authorization: `Bearer ${user.accessToken}` }
       });
-      setPotdTemplate(prev => ({
-        ...prev,
-        isLiked: data.liked,
-        likeCount: data.liked ? (prev.likeCount || 0) + 1 : (prev.likeCount || 0) - 1
-      }));
+      setPotdTemplates(prev => prev.map(t => 
+        t._id === posterId 
+          ? { ...t, isLiked: data.liked, likeCount: data.liked ? (t.likeCount || 0) + 1 : (t.likeCount || 0) - 1 }
+          : t
+      ));
     } catch (err) {
       console.error('POTD Like failed:', err);
     }
   };
 
-  const renderPOTDCard = (tpl) => {
-    if (!tpl) return null;
+  const renderPOTDCard = (templates) => {
+    if (!templates || templates.length === 0) return null;
     return (
-      <div className="potd-card-wrapper mb-8 lg:mb-12 lg:max-w-4xl lg:mx-auto px-4 lg:px-0">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] leading-none mb-2">Featured Collection</p>
-              <h2 className="text-2xl lg:text-3xl font-black text-slate-800 tracking-tight">Poster of the Day</h2>
+      <section className="bg-white pt-4 pb-10 lg:pt-6 lg:pb-12 mb-2 border-b border-slate-50">
+        <div className="w-full lg:px-4 lg:max-w-6xl lg:mx-auto">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between px-4 lg:px-0">
+              <div className="flex flex-col">
+                <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] leading-none mb-2">Featured Collection</p>
+                <h2 className="text-2xl lg:text-3xl font-black text-slate-800 tracking-tight">Poster of the Day</h2>
+              </div>
             </div>
             
-            {tpl && (
-               <button 
-                 onClick={handleLikePOTD}
-                 className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-all"
-               >
-                 <Heart size={20} className={tpl.isLiked ? 'fill-red-500 text-red-500' : 'text-slate-300'} />
-                 <span className="font-black text-slate-700">{tpl.likeCount || 0}</span>
-               </button>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 lg:px-0">
+              {templates.map(tpl => (
+                <div key={tpl._id} className="relative group">
+                  <div className="absolute top-4 right-4 z-[20]">
+                    <button 
+                       onClick={() => handleLikePOTD(tpl._id)}
+                       className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 active:scale-95 transition-all"
+                    >
+                       <Heart size={16} className={tpl.isLiked ? 'fill-red-500 text-red-500' : 'text-slate-300'} />
+                       <span className="text-[0.7rem] font-black text-slate-700">{tpl.likeCount || 0}</span>
+                    </button>
+                  </div>
+                  <POTDCard poster={tpl} onEdit={openDetail} />
+                </div>
+              ))}
+            </div>
           </div>
-          <POTDCard poster={tpl} onEdit={openDetail} />
         </div>
-      </div>
+      </section>
     );
   };
 
@@ -185,7 +235,69 @@ const ForYou = () => {
       </div>
 
       <div className="pt-2">
-        {activeCategory === 'Video' ? (
+        {searchQuery.trim() !== '' ? (
+          <div className="p-4">
+            <div className="mb-6">
+               <h2 className="text-xl font-bold text-slate-800 tracking-tight">Search Results</h2>
+               <p className="text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                 {isSearching ? 'Searching...' : `Found ${searchData.templates.length + searchData.categories.length + searchData.subcategories.length} matches for "${searchQuery}"`}
+               </p>
+            </div>
+            
+            {isSearching ? (
+               <ShimmerLoader type="regular" count={6} />
+            ) : (searchData.templates.length > 0 || searchData.categories.length > 0 || searchData.subcategories.length > 0) ? (
+               <div className="space-y-8">
+                 {/* Categories & Subcategories Hits */}
+                 {(searchData.categories.length > 0 || searchData.subcategories.length > 0) && (
+                   <div className="space-y-4">
+                     <h3 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Collections</h3>
+                     <div className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1">
+                       {searchData.categories.map(cat => (
+                         <div 
+                           key={cat._id} 
+                           onClick={() => { setActiveCategory(cat._id); setSearchQuery(''); }}
+                           className="min-w-[120px] bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all"
+                         >
+                           <img src={cat.image} className="w-10 h-10 rounded-full object-cover bg-slate-50" alt="" />
+                           <span className="text-[0.65rem] font-bold text-slate-700 text-center truncate w-full">{cat.name}</span>
+                         </div>
+                       ))}
+                       {searchData.subcategories.map(sub => (
+                         <div 
+                           key={sub._id} 
+                           onClick={() => { setActiveCategory(sub.parentId); setActiveSubcategory(sub._id); setSearchQuery(''); }}
+                           className="min-w-[120px] bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all"
+                         >
+                           <img src={sub.image} className="w-10 h-10 rounded-full object-cover bg-slate-50" alt="" />
+                           <span className="text-[0.65rem] font-bold text-slate-700 text-center truncate w-full">{sub.name}</span>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Template Hits */}
+                 {searchData.templates.length > 0 && (
+                   <div className="space-y-4">
+                     <h3 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Posters & Videos</h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                       {searchData.templates.map(tpl => (
+                         <TemplateCard key={tpl._id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
+                       ))}
+                     </div>
+                   </div>
+                 )}
+               </div>
+            ) : (
+               <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-50">
+                  <Search size={48} className="text-slate-200 mx-auto mb-4" />
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">No Matches Found</h3>
+                  <p className="text-[0.65rem] font-bold text-slate-400 mt-2 max-w-[200px] mx-auto">Try searching for keywords like "Festival", "Business" or "Video"</p>
+               </div>
+            )}
+          </div>
+        ) : activeCategory === 'Video' ? (
           <div className="p-2">
             <div className="px-2 mb-4">
               <h2 className="text-xl font-bold text-[#0f172a]">Video Templates</h2>
@@ -229,7 +341,7 @@ const ForYou = () => {
         ) : (
           <div className="space-y-0.5">
              {/* 1. Today's Special (Mixed subcategories with Category Name overlay) */}
-             <section className="bg-white py-6 mb-2 border-b border-slate-50">
+             <section className="bg-white py-6 mb-0 border-b border-slate-50">
                 <div className="w-full lg:px-4">
                   <SectionHeader 
                     title="Today's Special" 
@@ -284,7 +396,7 @@ const ForYou = () => {
              </section>
 
              {/* 1.5 Poster of the Day */}
-             {renderPOTDCard(potdTemplate)}
+             {renderPOTDCard(potdTemplates)}
 
              {/* 2. Initial High-Impact Posters (Grid of 3 on desktop) */}
              <div className="bg-white py-4 lg:px-4 mb-2 border-b border-slate-50">

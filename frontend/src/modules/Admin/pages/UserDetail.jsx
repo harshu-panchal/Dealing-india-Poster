@@ -128,8 +128,15 @@ const UserDetail = () => {
                 </div>
                 
                 <h2 className="text-2xl font-black text-slate-800 mb-1 tracking-tight">{user.name || 'Anonymous User'}</h2>
-                <div className="flex items-center gap-2 text-[var(--admin-text-subtle)] font-black text-[10px] uppercase tracking-[0.2em] mb-8">
-                  <Smartphone size={12} className="text-red-500" /> TERMINAL: {user.contentLanguage || 'English'}
+                <div className="flex flex-col items-center gap-1 mb-8 text-[var(--admin-text-subtle)] font-black text-[10px] uppercase tracking-[0.2em]">
+                  <div className="flex items-center gap-2">
+                    <Smartphone size={12} className="text-red-500" /> TERMINAL: {user.contentLanguage || 'English'}
+                  </div>
+                  {user.businessName && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <ShieldCheck size={12} className="text-emerald-500" /> BIZ: {user.businessName}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 w-full mb-10">

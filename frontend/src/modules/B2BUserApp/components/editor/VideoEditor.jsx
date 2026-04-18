@@ -1,62 +1,342 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Video, Download, MessageCircle, Share2, Play, Pause, X, Sparkles, Layers, Sliders, Wand2, Zap, Music2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ArrowLeft, Video, Download, MessageCircle, Share2, Play, Pause, X, Sparkles, Layers, Sliders, Wand2, Zap, Music2, Search, Edit2, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
 const VideoEditor = ({ template, userData, onClose }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showMusicModal, setShowMusicModal] = useState(false);
   const [showEffects, setShowEffects] = useState(false);
   const [selectedEffect, setSelectedEffect] = useState('none');
   const [isPlaying, setIsPlaying] = useState(false);
   
   const [musicList, setMusicList] = useState([]);
-  const [activeMusicId, setActiveMusicId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('All');
+  const [selectedMusic, setSelectedMusic] = useState(null);
   const [previewingTrackId, setPreviewingTrackId] = useState(null);
+  
   const previewAudioRef = useRef(null);
   const posterAudioRef = useRef(null);
+  const canvasRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const mediaStreamDestRef = useRef(null);
+  const audioSourceRef = useRef(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   useEffect(() => {
+    // Initial loading simulation as per Image 1
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    
     const fetchMusic = async () => {
       try {
         const { data } = await axios.get(`${API_URL}/music/public`);
         setMusicList(data);
-        if (data.length > 0) setActiveMusicId(data[0]._id);
+        if (data.length > 0) {
+            // Default to first generic track if available
+            const defaultTrack = data.find(m => m.category === 'Generic') || data[0];
+            setSelectedMusic(defaultTrack);
+            if (posterAudioRef.current) {
+              posterAudioRef.current.src = defaultTrack.audioUrl;
+            }
+        }
       } catch (error) {
         console.error('Fetch music error:', error);
       }
     };
     fetchMusic();
+    return () => clearTimeout(timer);
   }, [API_URL]);
 
-  const togglePreview = (track) => {
+  const categories = useMemo(() => {
+    const cats = ['All', 'My Music', 'Generic', 'General', 'Festival', 'Maa', 'Bhakti', 'Motivation'];
+    return cats;
+  }, []);
+
+  const filteredMusic = useMemo(() => {
+    return musicList.filter(m => {
+        const matchesTab = activeTab === 'All' ? true : (activeTab === 'My Music' ? m.isUserOwned : m.category === activeTab);
+        const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             m.artist.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesTab && matchesSearch;
+    });
+  }, [musicList, activeTab, searchQuery]);
+
+  const togglePreview = async (track) => {
+    if (!previewAudioRef.current) return;
+
     if (previewingTrackId === track._id) {
       previewAudioRef.current.pause();
       setPreviewingTrackId(null);
     } else {
       setPreviewingTrackId(track._id);
+      previewAudioRef.current.pause(); // Pause any previous track
       previewAudioRef.current.src = track.audioUrl;
-      previewAudioRef.current.play().catch(e => console.log('Audio play blocked'));
+      try {
+        await previewAudioRef.current.play();
+      } catch (e) {
+        console.log('Audio preview interrupted');
+      }
     }
   };
 
-  const handleApplyMusic = (id) => {
-    setActiveMusicId(id);
-    const track = musicList.find(m => m._id === id);
-    if (track && posterAudioRef.current) {
+  const handleApplyMusic = async (track) => {
+    setSelectedMusic(track);
+    if (posterAudioRef.current) {
       posterAudioRef.current.src = track.audioUrl;
-      if (isPlaying) posterAudioRef.current.play();
+      if (isPlaying) {
+        try {
+          await posterAudioRef.current.play();
+        } catch (e) {
+          console.log('Applied music play interrupted');
+        }
+      }
     }
+    setShowMusicModal(false);
   };
 
   const effects = [
     { id: 'none', title: 'None', icon: <X size={24} /> },
-    { id: 'blur', title: 'Blur', icon: <Layers size={24} /> },
-    { id: 'fade', title: 'Fade Out', icon: <Sliders size={24} /> },
-    { id: 'tectonic', title: 'Tectonic', icon: <Zap size={24} /> },
-    { id: 'arti', title: 'Arti', icon: <Sparkles size={24} /> },
-    { id: 'color', title: 'Color', icon: <Wand2 size={24} /> }
+    { id: 'blur', title: 'Blur', icon: <Layers size={24} />, filter: 'blur(10px)' },
+    { id: 'zoom', title: 'Zoom', icon: <Sliders size={18} />, animation: 'zoom' },
+    { id: 'tectonic', title: 'Tectonic', icon: <Zap size={24} />, animation: 'shake' },
+    { id: 'arti', title: 'Arti', icon: <Sparkles size={24} />, filter: 'sepia(0.5) contrast(1.1) brightness(1.1)' },
+    { id: 'smooth', title: 'Smooth', icon: <Wand2 size={24} />, filter: 'brightness(1.05) saturate(1.2) contrast(0.95)' }
   ];
+
+  // ── Canvas Render Loop ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!canvasRef.current || isLoading) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const posterImg = new Image();
+    posterImg.crossOrigin = "anonymous";
+    posterImg.src = template.image;
+    
+    const userImg = new Image();
+    userImg.crossOrigin = "anonymous";
+    userImg.src = userData.userPhoto || userData.logo || '';
+
+    let animationId;
+    let startTime = Date.now();
+
+    const render = () => {
+      const time = (Date.now() - startTime) / 1000;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Clear
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+
+      // Apply Effects
+      let currentFilter = 'none';
+      if (selectedEffect === 'blur') currentFilter = 'blur(12px)';
+      if (selectedEffect === 'arti') currentFilter = 'sepia(0.6) contrast(1.1) brightness(1.2)';
+      if (selectedEffect === 'smooth') currentFilter = 'brightness(1.1) saturate(1.3) contrast(0.9)';
+      
+      ctx.filter = currentFilter;
+
+      // Motion Animations
+      if (selectedEffect === 'zoom') {
+        const scale = 1 + Math.sin(time * 2) * 0.05;
+        ctx.translate(w/2, h/2);
+        ctx.scale(scale, scale);
+        ctx.translate(-w/2, -h/2);
+      }
+      if (selectedEffect === 'tectonic') {
+        ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+      }
+
+      // Draw Main Image
+      ctx.drawImage(posterImg, 0, 0, w, h);
+      ctx.restore();
+
+      // Draw Noise for Arti
+      if (selectedEffect === 'arti') {
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.05})`;
+        for(let i=0; i<100; i++) ctx.fillRect(Math.random()*w, Math.random()*h, 2, 2);
+      }
+
+      // Draw Branding Overlays (Matches Image 3)
+      if (userImg.complete && (userData.userPhoto || userData.logo)) {
+        const barH = h * 0.12;
+        const pad = w * 0.05;
+        
+        // Glassmorphism Bar
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        const barY = h - barH - pad;
+        const barRect = [pad, barY, w - pad*2, barH];
+        
+        // Rounded Rect for Bar
+        const r = 24;
+        ctx.beginPath();
+        ctx.moveTo(barRect[0]+r, barRect[1]);
+        ctx.lineTo(barRect[0]+barRect[2]-r, barRect[1]);
+        ctx.quadraticCurveTo(barRect[0]+barRect[2], barRect[1], barRect[0]+barRect[2], barRect[1]+r);
+        ctx.lineTo(barRect[0]+barRect[2], barRect[1]+barRect[3]-r);
+        ctx.quadraticCurveTo(barRect[0]+barRect[2], barRect[1]+barRect[3], barRect[0]+barRect[2]-r, barRect[1]+barRect[3]);
+        ctx.lineTo(barRect[0]+r, barRect[1]+barRect[3]);
+        ctx.quadraticCurveTo(barRect[0], barRect[1]+barRect[3], barRect[0], barRect[1]+barRect[3]-r);
+        ctx.lineTo(barRect[0], barRect[1]+r);
+        ctx.quadraticCurveTo(barRect[0], barRect[1], barRect[0]+r, barRect[1]);
+        ctx.fill();
+        ctx.clip(); // Ensure content stays in bar
+
+        // Logo
+        const logoSize = barH * 0.7;
+        const logoX = pad + (barH - logoSize)/2;
+        const logoY = barY + (barH - logoSize)/2;
+        ctx.drawImage(userImg, logoX, logoY, logoSize, logoSize);
+
+        // Text
+        ctx.fillStyle = 'white';
+        ctx.font = `black ${h * 0.024}px sans-serif`;
+        ctx.fillText(userData.business_name?.toUpperCase() || '', logoX + logoSize + 15, barY + barH/2 - 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = `bold ${h * 0.02}px sans-serif`;
+        ctx.fillText(userData.phone_number || '', logoX + logoSize + 15, barY + barH/2 + 18);
+        ctx.restore();
+      }
+
+      animationId = requestAnimationFrame(render);
+    };
+
+    posterImg.onload = () => {
+      render();
+    };
+
+    return () => cancelAnimationFrame(animationId);
+  }, [template.image, userData, selectedEffect, isLoading]);
+
+  // ── Recording Functionality ──────────────────────────────────────────
+  const handleDownloadVideo = async () => {
+    if (!canvasRef.current || !selectedMusic) return;
+    
+    try {
+      setIsProcessing(true);
+      setDownloadProgress(0);
+
+      // 1. Audio Setup
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        mediaStreamDestRef.current = audioContextRef.current.createMediaStreamDestination();
+      }
+      
+      const audioCtx = audioContextRef.current;
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
+      // Create or reuse audio source with GainNode for better routing
+      if (!audioSourceRef.current) {
+        audioSourceRef.current = audioCtx.createMediaElementSource(posterAudioRef.current);
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 1.0;
+        
+        audioSourceRef.current.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        gainNode.connect(mediaStreamDestRef.current);
+      }
+
+      // 2. Stream Capture
+      const canvasStream = canvasRef.current.captureStream(30);
+      const audioTracks = mediaStreamDestRef.current.stream.getAudioTracks();
+      const videoTracks = canvasStream.getVideoTracks();
+
+      if (audioTracks.length === 0) {
+        console.warn('No audio tracks found in destination stream');
+      }
+
+      const combinedStream = new MediaStream([
+        ...videoTracks,
+        ...audioTracks
+      ]);
+
+      // 3. Media Recorder
+      // Try widely supported mimeTypes sequentially
+      const supportedMimeTypes = [
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp9,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      
+      let mimeType = supportedMimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+        
+      const recorder = new MediaRecorder(combinedStream, { 
+        mimeType,
+        audioBitsPerSecond: 128000,
+        videoBitsPerSecond: 2500000
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType.includes('mp4') ? 'video/mp4' : 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `poster-video-${Date.now()}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setIsProcessing(false);
+      };
+
+      // Ensure the audio is ready before starting recorder
+      posterAudioRef.current.currentTime = 0;
+      await new Promise((resolve) => {
+        if (posterAudioRef.current.readyState >= 3) resolve();
+        else {
+          posterAudioRef.current.oncanplay = resolve;
+          // Fallback if event doesn't fire
+          setTimeout(resolve, 1000);
+        }
+      });
+
+      // Start play and record
+      await posterAudioRef.current.play();
+      recorder.start(100); // 100ms time slices can help with data availability
+
+      // Recording Duration (8 seconds)
+      const duration = 8;
+      const interval = setInterval(() => {
+        setDownloadProgress(prev => {
+           if (prev >= 100) {
+             clearInterval(interval);
+             return 100;
+           }
+           return prev + (100 / (duration * 10));
+        });
+      }, 100);
+
+      setTimeout(() => {
+        if (recorder.state !== 'inactive') {
+          recorder.stop();
+        }
+        posterAudioRef.current.pause();
+        clearInterval(interval);
+      }, duration * 1000);
+
+    } catch (err) {
+      console.error('Recording failed:', err);
+      setIsProcessing(false);
+      alert('Video export failed: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const currentEffect = effects.find(e => e.id === selectedEffect);
 
   return (
     <motion.div 
@@ -65,167 +345,292 @@ const VideoEditor = ({ template, userData, onClose }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
     >
-      <audio ref={previewAudioRef} onEnded={() => setPreviewingTrackId(null)} />
-      <audio ref={posterAudioRef} loop />
+      <audio ref={previewAudioRef} crossOrigin="anonymous" onEnded={() => setPreviewingTrackId(null)} />
+      <audio ref={posterAudioRef} crossOrigin="anonymous" loop />
+
+      {/* ── Processing Overlay (New Phase 6) ── */}
+      <AnimatePresence>
+        {(isLoading || isProcessing) && (
+          <motion.div 
+            className="absolute inset-0 bg-white/95 backdrop-blur-2xl z-[5000] flex flex-col items-center justify-center p-10 text-center"
+            exit={{ opacity: 0 }}
+          >
+            <div className="relative mb-8">
+               <div className="w-24 h-24 border-4 border-rose-100 border-t-rose-500 rounded-full animate-spin" />
+               {isProcessing && (
+                 <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-rose-600">
+                    {Math.round(downloadProgress)}%
+                 </div>
+               )}
+            </div>
+            <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight mb-2">
+               {isProcessing ? 'Capturing Moments...' : 'Adding Your Audio...'}
+            </h3>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+               {isProcessing ? 'Merging effects and music into your video' : 'This will just take a moment'}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
-      <div className="bg-[#b91c1c] p-3 px-4 flex items-center gap-4 text-white">
+      <div className="bg-[#b91c1c] p-3 px-4 flex items-center gap-4 text-white shadow-lg relative z-10">
         <button className="bg-transparent text-white p-0 flex items-center active:scale-95 transition-transform border-none cursor-pointer" onClick={onClose}>
           <ArrowLeft size={24} />
         </button>
-        <h3 className="text-[1.1rem] font-bold">Video Poster Editor</h3>
+        <h3 className="text-[1.1rem] font-black uppercase tracking-tight">Video Poster</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
-        {/* Poster Preview */}
-        <div className="p-6 flex flex-col items-center">
-          <div className="relative w-full max-w-[340px] aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-white border-8 border-white">
-             <img src={template.image} alt="Preview" className="w-full h-full object-cover" />
+        {/* Poster Preview with Live Canvas (New Phase 1) */}
+        <div className="p-6 pb-2 flex flex-col items-center">
+          <div className="relative w-full max-w-[340px] aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-white border-[6px] border-white">
+             <canvas 
+               ref={canvasRef} 
+               width={1080} 
+               height={1080}
+               className="w-full h-full object-cover"
+             />
              
              {/* Play/Pause Overlay */}
-             <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+             <div className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors">
                 <button 
-                   className="w-20 h-20 bg-white/30 backdrop-blur-xl rounded-full flex items-center justify-center text-white border border-white/40 shadow-2xl active:scale-90 transition-transform border-none cursor-pointer"
+                   className="w-20 h-20 bg-white/40 backdrop-blur-2xl rounded-full flex items-center justify-center text-white border-2 border-white/50 shadow-2xl active:scale-90 transition-all border-none cursor-pointer group"
                    onClick={() => {
                      setIsPlaying(!isPlaying);
-                     if (!isPlaying) posterAudioRef.current?.play();
+                     if (!isPlaying) posterAudioRef.current?.play().catch(e => console.log('Interrupted'));
                      else posterAudioRef.current?.pause();
                    }}
                 >
-                  {isPlaying ? <Pause size={40} fill="white" /> : <Play size={40} className="ml-1" fill="white" />}
+                  {isPlaying ? <Pause size={40} fill="white" /> : <Play size={40} className="ml-1.5" fill="white" />}
                 </button>
-             </div>
-
-             {/* Branding Bar */}
-             <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-3 px-4 flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-orange-500 shadow-sm">
-                  <img src={userData.userPhoto || userData.logo} alt="logo" className="w-full h-full object-cover" />
-               </div>
-               <div className="flex-1 min-w-0">
-                  <div className="text-[0.75rem] font-black text-gray-900 leading-tight truncate uppercase tracking-tighter">{userData.business_name}</div>
-                  <div className="text-[0.6rem] font-bold text-gray-500 tracking-wider">📞 {userData.phone_number}</div>
-               </div>
              </div>
           </div>
         </div>
 
-        {/* Dynamic Music Content */}
-        <div className="flex-1 bg-white rounded-t-[3rem] p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-           <div className="flex justify-between items-center mb-6">
-              <h4 className="text-[1rem] font-black text-gray-800 tracking-tight uppercase">Select Background Music</h4>
-              <span className="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-full">{musicList.length} Tracks</span>
-           </div>
+        {/* ── Choose Audio & Music Section (Image 3) ── */}
+        <div className="p-6 space-y-4">
+           <h4 className="text-[0.7rem] font-black text-gray-400 uppercase tracking-[0.2em] pl-1">Choose Audio & Music</h4>
            
-           <div className="space-y-3 pb-24">
-              {musicList.map(track => (
-                <div 
-                  key={track._id} 
-                  className={`relative group bg-gray-50 border-2 rounded-[1.5rem] p-3 flex items-center gap-4 transition-all cursor-pointer ${activeMusicId === track._id ? 'border-orange-500 bg-orange-50/30' : 'border-gray-100 hover:border-gray-200'}`}
-                  onClick={() => handleApplyMusic(track._id)}
-                >
-                   <div className="w-14 h-14 rounded-2xl bg-white flex-shrink-0 relative overflow-hidden shadow-sm">
-                      <img src={track.thumbnailUrl} className="w-full h-full object-cover" alt="t" />
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePreview(track);
-                        }}
-                        className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity border-none cursor-pointer"
-                      >
-                        {previewingTrackId === track._id ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" />}
-                      </button>
-                   </div>
-                   <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                         <h5 className={`text-[0.95rem] font-black leading-tight truncate ${activeMusicId === track._id ? 'text-orange-600' : 'text-gray-800'}`}>{track.title}</h5>
-                         {activeMusicId === track._id && <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />}
-                      </div>
-                      <p className="text-[0.7rem] text-gray-400 font-bold uppercase tracking-widest">{track.artist}</p>
-                   </div>
-                   <div className="flex items-center gap-2">
-                       {activeMusicId === track._id ? (
-                          <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white">
-                             <Zap size={12} fill="white" />
-                          </div>
-                       ) : (
-                          <div className="w-6 h-6 rounded-full bg-gray-200/50" />
-                       )}
-                   </div>
-                </div>
-              ))}
-              {musicList.length === 0 && (
-                 <div className="text-center py-10 opacity-30">
-                    <Music2 size={40} className="mx-auto mb-2" />
-                    <p className="font-bold text-sm">No music tracks available</p>
+           <div className="space-y-3">
+              {/* Background Music Slot */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between shadow-sm group hover:border-orange-100 transition-colors">
+                 <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
+                       <Music2 size={20} />
+                    </div>
+                    <div>
+                        <h5 className="text-[0.9rem] font-black text-gray-800 leading-tight">{selectedMusic?.title || 'Generic-1'}</h5>
+                        <p className="text-[0.7rem] text-gray-400 font-bold uppercase tracking-widest">Background Music | {selectedMusic?.duration || '00:22'}</p>
+                    </div>
                  </div>
-              )}
+                 <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => setShowMusicModal(true)}
+                        className="flex items-center gap-2 h-9 px-4 bg-gray-50 text-gray-600 rounded-xl border border-gray-100 text-[0.75rem] font-black uppercase tracking-wider hover:bg-gray-100 transition-colors"
+                    >
+                       <Edit2 size={14} /> Edit
+                    </button>
+                    <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white">
+                       <Check size={14} strokeWidth={3} />
+                    </div>
+                 </div>
+              </div>
            </div>
+
+           {/* Video Effects Button */}
+           <button 
+             onClick={() => setShowEffects(true)}
+             className="w-full h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center gap-3 font-black text-[0.9rem] uppercase tracking-widest shadow-sm hover:bg-indigo-100 transition-all active:scale-95"
+           >
+              <Zap size={20} className="fill-current" /> Video Effects
+           </button>
         </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 px-6 border-t border-gray-100 bg-white/80 backdrop-blur-xl flex items-center justify-between gap-2 pb-8 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-         <button 
-           className="bg-orange-600 text-white px-8 py-4 rounded-[1.5rem] font-black text-[1rem] flex items-center gap-2.5 active:scale-95 transition-all shadow-xl shadow-orange-100 border-none cursor-pointer"
-           onClick={() => setShowEffects(true)}
+      {/* Floating Bottom Actions */}
+      <div className="p-6 pt-2 pb-8 flex items-center justify-between gap-6 bg-white border-t border-gray-100 z-10">
+         <div 
+           className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1"
+           onClick={handleDownloadVideo}
          >
-           <Sparkles size={20} /> FX Filters
-         </button>
-
-         <div className="flex-1 flex justify-around items-center">
-            <div className="flex flex-col items-center gap-1 text-[0.65rem] text-gray-400 font-black uppercase cursor-pointer active:scale-95 transition-transform text-center">
-               <Download size={24} strokeWidth={2.5} className="text-rose-500" />
-               <span>Save</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 text-[0.65rem] text-gray-400 font-black uppercase cursor-pointer active:scale-95 transition-transform text-center">
-               <MessageCircle size={24} strokeWidth={2.5} className="text-green-500" />
-               <span>Post</span>
-            </div>
+            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm border-none"><Download size={22} /></div>
+            <span className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest">Download</span>
+         </div>
+         <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1">
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm"><MessageCircle size={22} /></div>
+            <span className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest">WhatsApp</span>
+         </div>
+         <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1">
+            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 shadow-sm"><Share2 size={22} /></div>
+            <span className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest">Share</span>
          </div>
       </div>
 
-      {/* Effects Slide Modal */}
+      {/* ── Music Modal (Image 2) ── */}
+      <AnimatePresence>
+        {showMusicModal && (
+          <motion.div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[4000] flex items-end"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowMusicModal(false)}
+          >
+            <motion.div 
+              className="w-full bg-white rounded-t-[3rem] h-[85vh] flex flex-col shadow-2xl overflow-hidden"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              onClick={e => e.stopPropagation()}
+            >
+               {/* Modal Header */}
+               <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <button className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border-none cursor-pointer" onClick={() => setShowMusicModal(false)}>
+                     <X size={20} />
+                  </button>
+                  <h3 className="text-[1.1rem] font-black uppercase tracking-tight">Background Music</h3>
+                  <button className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 border-none cursor-pointer">
+                     <Check size={20} />
+                  </button>
+               </div>
+
+               <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                  {/* Search bar */}
+                  <div className="relative mb-6">
+                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                     <input 
+                        type="text" 
+                        placeholder="Search Audio" 
+                        className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 text-[0.9rem] font-bold text-gray-800 outline-none focus:border-orange-500 transition-colors"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                     />
+                     <button className="absolute right-3 top-1/2 -translate-y-1/2 h-9 px-4 bg-white text-gray-600 rounded-xl border border-gray-100 text-[0.7rem] font-black uppercase tracking-wider flex items-center gap-2 shadow-sm border-none cursor-pointer">
+                        <Music2 size={14} /> Add Music
+                     </button>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex gap-3 overflow-x-auto pb-6 scrollbar-hide">
+                     {categories.map(cat => (
+                        <button 
+                           key={cat} 
+                           onClick={() => setActiveTab(cat)}
+                           className={`h-11 px-6 rounded-full text-[0.8rem] font-black uppercase tracking-widest whitespace-nowrap transition-all border-none cursor-pointer ${activeTab === cat ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-gray-50 text-gray-400'}`}
+                        >
+                           {cat}
+                        </button>
+                     ))}
+                  </div>
+
+                  {/* Own Music Banner */}
+                  {activeTab === 'Generic' && (
+                    <div className="bg-orange-50/50 rounded-[2rem] p-6 mb-8 flex items-center justify-between relative overflow-hidden border border-orange-100/30">
+                        <div className="relative z-10 flex-1">
+                            <h4 className="text-[1.1rem] font-black text-gray-800 leading-tight mb-3">Want to use your own Music?</h4>
+                            <button className="h-11 px-6 bg-rose-500 text-white rounded-2xl flex items-center gap-2 text-[0.8rem] font-black uppercase tracking-wider shadow-lg shadow-rose-200 border-none cursor-pointer">
+                                Add Music <Music2 size={16} />
+                            </button>
+                        </div>
+                        <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center text-rose-500 relative z-10">
+                            <Music2 size={40} strokeWidth={2.5} />
+                        </div>
+                        <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-orange-100 rounded-full blur-3xl opacity-50" />
+                    </div>
+                  )}
+
+                  {/* Music Items */}
+                  <div className="space-y-3">
+                     {filteredMusic.map(track => (
+                        <div 
+                           key={track._id} 
+                           className={`flex items-center justify-between p-4 rounded-[1.5rem] transition-all group ${selectedMusic?._id === track._id ? 'bg-orange-50/50' : 'bg-white'}`}
+                        >
+                           <div className="flex items-center gap-4 flex-1 min-w-0">
+                               <div className="w-12 h-12 rounded-xl bg-gray-100 flex-shrink-0 relative group-hover:scale-105 transition-transform overflow-hidden">
+                                  <img 
+                                    src={track.thumbnailUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200'} 
+                                    className="w-full h-full object-cover rounded-xl" 
+                                    alt={track.title} 
+                                  />
+                               </div>
+                               <div className="flex-1 min-w-0">
+                                  <h5 className={`text-[0.9rem] font-black leading-tight truncate ${selectedMusic?._id === track._id ? 'text-rose-500' : 'text-gray-800'}`}>{track.title}</h5>
+                                  <p className="text-[0.65rem] text-gray-400 font-bold uppercase tracking-[0.15em] mt-0.5">{track.duration || '00:22'}</p>
+                               </div>
+                           </div>
+                           <div className="flex items-center gap-3">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); togglePreview(track); }}
+                                className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-800 shadow-sm border border-gray-100 cursor-pointer active:scale-90 transition-all border-none"
+                              >
+                                 {previewingTrackId === track._id ? <Pause size={18} fill="currentColor" /> : <Play size={18} className="ml-0.5" fill="currentColor" />}
+                              </button>
+                              <button 
+                                onClick={() => handleApplyMusic(track)}
+                                className={`h-11 px-6 rounded-2xl text-[0.75rem] font-black uppercase tracking-widest flex items-center gap-2 transition-all border-none cursor-pointer shadow-lg ${selectedMusic?._id === track._id ? 'bg-rose-500 text-white shadow-rose-200' : 'bg-rose-500 text-white shadow-rose-200'}`}
+                              >
+                                 Apply <ArrowLeft size={16} className="rotate-180" />
+                              </button>
+                           </div>
+                        </div>
+                     ))}
+                     {filteredMusic.length === 0 && (
+                        <div className="text-center py-20 opacity-20">
+                           <Music2 size={60} className="mx-auto mb-4" />
+                           <p className="font-black uppercase tracking-[0.2em] text-sm">No Tracks Found</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Video Effects Modal (Image 4) ── */}
       <AnimatePresence>
         {showEffects && (
           <motion.div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[3000] flex items-end"
+            className="fixed inset-0 bg-black/20 z-[4000] flex items-end"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowEffects(false)}
           >
             <motion.div 
-              className="w-full bg-white rounded-t-[3rem] p-8 pb-12 flex flex-col gap-8 shadow-2xl"
+              className="w-full bg-white rounded-t-[3rem] p-8 pb-12 flex flex-col gap-8 shadow-2xl overflow-hidden"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               onClick={e => e.stopPropagation()}
             >
-               <div className="flex flex-col gap-1 text-center sm:text-left">
-                  <h4 className="text-xl font-black text-gray-900 uppercase">Video Transitions</h4>
+               <div className="flex flex-col gap-1">
+                  <h4 className="text-xl font-black text-gray-900 uppercase tracking-tight">Video Transitions</h4>
                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Select your motion style</p>
                </div>
                
-               <div className="flex items-center overflow-x-auto gap-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2 px-1">
+               <div className="flex items-center overflow-x-auto gap-8 scrollbar-hide py-2 px-1">
                   {effects.map(fx => (
                     <div 
                       key={fx.id} 
                       className="flex flex-col items-center gap-3 shrink-0 cursor-pointer group"
                       onClick={() => setSelectedEffect(fx.id)}
                     >
-                       <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all ${selectedEffect === fx.id ? 'bg-orange-600 text-white scale-110 shadow-2xl shadow-orange-200' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100'}`}>
-                          {React.cloneElement(fx.icon, { size: 32 })}
+                       <div className={`w-20 h-20 rounded-[2.25rem] flex items-center justify-center transition-all ${selectedEffect === fx.id ? 'bg-orange-600 text-white scale-110 shadow-2xl shadow-orange-200' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100'}`}>
+                          {React.cloneElement(fx.icon, { size: 32, strokeWidth: selectedEffect === fx.id ? 2.5 : 2 })}
                        </div>
-                       <span className={`text-[0.7rem] font-black uppercase tracking-widest ${selectedEffect === fx.id ? 'text-orange-600' : 'text-gray-400'}`}>{fx.title}</span>
+                       <span className={`text-[0.65rem] font-black uppercase tracking-widest transition-colors ${selectedEffect === fx.id ? 'text-orange-600' : 'text-gray-400'}`}>{fx.title}</span>
                     </div>
                   ))}
                </div>
 
                <button 
-                 className="w-full py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-lg shadow-2xl active:scale-[0.98] transition-all border-none uppercase tracking-widest cursor-pointer"
+                 className="w-full h-16 bg-rose-500 text-white rounded-[1.5rem] font-black text-lg shadow-2xl shadow-rose-200 active:scale-[0.98] transition-all border-none uppercase tracking-widest cursor-pointer"
                  onClick={() => setShowEffects(false)}
                >
-                 Confirm Effect
+                 Apply Effect
                </button>
             </motion.div>
           </motion.div>
