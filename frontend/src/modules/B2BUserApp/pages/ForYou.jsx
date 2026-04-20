@@ -29,7 +29,14 @@ const ForYou = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
+  const [activeType, setActiveType] = useState('image'); // 'image' or 'video'
   const API_URL = import.meta.env.VITE_API_URL;
+
+  const filterByType = useCallback((t) => {
+    if (!t) return false;
+    const isVideo = t.type === 'video' || t.isVideo;
+    return activeType === 'video' ? isVideo : !isVideo;
+  }, [activeType]);
 
   // Debounce logic
   useEffect(() => {
@@ -41,17 +48,15 @@ const ForYou = () => {
   useEffect(() => {
     const performSearch = async () => {
       if (!debouncedQuery.trim()) {
-        setSearchResults([]);
+        setSearchData({ templates: [], categories: [], subcategories: [] });
         setIsSearching(false);
         return;
       }
 
       try {
         setIsSearching(true);
-        const params = { search: debouncedQuery, limit: 50 };
-        if (activeCategory === 'Video') {
-          params.type = 'video';
-        } else if (activeCategory !== 'All') {
+        const params = { search: debouncedQuery, limit: 50, type: activeType };
+        if (activeCategory !== 'All') {
           params.category = activeCategory;
         }
         
@@ -69,7 +74,7 @@ const ForYou = () => {
     };
 
     performSearch();
-  }, [debouncedQuery, API_URL]);
+  }, [debouncedQuery, activeCategory, activeType, API_URL]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -88,18 +93,19 @@ const ForYou = () => {
       setSpecialItems(mixedSubcategories.sort(() => 0.5 - Math.random()));
 
       // Fetch Templates
-      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=100`);
+      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400`);
       const templates = tplData.templates;
       setAllTemplates(templates);
-      setVideoPosters(templates.filter(t => t.isVideo));
+      
+
+      setVideoPosters(templates.filter(t => t.type === 'video' || t.isVideo));
       
       // Fetch Poster of the Day
       try {
-        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=3`);
+        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=10`);
         if (potdData.templates && potdData.templates.length > 0) {
           setPotdTemplates(potdData.templates);
         } else {
-          // Fallback to first 3 templates
           setPotdTemplates(templates.slice(0, 3));
         }
       } catch (e) {
@@ -111,8 +117,12 @@ const ForYou = () => {
         id: cat._id,
         title: cat.name,
         subcategories: cat.subcategories,
-        templates: templates.filter(t => t.categoryId === cat._id || t.categoryId?._id === cat._id)
-      })).filter(s => s.templates.length > 0 || (s.subcategories && s.subcategories.length > 0));
+        templates: templates.filter(t => {
+           const matchesCategory = t.categoryId === cat._id || t.categoryId?._id === cat._id;
+           const matchesType = filterByType(t);
+           return matchesCategory && matchesType;
+        })
+      })).filter(s => s.templates.length > 0 || (s.subcategories && s.subcategories.length > 0 && activeType === 'image'));
 
       setSections(organizedSections);
     } catch (error) {
@@ -120,11 +130,29 @@ const ForYou = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [API_URL]);
+  }, [API_URL, activeType]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Handle shared template link auto-open
+  useEffect(() => {
+    if (allTemplates.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const templateId = urlParams.get('templateId');
+      
+      if (templateId) {
+        const template = allTemplates.find(t => t._id === templateId);
+        if (template) {
+           openDetail(template);
+           // Clear param from URL
+           const newurl = window.location.origin + window.location.pathname;
+           window.history.replaceState({path: newurl}, '', newurl);
+        }
+      }
+    }
+  }, [allTemplates, openDetail]);
 
   const handleLikePOTD = async (posterId) => {
     if (!user?.accessToken) return;
@@ -203,19 +231,21 @@ const ForYou = () => {
         </section>
 
         <section className="bg-white pt-1 pb-4 relative border-b border-[#f1f5f9] flex justify-center">
-          <div className="flex px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth lg:max-w-6xl w-full gap-1.5">
+          <div className="flex px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth lg:max-w-6xl w-full gap-1.5 px-4 items-center">
+            <button 
+              onClick={() => setActiveType(prev => prev === 'video' ? 'image' : 'video')}
+              className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 shadow-sm ${activeType === 'video' ? 'bg-[#b91c1c] text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+            >
+              <Video size={18} fill={activeType === 'video' ? 'white' : 'none'} className={activeType === 'video' ? 'text-white' : 'text-slate-400'} /> Video
+            </button>
+
+            <div className="w-[1px] h-8 bg-slate-200 mx-1.5 self-center shrink-0" />
+
             <button
                onClick={() => { setActiveCategory('All'); setActiveSubcategory(null); }}
                className={`px-6 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap shrink-0 transition-colors ${activeCategory === 'All' ? 'bg-[#1e1e1e] text-white' : 'bg-slate-100 text-slate-500'}`}
             >
               All
-            </button>
-
-            <button 
-              onClick={() => { setActiveCategory('Video'); setActiveSubcategory(null); }}
-              className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 ${activeCategory === 'Video' ? 'bg-[#b91c1c] text-white' : 'bg-[#ef4444] text-white'}`}
-            >
-              <Video size={18} fill="white" /> Video
             </button>
 
             {categories.map(cat => (
@@ -278,11 +308,11 @@ const ForYou = () => {
                  )}
 
                  {/* Template Hits */}
-                 {searchData.templates.length > 0 && (
+                 {searchData.templates.filter(filterByType).length > 0 && (
                    <div className="space-y-4">
-                     <h3 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Posters & Videos</h3>
+                     <h3 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">{activeType === 'video' ? 'Videos' : 'Posters'}</h3>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                       {searchData.templates.map(tpl => (
+                       {searchData.templates.filter(filterByType).map(tpl => (
                          <TemplateCard key={tpl._id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
                        ))}
                      </div>
@@ -297,14 +327,14 @@ const ForYou = () => {
                </div>
             )}
           </div>
-        ) : activeCategory === 'Video' ? (
+        ) : (activeCategory === 'All' && activeType === 'video') ? (
           <div className="p-2">
             <div className="px-2 mb-4">
               <h2 className="text-xl font-bold text-[#0f172a]">Video Templates</h2>
               <p className="text-sm text-[#64748b]">Found {videoPosters.length} trending videos</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {videoPosters.map(tpl => (
+              {allTemplates.filter(filterByType).map(tpl => (
                 <TemplateCard key={tpl._id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
               ))}
             </div>
@@ -316,8 +346,9 @@ const ForYou = () => {
                  <h2 className="text-xl font-bold text-[#0f172a]">
                     {categories.find(c => c._id === activeCategory)?.name || activeCategory}
                     {activeSubcategory && ` > ${specialItems.find(s => s._id === activeSubcategory)?.name}`}
+                    {activeType === 'video' && ' (Videos)'}
                  </h2>
-                 <p className="text-sm text-[#64748b]">Showing posters for your selection</p>
+                 <p className="text-sm text-[#64748b]">Showing {activeType}s for your selection</p>
               </div>
               <button 
                  onClick={() => { setActiveCategory('All'); setActiveSubcategory(null); }}
@@ -331,7 +362,8 @@ const ForYou = () => {
                 .filter(t => {
                    const matchesCat = t.categoryId === activeCategory || t.categoryId?._id === activeCategory;
                    const matchesSub = !activeSubcategory || t.subcategoryId === activeSubcategory || t.subcategoryId?._id === activeSubcategory;
-                   return matchesCat && matchesSub;
+                   const matchesType = filterByType(t);
+                   return matchesCat && matchesSub && matchesType;
                 })
                 .map(tpl => (
                 <TemplateCard key={tpl._id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
@@ -400,9 +432,9 @@ const ForYou = () => {
 
              {/* 2. Initial High-Impact Posters (Grid of 3 on desktop) */}
              <div className="bg-white py-4 lg:px-4 mb-2 border-b border-slate-50">
-                <SectionHeader title="Recommended Posters" showViewAll={true} />
+                <SectionHeader title={`Recommended ${activeType === 'video' ? 'Videos' : 'Posters'}`} showViewAll={true} />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 lg:px-0">
-                   {allTemplates.slice(0, 6).map((tpl, i) => (
+                   {allTemplates.filter(filterByType).slice(0, 6).map((tpl, i) => (
                       <TemplateCard key={`init-grid-${tpl._id}`} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
                    ))}
                 </div>
@@ -411,9 +443,11 @@ const ForYou = () => {
              {/* 3. Trending Posters Slider (Shifted after 5 posters) */}
              <section className="bg-white py-6 mt-4 mb-2">
                 <div className="w-full lg:px-4">
-                  <SectionHeader title="Trending This Week" showViewAll={true} />
+                  <SectionHeader title={`Trending ${activeType === 'video' ? 'Videos' : 'Posters'}`} showViewAll={true} />
                   <HorizontalScrollList className="pt-2">
-                    {allTemplates.length > 5 ? allTemplates.slice(5, 15).map(tpl => (
+                    {allTemplates.filter(filterByType).length > 5 ? allTemplates.filter(filterByType).slice(5, 15).map(tpl => (
+                      <TemplateCard key={tpl._id} template={tpl} variant="compact" onClick={() => openDetail(tpl)} />
+                    )) : allTemplates.filter(filterByType).length > 0 ? allTemplates.filter(filterByType).map(tpl => (
                       <TemplateCard key={tpl._id} template={tpl} variant="compact" onClick={() => openDetail(tpl)} />
                     )) : (
                        <div className="flex flex-col items-center justify-center w-full py-10 opacity-40">
@@ -426,9 +460,8 @@ const ForYou = () => {
 
              {/* 4. Categorized Discovery Modules (No names on slides as requested) */}
              {sections.map((section, index) => {
-                // Pick 1 high-impact template to show between sliders
-                // Using modulo to ensure we always have a template even if list is short
-                const interTemplate = allTemplates.length > 0 ? allTemplates[index % allTemplates.length] : null;
+                const typeFilteredTemplates = section.templates.filter(filterByType);
+                if (typeFilteredTemplates.length === 0 && (!section.subcategories || section.subcategories.length === 0)) return null;
 
                 return (
                   <React.Fragment key={section.id}>
@@ -454,7 +487,7 @@ const ForYou = () => {
                                  />
                               ))
                            ) : (
-                              section.templates.map(tpl => (
+                              typeFilteredTemplates.map(tpl => (
                                  <TemplateCard key={tpl._id} template={tpl} variant="compact" onClick={() => openDetail(tpl)} />
                               ))
                            )}
@@ -463,13 +496,14 @@ const ForYou = () => {
                     </section>
                     
                     {/* Interspersed cards for continuous scroll variety - 3 in a row on desktop */}
-                    {allTemplates.length > 0 && (
+                    {allTemplates.filter(filterByType).length > 0 && (
                       <div className="bg-white py-6 mb-2 lg:px-4 border-b border-slate-50">
                         <SectionHeader title="Staff Picks" showViewAll={false} />
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 lg:px-0">
                           {[0, 1, 2].map(offset => {
-                            const tplIndex = (index * 3 + offset) % allTemplates.length;
-                            const tpl = allTemplates[tplIndex];
+                            const filteredList = allTemplates.filter(filterByType);
+                            const tplIndex = (index * 3 + offset) % filteredList.length;
+                            const tpl = filteredList[tplIndex];
                             return <TemplateCard key={`inter-${index}-${offset}`} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />;
                           })}
                         </div>

@@ -187,45 +187,6 @@ const ReferralManager = () => {
                </div>
             </Card>
 
-            <Card className="referral-item border-none detail-card p-8">
-               <div className="flex items-center gap-4 mb-10">
-                  <div className="w-12 h-12 bg-[#ef4444] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-500/20">
-                     <ShieldCheck size={24} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Access Control & Security</h3>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">Integrity preservation mechanics</p>
-                  </div>
-               </div>
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="p-6 bg-white  rounded-[2rem] border border-slate-100 dark:border-slate-800 group hover:ring-2 hover:ring-red-500/20 transition-all flex flex-col justify-between h-[160px]">
-                     <div className="flex justify-between items-start">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50  flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform"><Smartphone size={18} /></div>
-                        <div className="w-14 h-7 bg-[#ef4444] rounded-full relative shadow-inner p-1">
-                           <div className="absolute right-1 top-0.5 w-6 h-6 bg-white rounded-full shadow-lg"></div>
-                        </div>
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 mb-0.5">Device Registry Sync</h4>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">Prevent multi-instancing on equivalent nodes</p>
-                     </div>
-                  </div>
-
-                  <div className="p-6 bg-white  rounded-[2rem] border border-slate-100 dark:border-slate-800 group hover:ring-2 hover:ring-red-500/20 transition-all flex flex-col justify-between h-[160px]">
-                     <div className="flex justify-between items-start">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50  flex items-center justify-center text-emerald-500 shadow-sm group-hover:scale-110 transition-transform"><Target size={18} /></div>
-                        <div className="w-14 h-7 bg-slate-200 dark:bg-slate-800 rounded-full relative shadow-inner p-1">
-                           <div className="absolute left-1 top-0.5 w-6 h-6 bg-white rounded-full shadow-lg"></div>
-                        </div>
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 mb-0.5">Yield Modulation Cap</h4>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">Limit monthly reward accrual per unique ID</p>
-                     </div>
-                  </div>
-               </div>
-            </Card>
          </div>
 
          <div className="referral-item space-y-8">

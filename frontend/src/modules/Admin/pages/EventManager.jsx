@@ -27,6 +27,12 @@ const EventManager = () => {
 
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [viewMode, setViewMode] = useState('calendar'); // Default to calendar as requested
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
   const [newEventData, setNewEventData] = useState({ 
     name: '', 
     date: '', 
@@ -124,15 +130,143 @@ const EventManager = () => {
            <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Event Calendar</h1>
            <p className="text-slate-400 text-xs font-semibold mt-1">Schedule and manage upcoming festivals and important dates</p>
         </div>
-        <Button 
-          onClick={() => setShowAddEvent(true)}
-          className="w-full sm:w-auto rounded-xl shadow-lg shadow-red-500/20 px-6 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs font-black uppercase tracking-widest"
-        >
-          <Plus size={16} className="mr-2" strokeWidth={3} /> Add New Event
-        </Button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="bg-slate-100 p-1.5 rounded-2xl flex items-center gap-1">
+             <button 
+               onClick={() => setViewMode('calendar')}
+               className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'calendar' ? 'bg-white text-[#ef4444] shadow-sm' : 'text-slate-400'}`}
+             >
+                Calendar
+             </button>
+             <button 
+               onClick={() => setViewMode('list')}
+               className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-white text-[#ef4444] shadow-sm' : 'text-slate-400'}`}
+             >
+                List
+             </button>
+          </div>
+          <Button 
+            onClick={() => setShowAddEvent(true)}
+            className="flex-1 sm:flex-none rounded-xl shadow-lg shadow-red-500/20 px-6 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs font-black uppercase tracking-widest"
+          >
+            <Plus size={16} className="mr-2" strokeWidth={3} /> New Event
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+      {viewMode === 'calendar' && (
+        <Card className="calendar-container border-none p-8 bg-white shadow-xl shadow-slate-200/40 relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-bl-[10rem] -z-0 opacity-50" />
+           
+           <div className="relative z-10 space-y-8">
+              <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-[#ef4444]">
+                       <Calendar size={24} />
+                    </div>
+                    <div>
+                       <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                          {selectedDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                       </h3>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Chronological Distribution</p>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => {
+                         const d = new Date(selectedDate);
+                         d.setMonth(d.getMonth() - 1);
+                         setSelectedDate(d);
+                      }}
+                      className="rounded-xl hover:bg-slate-50 border-none"
+                    >
+                       <ChevronLeft size={20} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setSelectedDate(new Date())}
+                      className="text-[10px] font-black uppercase tracking-widest px-6 h-10 rounded-xl border-none hover:bg-slate-50"
+                    >
+                       Today
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => {
+                         const d = new Date(selectedDate);
+                         d.setMonth(d.getMonth() + 1);
+                         setSelectedDate(d);
+                      }}
+                      className="rounded-xl hover:bg-slate-50 border-none"
+                    >
+                       <ChevronRight size={20} />
+                    </Button>
+                 </div>
+              </div>
+
+              <motion.div 
+                key={selectedDate.getMonth()}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-7 border border-slate-100 rounded-[2rem] overflow-hidden bg-slate-50/30"
+              >
+                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="py-4 text-center border-b border-slate-100 bg-white">
+                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{day}</span>
+                    </div>
+                 ))}
+                 
+                 {Array.from({ length: getFirstDayOfMonth(selectedDate.getFullYear(), selectedDate.getMonth()) }).map((_, i) => (
+                    <div key={`empty-${i}`} className="h-24 md:h-32 border-r border-b border-slate-100/50 bg-slate-50/20" />
+                 ))}
+
+                 {Array.from({ length: getDaysInMonth(selectedDate.getFullYear(), selectedDate.getMonth()) }).map((_, i) => {
+                    const day = i + 1;
+                    const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayEvents = events.filter(e => e.date.startsWith(dateStr));
+                    const isToday = new Date().toDateString() === new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day).toDateString();
+
+                    return (
+                       <div key={day} className={`h-24 md:h-32 p-3 border-r border-b border-slate-100 relative group transition-all hover:bg-white hover:z-10 bg-white/50`}>
+                          <span className={`text-xs font-black ${isToday ? 'bg-[#ef4444] text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg shadow-red-500/30' : 'text-slate-400'}`}>
+                             {day}
+                          </span>
+                          
+                          <div className="mt-2 space-y-1">
+                             {dayEvents.map(event => (
+                                <div 
+                                  key={event._id} 
+                                  className="px-2 py-1 bg-red-50 text-[#ef4444] rounded-lg text-[9px] font-bold border border-red-100/50 truncate cursor-pointer hover:bg-red-100 transition-colors"
+                                  onClick={() => {
+                                     // Optional: open edit or detail
+                                  }}
+                                >
+                                   {event.name}
+                                </div>
+                             ))}
+                             {dayEvents.length === 0 && (
+                                <button 
+                                  onClick={() => {
+                                     setNewEventData({...newEventData, date: dateStr});
+                                     setShowAddEvent(true);
+                                  }}
+                                  className="w-full py-2 opacity-0 group-hover:opacity-100 text-[10px] font-black text-slate-300 uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl hover:border-[#ef4444]/20 hover:text-[#ef4444] transition-all"
+                                >
+                                   + Add
+                                </button>
+                             )}
+                          </div>
+                       </div>
+                    );
+                 })}
+              </motion.div>
+           </div>
+        </Card>
+      )}
+
+      <div className={`${viewMode === 'calendar' ? 'hidden' : 'block'} grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-10`}>
          {/* Upcoming Schedule List */}
          <div className="lg:col-span-3 xl:col-span-4 space-y-10">
             <Card className="calendar-item border-none overflow-hidden bg-white shadow-xl shadow-slate-200/50">

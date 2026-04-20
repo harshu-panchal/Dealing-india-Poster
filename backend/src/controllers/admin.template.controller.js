@@ -39,7 +39,7 @@ export const getAdminTemplates = async (req, res) => {
 // @route   POST /api/admin/templates
 export const createTemplate = async (req, res) => {
   try {
-    const { name, image, categoryId, subcategoryId, eventId, type, isVideo, videoUrl, isPremium, tags } = req.body;
+    const { name, image, categoryId, subcategoryId, eventId, type, isVideo, videoUrl, audioUrl, duration, isPremium, tags } = req.body;
     
     const template = await Template.create({
       name,
@@ -50,6 +50,8 @@ export const createTemplate = async (req, res) => {
       type,
       isVideo: isVideo === true || type === 'video',
       videoUrl,
+      audioUrl,
+      duration: duration || 10,
       isPremium,
       tags
     });

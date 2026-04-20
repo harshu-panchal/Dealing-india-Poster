@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 });
 
 function checkFileType(file, cb) {
-  const filetypes = /jpg|jpeg|png|webp|mp3|mpeg|wav|m4a|ogg/;
+  const filetypes = /jpg|jpeg|png|webp|mp3|mpeg|wav|m4a|ogg|mp4|webm|mov/;
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = filetypes.test(file.mimetype);
 
@@ -31,6 +31,7 @@ function checkFileType(file, cb) {
 
 const upload = multer({
   storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
     checkFileType(file, cb);
   },

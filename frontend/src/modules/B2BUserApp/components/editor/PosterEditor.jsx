@@ -17,8 +17,7 @@ const PosterEditor = ({ template, onClose }) => {
   const tabs = [
     { id: 'text', icon: Type, label: 'Text' },
     { id: 'branding', icon: Sparkles, label: 'Logo' },
-    { id: 'frames', icon: Layers, label: 'Frames' },
-    { id: 'video', icon: Video, label: 'Video' }
+    { id: 'frames', icon: Layers, label: 'Frames' }
   ];
   const [subTab, setSubTab] = useState('Personal');
   const [musicList, setMusicList] = useState([]);
@@ -296,21 +295,24 @@ const PosterEditor = ({ template, onClose }) => {
         <div className="flex h-[40%] lg:h-auto lg:flex-1 items-center justify-center p-4 lg:p-12 bg-[#f8fafc] relative overflow-hidden shrink-0 lg:shrink">
            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ef4444 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
            
-           <div ref={previewBoundsRef} className="relative w-full max-w-[300px] lg:max-w-[500px] aspect-square bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] lg:shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-xl lg:rounded-2xl overflow-hidden border-4 lg:border-8 border-white group">
-               {/* Poster Background */}
-               <img src={currentTemplate.image} className="w-full h-full object-cover relative z-[1]" alt="Preview" crossOrigin="anonymous" />
-               
-               {/* Frame Layer (Middle) */}
-               {effectiveSelectedFrame && (
-                 <img 
-                   src={effectiveSelectedFrame} 
-                   className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
-                   alt="Frame Overlay"
-                   crossOrigin="anonymous"
-                 />
-               )}
+           <div ref={previewBoundsRef} className="relative w-full max-w-[300px] lg:max-w-[500px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] lg:shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-xl lg:rounded-2xl overflow-hidden border-4 lg:border-8 border-white group">
+               {/* Main Poster Content (Square) */}
+               <div className="relative aspect-square overflow-hidden bg-white">
+                 {/* Poster Background */}
+                 <img src={currentTemplate.image} className="w-full h-full object-cover relative z-[1]" alt="Preview" crossOrigin="anonymous" />
+                 
+                 {/* Frame Layer (Inside square only) */}
+                 {effectiveSelectedFrame && (
+                   <img 
+                     src={effectiveSelectedFrame} 
+                     className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
+                     alt="Frame Overlay"
+                     crossOrigin="anonymous"
+                   />
+                 )}
+               </div>
 
-               {/* Dedicated Text & Content Layer (Top) */}
+               {/* Dedicated Text & Content Layer (Top - Covers full bounds) */}
                <div className="text-layer absolute inset-0 z-[75]">
                    {/* Branding Items - Now directly in text-layer, relative to whole poster */}
                    {localUserData.enabledFields?.name !== false && (
@@ -506,16 +508,10 @@ const PosterEditor = ({ template, onClose }) => {
                  ))}
                </div>
 
-               {/* Branding Bar Visuals (Bottom Layer if no frame) */}
-               {!selectedFrame && (
-                 <div className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-none">
-                   <div 
-                     className="flex h-[50px] lg:h-[100px] shadow-2xl border-t border-white/10"
-                     style={{ backgroundColor: '#0a0a0a' }}
-                   >
-                      <div className="flex-1" />
-                      <div className="relative w-[80px] lg:w-[180px] flex-shrink-0" />
-                   </div>
+               {/* Branding Bar Visuals (Appended below if no frame) */}
+               {!effectiveSelectedFrame && (
+                 <div ref={brandingBarRef} className="relative z-[10] w-full bg-[#0a0a0a] border-t border-white/10 h-[85px] lg:h-[110px]">
+                    {/* Items like name, phone, userPhoto will be placed via absolute coordinates in text-layer */}
                  </div>
                )}
             </div>
@@ -847,7 +843,10 @@ const PosterEditor = ({ template, onClose }) => {
           <VideoEditor 
             template={template}
             userData={userData}
-            onClose={() => setShowVideoEditor(false)}
+            onClose={() => {
+              setShowVideoEditor(false);
+              if (activeTab === 'video') setActiveTab('text');
+            }}
           />
         )}
       </AnimatePresence>

@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import axios from 'axios';
-import { Edit2, Download, MessageCircle, Share2, Flame, Heart, Video, PlayCircle } from 'lucide-react';
+import { Edit2, Download, MessageCircle, Share2, Flame, Heart, Video, PlayCircle, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEditor } from '../../context/EditorContext';
+import BrandingOverlay from './BrandingOverlay';
 
 const POTDCard = ({ poster, onEdit }) => {
   const { user } = useAuth();
   const { openEditor } = useEditor();
-  const [isLiked, setIsLiked] = useState(poster.isLiked || false);
-  const [likeCount, setLikeCount] = useState(poster.likeCount || 0);
+  const [isLiked, setIsLiked] = React.useState(poster.isLiked || false);
+  const [likeCount, setLikeCount] = React.useState(poster.likeCount || 0);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  React.useEffect(() => {
+     return () => setIsPlaying(false);
+  }, []);
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    return url.match(/\.(mp4|webm|mov|ogg)$/i) || url.includes('/video/upload/');
+  };
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
@@ -73,10 +84,49 @@ const POTDCard = ({ poster, onEdit }) => {
   return (
     <div className="flex flex-col w-full bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100">
       <div 
-        className="relative aspect-square overflow-hidden cursor-pointer group" 
+        className="relative aspect-square overflow-hidden cursor-pointer group bg-slate-50" 
         onClick={() => onEdit(poster)}
       >
-        <img src={poster.image} alt={poster.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+        {(poster.type === 'video' || poster.isVideo) && (poster.videoUrl || isVideoUrl(poster.image)) ? (
+           <div className="w-full h-full relative">
+              <video 
+                src={poster.videoUrl || poster.image} 
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+              {isPlaying && (
+                 <>
+                   <video 
+                     src={poster.videoUrl || poster.image} 
+                     className="absolute inset-0 w-full h-full object-cover z-[5]"
+                     autoPlay
+                     loop
+                     muted={false}
+                     playsInline
+                   />
+                   <div className="absolute inset-0 flex items-center justify-center z-[20]">
+                     <button 
+                       onClick={(e) => { e.stopPropagation(); setIsPlaying(false); }}
+                       className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                     >
+                        <X size={32} />
+                     </button>
+                   </div>
+                 </>
+              )}
+              <div className="absolute inset-0 bg-black/10 z-[2]" />
+           </div>
+        ) : (
+          <img src={poster.image} alt={poster.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+        )}
+
+        {/* Audio support for image+music */}
+        {!(poster.videoUrl) && poster.audioUrl && isPlaying && (
+           <audio src={poster.audioUrl} autoPlay loop />
+        )}
         
         {/* Banner Overlays */}
         <div className="absolute top-4 left-4 z-10">
@@ -85,8 +135,26 @@ const POTDCard = ({ poster, onEdit }) => {
           </div>
         </div>
 
+        {(poster.type === 'video' || poster.isVideo) && !isPlaying && (
+           <div className="absolute inset-0 flex items-center justify-center z-[15]">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsPlaying(true); }}
+                className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white shadow-xl hover:scale-110 transition-transform"
+              >
+                 <PlayCircle size={40} className="fill-white/20" />
+              </button>
+           </div>
+        )}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
+
+      {/* Branding Info - Appended below as requested */}
+      <BrandingOverlay 
+        userData={poster.customData || {}} 
+        size="regular" 
+        isOverlay={false} 
+      />
       
       <div className="flex justify-around py-3 lg:py-4 border-t border-slate-50 bg-white">
         <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => { e.stopPropagation(); onEdit(poster); }}>

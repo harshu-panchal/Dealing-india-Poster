@@ -36,6 +36,14 @@ const templateSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  audioUrl: {
+    type: String,
+    default: '',
+  },
+  duration: {
+    type: Number,
+    default: 10, // Default 10 seconds
+  },
   isPremium: {
     type: Boolean,
     default: false,

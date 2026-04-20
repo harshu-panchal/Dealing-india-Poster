@@ -104,16 +104,72 @@ const TemplateManager = () => {
     }
   };
 
+  const [musicList, setMusicList] = useState([]);
+  const [assetType, setAssetType] = useState('image'); // 'image' or 'video'
+  const [videoMode, setVideoMode] = useState('direct'); // 'direct' or 'image-music'
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
+
+  const fetchMusic = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/music/public`);
+      setMusicList(data);
+    } catch (error) {
+      console.error('Fetch music error:', error);
+    }
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchMusic();
+  }, [fetchMusic]);
+
+  const getVideoThumbnail = (url) => {
+    if (!url) return '';
+    if (url.includes('/video/upload/')) {
+       return url.replace(/\/video\/upload\/(v\d+\/)?(.+)\.(mp4|webm|mov|ogg)$/i, '/video/upload/$1$2.jpg');
+    }
+    return '';
+  };
+
+  useEffect(() => {
+    if (editingTemplate) {
+      setAssetType(editingTemplate.type || 'image');
+      setPreviewUrl(editingTemplate.image || '');
+      setVideoUrl(editingTemplate.videoUrl || '');
+      setAudioUrl(editingTemplate.audioUrl || '');
+      // If it has videoUrl it's direct, otherwise if it has audio it's image-music
+      if (editingTemplate.videoUrl) setVideoMode('direct');
+      else if (editingTemplate.audioUrl) setVideoMode('image-music');
+    }
+  }, [editingTemplate]);
+
   const handleCreateOrUpdate = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const videoSrc = assetType === 'video' ? videoUrl : '';
+    const finalImageUrl = previewUrl || formData.get('image_url') || (assetType === 'video' ? getVideoThumbnail(videoSrc) : '');
+
+    if (assetType === 'video' && videoMode === 'direct' && !videoSrc) {
+       alert('Please upload a video or provide a video URL');
+       return;
+    }
+
+    if (!finalImageUrl) {
+       alert('Please upload a template image or thumbnail');
+       return;
+    }
+
     const data = {
       name: formData.get('title'),
       categoryId: formData.get('category'),
       subcategoryId: formData.get('subcategory') || undefined,
       eventId: formData.get('eventId') || undefined,
-      type: formData.get('type'),
-      image: previewUrl || formData.get('image_url'),
+      type: assetType,
+      image: finalImageUrl,
+      videoUrl: videoSrc,
+      audioUrl: assetType === 'video' && videoMode === 'image-music' ? audioUrl : '',
+      duration: assetType === 'video' ? Number(formData.get('duration')) : 10,
       isPremium: formData.get('isPremium') === 'true',
     };
 
@@ -128,6 +184,31 @@ const TemplateManager = () => {
       fetchTemplates();
     } catch (error) {
       alert(error.response?.data?.message || 'Save failed');
+    }
+  };
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const config = {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${admin.accessToken}` 
+        }
+      };
+      // For video, Cloudinary needs resource_type: video (handled by backend or we can append it)
+      const { data } = await axios.post(`${API_URL}/admin/upload`, formData, config);
+      setVideoUrl(data.url);
+    } catch (error) {
+      alert('Video upload failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -150,6 +231,13 @@ const TemplateManager = () => {
     );
   }, [templates, activeType, searchQuery, eventFilter]);
 
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    return url.match(/\.(mp4|webm|mov|ogg)$/i) || url.includes('/video/upload/');
+  };
+
+  const videoInputRef = useRef();
+
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-4">
@@ -162,6 +250,9 @@ const TemplateManager = () => {
           onClick={() => {
             setEditingTemplate(null);
             setPreviewUrl('');
+            setVideoUrl('');
+            setAudioUrl('');
+            setAssetType('image');
             setSelectedCategoryId('');
             setShowModal(true);
           }}
@@ -192,12 +283,18 @@ const TemplateManager = () => {
           <motion.div layout key={tpl._id} className="group">
             <Card className="border-none overflow-hidden hover:shadow-2xl transition-all duration-500 bg-white">
               <div className="aspect-[4/5] relative overflow-hidden bg-slate-100">
-                 <img src={tpl.image} className="w-full h-full object-cover" alt="Tpl" />
-                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
+                 {isVideoUrl(tpl.image) ? (
+                   <video src={tpl.image} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                 ) : (
+                   <img src={tpl.image} className="w-full h-full object-cover" alt="Tpl" />
+                 )}
+                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3 z-10">
                     <Button 
                       onClick={() => { 
                           setEditingTemplate(tpl); 
                           setPreviewUrl(tpl.image); 
+                          setVideoUrl(tpl.videoUrl || '');
+                          setAudioUrl(tpl.audioUrl || '');
                           setSelectedCategoryId(tpl.categoryId?._id || '');
                           setShowModal(true); 
                        }}
@@ -212,8 +309,13 @@ const TemplateManager = () => {
                        <Trash2 size={18} />
                     </Button>
                  </div>
+                 {tpl.type === 'video' && (
+                    <div className="absolute top-3 right-3 bg-red-500 text-white text-[8px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-20">
+                       <Video size={10} /> VIDEO
+                    </div>
+                 )}
                  {tpl.eventId && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white text-[8px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                    <div className="absolute top-3 left-3 bg-[#1e293b] text-white text-[8px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-20">
                        <Calendar size={10} /> {tpl.eventId.name || 'EVENT'}
                     </div>
                  )}
@@ -278,10 +380,22 @@ const TemplateManager = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <select name="type" defaultValue={editingTemplate?.type || 'image'} className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs">
-                 <option value="image">Static Image</option>
-                 <option value="video">Motion Graphics</option>
-              </select>
+               <div className="p-1.5 bg-slate-100 rounded-xl flex items-center h-12">
+                  <button 
+                    type="button" 
+                    onClick={() => setAssetType('image')}
+                    className={`flex-1 h-full rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${assetType === 'image' ? 'bg-white text-red-500 shadow-sm' : 'text-slate-400'}`}
+                  >
+                     Image
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setAssetType('video')}
+                    className={`flex-1 h-full rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${assetType === 'video' ? 'bg-white text-red-500 shadow-sm' : 'text-slate-400'}`}
+                  >
+                     Video
+                  </button>
+               </div>
 
               <select 
                 name="eventId" 
@@ -295,19 +409,97 @@ const TemplateManager = () => {
               </select>
             </div>
 
-           <div 
-             className="h-32 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 relative overflow-hidden"
-             onClick={() => fileInputRef.current.click()}
-           >
-              <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-              {uploading ? <Loader2 className="animate-spin text-red-500" /> : previewUrl ? <img src={previewUrl} className="w-full h-full object-cover" /> : <><Upload size={24} className="text-slate-300" /><span className="text-xs font-bold text-slate-400 mt-2">Upload Asset</span></>}
+            {assetType === 'video' && (
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                 <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Video Production Mode</p>
+                    <div className="flex gap-2">
+                       <button 
+                         type="button" 
+                         onClick={() => setVideoMode('direct')}
+                         className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all ${videoMode === 'direct' ? 'bg-red-500 text-white shadow-lg' : 'bg-slate-200 text-slate-500'}`}
+                       >
+                          Direct Upload
+                       </button>
+                       <button 
+                         type="button" 
+                         onClick={() => setVideoMode('image-music')}
+                         className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-all ${videoMode === 'image-music' ? 'bg-red-500 text-white shadow-lg' : 'bg-slate-200 text-slate-500'}`}
+                       >
+                          Image + Music
+                       </button>
+                    </div>
+                 </div>
+
+                 {videoMode === 'direct' ? (
+                    <div className="space-y-4">
+                       <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={handleVideoUpload} />
+                       <div className="h-32 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-all relative overflow-hidden" onClick={() => videoInputRef.current.click()}>
+                          {videoUrl ? (
+                            <video src={videoUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                          ) : (
+                            <>
+                              <Upload size={20} className="text-slate-300 mb-1" />
+                              <span className="text-[9px] font-black text-slate-400 uppercase">Upload mp4/webm</span>
+                            </>
+                          )}
+                          {uploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-red-500" /></div>}
+                       </div>
+                       <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Video Source URL" className="h-10 text-xs" />
+                    </div>
+                 ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Select Soundtrack</p>
+                          <select 
+                            className="w-full h-10 rounded-xl bg-white border-slate-100 px-3 font-bold text-[10px]"
+                            value={audioUrl}
+                            onChange={(e) => setAudioUrl(e.target.value)}
+                          >
+                             <option value="">No Background Music</option>
+                             {musicList.map(m => (
+                                <option key={m._id} value={m.audioUrl}>{m.title}</option>
+                             ))}
+                          </select>
+                       </div>
+                       <div className="space-y-2">
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Set Duration (sec)</p>
+                          <Input name="duration" type="number" defaultValue={editingTemplate?.duration || 10} min="5" max="30" className="h-10 text-xs" />
+                       </div>
+                    </div>
+                 )}
+              </div>
+            )}
+
+           <div className="space-y-2">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                 {assetType === 'video' && videoMode === 'direct' ? 'Thumbnail / Poster Image' : 'Template Background Image'}
+              </p>
+              <div 
+                className="h-32 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 relative overflow-hidden"
+                onClick={() => fileInputRef.current.click()}
+              >
+                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                 {uploading ? (
+                   <Loader2 className="animate-spin text-red-500" />
+                 ) : previewUrl ? (
+                    isVideoUrl(previewUrl) ? (
+                      <video src={previewUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
+                    ) : (
+                      <img src={previewUrl} className="w-full h-full object-cover" />
+                    )
+                 ) : (
+                   <><Upload size={24} className="text-slate-300" /><span className="text-xs font-bold text-slate-400 mt-2">Upload Image</span></>
+                 )}
+              </div>
+              <Input name="image_url" value={previewUrl} onChange={(e) => setPreviewUrl(e.target.value)} placeholder="Or Image URL" className="h-12" />
            </div>
-           
-           <Input name="image_url" value={previewUrl} onChange={(e) => setPreviewUrl(e.target.value)} placeholder="Or Image URL" className="h-12" />
 
            <div className="flex gap-4">
               <Button type="button" onClick={() => setShowModal(false)} variant="ghost" className="flex-1 h-12 bg-slate-50 text-slate-500">Cancel</Button>
-              <Button type="submit" className="flex-[2] h-12 bg-red-500 text-white font-black uppercase">Save Template</Button>
+              <Button type="submit" className="flex-[2] h-12 bg-red-500 text-white font-black uppercase tracking-widest">
+                 {editingTemplate ? 'Update Content' : 'Deploy Template'}
+              </Button>
            </div>
         </form>
       </AdminModal>

@@ -125,8 +125,10 @@ const VideoEditor = ({ template, userData, onClose }) => {
 
     const render = () => {
       const time = (Date.now() - startTime) / 1000;
-      const w = canvas.width;
-      const h = canvas.height;
+      const w = 1080;
+      const h = 1250; // Increased height to append branding
+      canvas.width = w;
+      canvas.height = h;
 
       // Clear
       ctx.clearRect(0, 0, w, h);
@@ -152,7 +154,8 @@ const VideoEditor = ({ template, userData, onClose }) => {
       }
 
       // Draw Main Image
-      ctx.drawImage(posterImg, 0, 0, w, h);
+      // Draw Main Image (Top Square)
+      ctx.drawImage(posterImg, 0, 0, 1080, 1080);
       ctx.restore();
 
       // Draw Noise for Arti
@@ -163,45 +166,37 @@ const VideoEditor = ({ template, userData, onClose }) => {
 
       // Draw Branding Overlays (Matches Image 3)
       if (userImg.complete && (userData.userPhoto || userData.logo)) {
-        const barH = h * 0.12;
-        const pad = w * 0.05;
-        
-        // Glassmorphism Bar
+        // Branding Bar (Appended Bottom)
         ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.shadowBlur = 40;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        const barY = h - barH - pad;
-        const barRect = [pad, barY, w - pad*2, barH];
+        ctx.fillStyle = '#0a0a0a';
+        const barH = 170;
+        const barY = 1080;
+        const barRect = [0, barY, w, barH];
         
-        // Rounded Rect for Bar
-        const r = 24;
-        ctx.beginPath();
-        ctx.moveTo(barRect[0]+r, barRect[1]);
-        ctx.lineTo(barRect[0]+barRect[2]-r, barRect[1]);
-        ctx.quadraticCurveTo(barRect[0]+barRect[2], barRect[1], barRect[0]+barRect[2], barRect[1]+r);
-        ctx.lineTo(barRect[0]+barRect[2], barRect[1]+barRect[3]-r);
-        ctx.quadraticCurveTo(barRect[0]+barRect[2], barRect[1]+barRect[3], barRect[0]+barRect[2]-r, barRect[1]+barRect[3]);
-        ctx.lineTo(barRect[0]+r, barRect[1]+barRect[3]);
-        ctx.quadraticCurveTo(barRect[0], barRect[1]+barRect[3], barRect[0], barRect[1]+barRect[3]-r);
-        ctx.lineTo(barRect[0], barRect[1]+r);
-        ctx.quadraticCurveTo(barRect[0], barRect[1], barRect[0]+r, barRect[1]);
-        ctx.fill();
-        ctx.clip(); // Ensure content stays in bar
+        ctx.fillRect(barRect[0], barRect[1], barRect[2], barRect[3]);
+        // ctx.clip(); // No longer clipping as it's full width
 
         // Logo
-        const logoSize = barH * 0.7;
-        const logoX = pad + (barH - logoSize)/2;
+        const logoSize = 120;
+        const logoX = 900; // Right side
         const logoY = barY + (barH - logoSize)/2;
+        
+        // Circular clip for logo
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 0, Math.PI * 2);
+        ctx.clip();
         ctx.drawImage(userImg, logoX, logoY, logoSize, logoSize);
+        ctx.restore();
 
-        // Text
+        // Text (Left Side of bar)
         ctx.fillStyle = 'white';
-        ctx.font = `black ${h * 0.024}px sans-serif`;
-        ctx.fillText(userData.business_name?.toUpperCase() || '', logoX + logoSize + 15, barY + barH/2 - 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.font = `bold ${h * 0.02}px sans-serif`;
-        ctx.fillText(userData.phone_number || '', logoX + logoSize + 15, barY + barH/2 + 18);
+        ctx.font = `900 32px sans-serif`;
+        ctx.fillText(userData.business_name?.toUpperCase() || '', 40, barY + 50);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = `bold 24px sans-serif`;
+        ctx.fillText(userData.phone_number || '', 40, barY + 90);
+        ctx.fillText(userData.website || '', 40, barY + 125);
         ctx.restore();
       }
 
@@ -336,6 +331,38 @@ const VideoEditor = ({ template, userData, onClose }) => {
     }
   };
 
+  const handleWhatsApp = () => {
+    const platformLink = window.location.origin;
+    const isVideo = template.isVideo || template.type === 'video';
+    const posterLink = `${platformLink}/?templateId=${template._id}`;
+
+    const message = isVideo 
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`;
+    
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleShare = async () => {
+    const platformLink = window.location.origin;
+    const isVideo = template.isVideo || template.type === 'video';
+    const posterLink = `${platformLink}/?templateId=${template._id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
+          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealing India Poster!`,
+          url: posterLink,
+        });
+      } catch (err) {
+        console.log('Share failed');
+      }
+    } else {
+      handleWhatsApp();
+    }
+  };
+
   const currentEffect = effects.find(e => e.id === selectedEffect);
 
   return (
@@ -384,12 +411,12 @@ const VideoEditor = ({ template, userData, onClose }) => {
       <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
         {/* Poster Preview with Live Canvas (New Phase 1) */}
         <div className="p-6 pb-2 flex flex-col items-center">
-          <div className="relative w-full max-w-[340px] aspect-square rounded-[2rem] overflow-hidden shadow-2xl bg-white border-[6px] border-white">
+          <div className="relative w-full max-w-[340px] rounded-[2rem] overflow-hidden shadow-2xl bg-white border-[6px] border-white">
              <canvas 
                ref={canvasRef} 
                width={1080} 
-               height={1080}
-               className="w-full h-full object-cover"
+               height={1250}
+               className="w-full h-auto object-contain"
              />
              
              {/* Play/Pause Overlay */}
@@ -457,11 +484,17 @@ const VideoEditor = ({ template, userData, onClose }) => {
             <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm border-none"><Download size={22} /></div>
             <span className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest">Download</span>
          </div>
-         <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1">
+         <div 
+           className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1"
+           onClick={handleWhatsApp}
+         >
             <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 shadow-sm"><MessageCircle size={22} /></div>
             <span className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest">WhatsApp</span>
          </div>
-         <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1">
+         <div 
+           className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform flex-1"
+           onClick={handleShare}
+         >
             <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 shadow-sm"><Share2 size={22} /></div>
             <span className="text-[0.65rem] font-black text-gray-400 uppercase tracking-widest">Share</span>
          </div>

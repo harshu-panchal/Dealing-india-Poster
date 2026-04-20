@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Volume2, Heart } from 'lucide-react';
+import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Volume2, Heart, X } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
 import BrandingOverlay from './BrandingOverlay';
@@ -10,18 +10,29 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   const { user } = useAuth();
   const [isLiked, setIsLiked] = React.useState(false);
   const [localLikeCount, setLocalLikeCount] = React.useState(template.likeCount || 0);
+  const [isPlaying, setIsPlaying] = React.useState(false);
 
   React.useEffect(() => {
     if (template.isLiked !== undefined) {
       setIsLiked(template.isLiked);
     }
   }, [template]);
+
+  // Stop playback on unmount
+  React.useEffect(() => {
+    return () => setIsPlaying(false);
+  }, []);
   
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   const cleanUrl = (url) => {
     if (!url || url.includes('default_logo.png')) return null;
     return url;
+  };
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    return url.match(/\.(mp4|webm|mov|ogg)$/i) || url.includes('/video/upload/') || url.includes('/video/upload/');
   };
   const normalizeFrameValue = (frame) => {
     if (!frame) return null;
@@ -122,19 +133,30 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     recordActivity();
-    const text = encodeURIComponent(`Check out this professional poster: ${currentTemplate.image}`);
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    const platformLink = window.location.origin;
+    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
+    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+
+    const message = isVideo 
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`;
+    
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleShare = async (e) => {
     e.stopPropagation();
     recordActivity();
+    const platformLink = window.location.origin;
+    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
+    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+    
     if (navigator.share) {
       try {
         await navigator.share({
-          title: currentTemplate.name || 'Professional Poster',
-          text: 'Check out this design from Dealing India Poster',
-          url: window.location.href,
+          title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
+          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealing India Poster!`,
+          url: posterLink,
         });
       } catch (err) {
         console.log('Share failed');
@@ -175,8 +197,15 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     );
   }
 
+  const isVideoTemplate = currentTemplate.isVideo || currentTemplate.type === 'video';
+
+  const handlePlayClick = (e) => {
+    e.stopPropagation();
+    setIsPlaying(!isPlaying);
+  };
+
   return (
-    <div className="bg-white mb-1 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-[#f1f5f9] overflow-hidden group transition-all hover:shadow-md hover:-translate-y-1 mb-4" ref={cardRef}>
       {/* Poster Heading with Like Button */}
       <div className="flex items-center justify-between px-3 py-2 bg-white">
         <h3 className="text-[0.75rem] font-black text-slate-800 uppercase tracking-wider truncate max-w-[70%]">
@@ -193,18 +222,56 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
         </button>
       </div>
       <div 
-        ref={cardRef}
-        className="w-full aspect-square overflow-hidden rounded-xl relative cursor-pointer" 
+        className="w-full aspect-square overflow-hidden relative cursor-pointer" 
         style={{ backgroundColor: '#f8fafc' }}
         onClick={() => handleAction(new Event('click'), onClick)}
       >
-        <img 
-          src={currentTemplate.image} 
-          alt={currentTemplate.title} 
-          loading="lazy" 
-          className="w-full h-full object-cover relative z-[1]"
-          onError={handleImageError}
-        />
+        {(isVideoTemplate && (currentTemplate.videoUrl || isVideoUrl(currentTemplate.image))) ? (
+          <div className="w-full h-full relative">
+            <video 
+              src={currentTemplate.videoUrl || currentTemplate.image} 
+              className="w-full h-full object-cover relative z-[1]"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+            {isPlaying && (
+               <>
+                 <video 
+                   src={currentTemplate.videoUrl || currentTemplate.image} 
+                   className="absolute inset-0 w-full h-full object-cover z-[2]"
+                   autoPlay
+                   loop
+                   muted={false}
+                   playsInline
+                 />
+                 <div className="absolute inset-0 flex items-center justify-center z-[10]">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsPlaying(false); }}
+                      className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                       <X size={32} />
+                    </button>
+                 </div>
+               </>
+            )}
+          </div>
+        ) : (
+          <img 
+            src={currentTemplate.image} 
+            alt={currentTemplate.title} 
+            loading="lazy" 
+            className="w-full h-full object-cover relative z-[1]"
+            onError={handleImageError}
+          />
+        )}
+        
+        {/* Support for Image + Music (Video Type without Video URL) */}
+        {!currentTemplate.videoUrl && currentTemplate.audioUrl && isPlaying && (
+           <audio src={currentTemplate.audioUrl} autoPlay loop />
+        )}
+        
         {activeFrame && (
           <img 
             src={activeFrame} 
@@ -213,17 +280,35 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
             crossOrigin="anonymous"
           />
         )}
-        {overlay || <BrandingOverlay userData={effectiveUserData} size="regular" />}
 
-        {currentTemplate.isVideo && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-            <PlayCircle size={48} className="text-white fill-white/20 opacity-80" />
+        {isVideoTemplate && !isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-[65]">
+            <button 
+              onClick={handlePlayClick}
+              className="p-3 bg-white/20 backdrop-blur-md rounded-full hover:scale-110 active:scale-95 transition-all"
+            >
+               <PlayCircle size={48} className="text-white fill-white/20" />
+            </button>
             <div className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/40 backdrop-blur-sm">
               <Volume2 size={16} className="text-white" />
             </div>
           </div>
         )}
+
+        {isVideoTemplate && isPlaying && (
+           <div className="absolute top-3 right-3 z-[65]">
+             <button 
+               onClick={handlePlayClick}
+               className="p-1.5 bg-black/40 backdrop-blur-sm rounded-full text-white"
+             >
+               <Volume2 size={16} />
+             </button>
+           </div>
+        )}
       </div>
+      
+      {/* Branding Info - Appended below image as requested */}
+      {overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={false} />}
       
       {(variant === 'regular' && showActions) && (
         <div className="flex justify-around py-3 lg:py-4 border-t border-[#f1f5f9] bg-white rounded-b-xl shadow-sm">
@@ -231,10 +316,14 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
             <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#334155] group-hover:text-primary"><Edit2 size={20} className="lg:w-6 lg:h-6" /></div>
             <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-primary">Edit</span>
           </div>
-          <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => handleAction(e, () => openEditor(template, 'video'))}>
-            <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#ef4444] group-hover:text-red-600"><Video size={20} className="lg:w-6 lg:h-6" /></div>
-            <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-red-600">Video</span>
-          </div>
+
+          {!isVideoTemplate && (
+            <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => handleAction(e, () => openEditor(template, 'video'))}>
+              <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#ef4444] group-hover:text-red-600"><Video size={20} className="lg:w-6 lg:h-6" /></div>
+              <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-red-600">Video</span>
+            </div>
+          )}
+
           <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={handleDownload}>
             <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-[#334155] group-hover:text-primary"><Download size={20} className="lg:w-6 lg:h-6" /></div>
             <span className="text-[0.75rem] lg:text-sm font-bold text-[#64748b] group-hover:text-primary">Save</span>

@@ -1,142 +1,113 @@
 import React from 'react';
-import { MessageCircle, User } from 'lucide-react';
 
-const BrandingOverlay = ({ userData = {}, size = 'regular' }) => {
+const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false }) => {
   const isCompact = size === 'compact';
   const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ef4444'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='40' fill='white' font-weight='black'%3EL%3C/text%3E%3C/svg%3E";
   const hasFrame = !!userData.selectedFrame;
-  
-  // Responsive sizing constants
-  const heightClass = isCompact ? 'h-[32px]' : 'h-[46px] lg:h-[56px]';
-  const nameSizeClass = isCompact ? 'text-[0.5rem]' : hasFrame ? 'text-[0.55rem] lg:text-[0.72rem]' : 'text-[0.65rem] lg:text-[0.8rem]';
-  const phoneSizeClass = isCompact ? 'text-[0.45rem]' : hasFrame ? 'text-[0.38rem] lg:text-[0.5rem]' : 'text-[0.6rem] lg:text-[0.7rem]';
-  const iconBoxSize = isCompact ? 'w-2.5 h-2.5' : 'w-3 h-3 lg:w-4 lg:h-4';
-  const iconSize = isCompact ? 6 : 8;
-  const photoSizeClass = isCompact ? 'w-[40px] h-[40px]' : hasFrame ? 'w-[44px] h-[44px] lg:w-[60px] lg:h-[60px]' : 'w-[56px] h-[56px] lg:w-[80px] lg:h-[80px]';
-  const photoOffsetClass = isCompact ? '-top-[60%]' : hasFrame ? '-top-[24%]' : '-top-[40%]';
-  const editBadgeClass = isCompact ? 'hidden' : 'absolute -bottom-1 left-1/2 -translate-x-1/2 text-[0.35rem] lg:text-[0.45rem] font-black tracking-tight bg-blue-600 text-white px-1.5 py-0.5 rounded-full shadow-md';
-  const zIndex = hasFrame ? 'z-[80]' : 'z-20';
 
+  // Sizing scales
+  const heightClass    = isCompact ? 'h-[40px]' : 'h-[85px] lg:h-[110px]';
+  const photoSizeClass = isCompact ? 'w-[28px] h-[28px]' : 'w-[52px] h-[52px] lg:w-[72px] lg:h-[72px]';
+  const nameSizeClass  = isCompact ? 'text-[0.5rem]'  : 'text-[0.62rem] lg:text-[0.78rem]';
+  const detailSizeClass = isCompact ? 'text-[0.42rem]' : 'text-[0.52rem] lg:text-[0.65rem]';
+  const paddingClass   = isCompact ? 'px-2'  : 'px-3 lg:px-5';
+  const gapClass       = isCompact ? 'gap-1.5' : 'gap-2 lg:gap-3';
+
+  // ── Custom frame applied: use absolute-position coords from editor ──────
+  if (hasFrame) {
+    return (
+      <div className={`w-full pointer-events-none ${isOverlay ? 'absolute bottom-0 left-0 right-0 z-[80]' : 'relative'}`}>
+        <div
+          className={`flex items-center ${heightClass} ${paddingClass} ${gapClass} w-full`}
+          style={{ backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)' }}
+        >
+          {/* Left: circular profile photo */}
+          <div className={`flex-shrink-0 ${photoSizeClass} rounded-full overflow-hidden border-2 border-white/30 shadow-lg`}>
+            <img
+              src={userData.userPhoto || userData.logo || defaultLogo}
+              className="w-full h-full object-cover"
+              alt="profile"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+
+          {/* Right: text details at absolute positions set by editor */}
+          <div className="flex-1 relative overflow-hidden h-full">
+            {userData.enabledFields?.name !== false && (
+              <span
+                className={`absolute ${nameSizeClass} font-black text-white uppercase tracking-tight whitespace-nowrap`}
+                style={{ left: userData.namePos?.x || '2%', top: userData.namePos?.y || '20%', textShadow: '0 1px 3px rgba(0,0,0,0.8)', zIndex: 95 }}
+              >
+                {userData.name || ''}
+              </span>
+            )}
+            {userData.enabledFields?.business_name !== false && (
+              <span
+                className={`absolute ${nameSizeClass} font-black text-white uppercase tracking-tight whitespace-nowrap`}
+                style={{ left: userData.businessNamePos?.x || '2%', top: userData.businessNamePos?.y || '45%', textShadow: '0 1px 3px rgba(0,0,0,0.8)', zIndex: 95 }}
+              >
+                {userData.business_name || ''}
+              </span>
+            )}
+            {userData.phone_number && (
+              <span
+                className={`absolute ${detailSizeClass} text-white/80 font-semibold whitespace-nowrap`}
+                style={{ left: userData.phonePos?.x || '2%', top: userData.phonePos?.y || '68%', textShadow: '0 1px 2px rgba(0,0,0,0.8)', zIndex: 95 }}
+              >
+                {userData.phone_number}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Default frame (no frame selected) ──────────────────────────────────
+  // Alignment: photo LEFT → name / business / contact stacked on RIGHT
   return (
-    <div className={`absolute bottom-0 left-0 right-0 pointer-events-none ${zIndex} w-full ${isCompact ? 'px-0.5 mb-0.5' : 'px-1 mb-1'}`}>
-      <div 
-        className={`rounded-b-xl flex ${heightClass} ${!hasFrame ? 'shadow-xl border-t border-white/10' : ''} mx-auto w-full`}
-        style={{ backgroundColor: hasFrame ? 'transparent' : 'rgba(0, 0, 0, 0.85)' }}
+    <div className={`w-full pointer-events-none ${isOverlay ? 'absolute bottom-0 left-0 right-0 z-20' : 'relative'}`}>
+      <div
+        className={`flex items-center ${heightClass} ${paddingClass} ${gapClass} w-full`}
+        style={{ backgroundColor: '#0a0a0a' }}
       >
-        {/* Left Details */}
-        <div className={`flex-1 flex flex-col justify-center ${isCompact ? 'px-1.5' : 'px-2 lg:px-4'} min-w-0 relative`}>
-          {userData.enabledFields?.name !== false && (
-            <div 
-              className={`${nameSizeClass} font-black text-white leading-tight uppercase tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-              style={{ 
-                textShadow: hasFrame ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-                left: hasFrame && userData.namePos ? userData.namePos.x : 'auto',
-                top: hasFrame && userData.namePos ? userData.namePos.y : 'auto',
-                whiteSpace: 'nowrap',
-                zIndex: 95
-              }}
-            >
-              {userData.name || ''}
-            </div>
-          )}
-          {userData.enabledFields?.business_name !== false && (
-            <div 
-              className={`${nameSizeClass} font-black text-white leading-tight uppercase tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-              style={{ 
-                textShadow: hasFrame ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-                left: hasFrame && userData.businessNamePos ? userData.businessNamePos.x : 'auto',
-                top: hasFrame && userData.businessNamePos ? userData.businessNamePos.y : 'auto',
-                whiteSpace: 'nowrap',
-                zIndex: 95
-              }}
-            >
-              {userData.business_name || ''}
-            </div>
-          )}
-           <div className="flex flex-col mt-0.5 relative h-full">
-             <span 
-               className={`${phoneSizeClass} text-white font-bold tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-               style={{ 
-                 textShadow: hasFrame ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
-                 left: hasFrame && userData.phonePos ? userData.phonePos.x : 'auto',
-                 top: hasFrame && userData.phonePos ? userData.phonePos.y : 'auto',
-                 whiteSpace: 'nowrap',
-                 zIndex: 95
-               }}
-             >
-               {userData.phone_number || ''}
-             </span>
-             {userData.enabledFields?.website && userData.website && (
-               <span 
-                 className={`${phoneSizeClass} text-white font-bold tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-                 style={{ 
-                   textShadow: hasFrame ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
-                   left: hasFrame && userData.websitePos ? userData.websitePos.x : 'auto',
-                   top: hasFrame && userData.websitePos ? userData.websitePos.y : 'auto',
-                   whiteSpace: 'nowrap',
-                   zIndex: 95
-                 }}
-               >
-                 {userData.website}
-               </span>
-             )}
-             {userData.enabledFields?.email && userData.email && (
-               <span 
-                 className={`${phoneSizeClass} text-white font-bold tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-                 style={{ 
-                   textShadow: hasFrame ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
-                   left: hasFrame && userData.emailPos ? userData.emailPos.x : 'auto',
-                   top: hasFrame && userData.emailPos ? userData.emailPos.y : 'auto',
-                   whiteSpace: 'nowrap',
-                   zIndex: 95
-                 }}
-               >
-                 {userData.email}
-               </span>
-             )}
-             {userData.enabledFields?.address && userData.address && (
-               <span 
-                 className={`${phoneSizeClass} text-white font-bold tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-                 style={{ 
-                   textShadow: hasFrame ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
-                   left: hasFrame && userData.addressPos ? userData.addressPos.x : 'auto',
-                   top: hasFrame && userData.addressPos ? userData.addressPos.y : 'auto',
-                   whiteSpace: 'nowrap',
-                   zIndex: 95
-                 }}
-               >
-                 {userData.address}
-               </span>
-             )}
-             {(userData.enabledFields?.gst || (userData.gst_number || '').trim()) && (
-               <span 
-                 className={`${phoneSizeClass} text-white font-bold tracking-tight ${hasFrame ? 'absolute' : 'truncate'}`} 
-                 style={{ 
-                   textShadow: hasFrame ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
-                   left: hasFrame && userData.gstPos ? userData.gstPos.x : 'auto',
-                   top: hasFrame && userData.gstPos ? userData.gstPos.y : 'auto',
-                   whiteSpace: 'nowrap',
-                   zIndex: 95
-                 }}
-               >
-                 GST: {userData.gst_number}
-               </span>
-             )}
-           </div>
+        {/* Left: circular photo / logo */}
+        <div className={`flex-shrink-0 ${photoSizeClass} rounded-full overflow-hidden border-2 border-white/20 shadow-lg`}>
+          <img
+            src={userData.userPhoto || userData.logo || defaultLogo}
+            className="w-full h-full object-cover"
+            alt="profile"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
         </div>
 
-        {/* Floating Circular Profile Holder */}
-        <div className={`relative ${isCompact ? 'w-10' : 'w-16 lg:w-24'} flex-shrink-0 flex items-center justify-center mr-1`}>
-          <div className={`absolute ${photoOffsetClass} right-0 ${photoSizeClass} z-30`}>
-            <div className="w-full h-full p-0.5 bg-white rounded-full shadow-lg border border-white/20 flex flex-col items-center justify-center overflow-hidden">
-              <img 
-                src={userData.userPhoto || userData.logo || defaultLogo} 
-                className="w-full h-full object-cover rounded-full" 
-                alt="u" 
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-            </div>
-          </div>
+        {/* Right: name, business, phone — stacked vertically, left-aligned */}
+        <div className="flex-1 flex flex-col justify-center min-w-0 overflow-hidden">
+          {userData.enabledFields?.name !== false && (
+            <span className={`${nameSizeClass} font-black text-white uppercase tracking-tight truncate leading-tight`}>
+              {userData.name || ''}
+            </span>
+          )}
+          {userData.enabledFields?.business_name !== false && (
+            <span className={`${nameSizeClass} font-black text-white/90 uppercase tracking-tight truncate leading-tight`}>
+              {userData.business_name || ''}
+            </span>
+          )}
+          {userData.phone_number && (
+            <span className={`${detailSizeClass} text-white/70 font-semibold truncate leading-tight mt-0.5`}>
+              {userData.phone_number}
+            </span>
+          )}
+          {userData.enabledFields?.website && userData.website && (
+            <span className={`${detailSizeClass} text-white/60 font-semibold truncate leading-tight`}>
+              {userData.website}
+            </span>
+          )}
+          {userData.enabledFields?.email && userData.email && (
+            <span className={`${detailSizeClass} text-white/60 font-semibold truncate leading-tight`}>
+              {userData.email}
+            </span>
+          )}
         </div>
       </div>
     </div>

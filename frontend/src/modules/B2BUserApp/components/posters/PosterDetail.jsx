@@ -1,20 +1,21 @@
-import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star, Mail, MapPin, Hash, Palette, Move, Save, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star, Mail, MapPin, Hash, Palette, Move, Save, CheckCircle, Edit2, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
 import VideoEditor from '../editor/VideoEditor';
+import BrandingOverlay from './BrandingOverlay';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const ActionIcon = ({ icon: Icon, label, color, onClick }) => (
   <div 
-    className="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
+    className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer group transition-all"
     onClick={onClick}
   >
-    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent" style={{ color }}>
-      <Icon size={24} />
+    <div className="w-10 h-10 transition-colors flex items-center justify-center text-slate-600 group-hover:text-indigo-600 group-active:scale-90">
+       <Icon size={24} style={{ color }} />
     </div>
-    <span className="text-[0.7rem] text-[#64748b] font-bold uppercase tracking-wider">{label}</span>
+    <span className="text-[0.75rem] font-bold text-slate-600 group-hover:text-indigo-600">{label}</span>
   </div>
 );
 
@@ -117,6 +118,18 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     if (!url || url.includes('default_logo.png')) return null;
     return url;
   };
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    return url.match(/\.(mp4|webm|mov|ogg)$/i) || url.includes('/video/upload/');
+  };
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Stop playback on unmount
+  useEffect(() => {
+    return () => setIsPlaying(false);
+  }, []);
 
   // Determine effective template data and user data
   const currentTemplate = template.templateId && typeof template.templateId === 'object' ? template.templateId : template;
@@ -293,9 +306,35 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   };
 
   const handleWhatsApp = () => {
-    const text = `Check out my custom poster! Created with Dealing India Poster.`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + currentTemplate.image)}`;
-    window.open(url, '_blank');
+    const platformLink = window.location.origin;
+    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
+    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+
+    const message = isVideo 
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`;
+    
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleShare = async () => {
+    const platformLink = window.location.origin;
+    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
+    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
+          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealing India Poster!`,
+          url: posterLink,
+        });
+      } catch (err) {
+        console.log('Share failed');
+      }
+    } else {
+      handleWhatsApp();
+    }
   };
 
   return (
@@ -337,16 +376,54 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
              {/* Captured Area — dual refs: posterRef for canvas export, posterContainerRef for drag math */}
             <div
               ref={(el) => { posterRef.current = el; posterContainerRef.current = el; }}
-              className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl flex items-center justify-center border border-[#e2e8f0]"
+              className="relative w-full rounded-lg overflow-hidden shadow-2xl border border-[#e2e8f0] flex flex-col"
               style={{ backgroundColor: '#ffffff' }}
             >
+              {/* Inner square image area */}
+              <div className="relative w-full aspect-square overflow-hidden">
                {/* Poster Background */}
-               <img
-                 src={currentTemplate.image}
-                 alt={currentTemplate.title}
-                 crossOrigin="anonymous"
-                 className="w-full h-full object-cover relative z-[1]"
-               />
+               {(currentTemplate.type === 'video' || currentTemplate.isVideo || isVideoUrl(currentTemplate.image)) ? (
+                 <div className="w-full h-full relative z-[1]">
+                    <video 
+                      src={currentTemplate.videoUrl || currentTemplate.image} 
+                      className="w-full h-full object-cover"
+                      autoPlay={isPlaying}
+                      loop
+                      muted={false}
+                      playsInline
+                    />
+                    {!isPlaying && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-[5]">
+                        <button 
+                          onClick={() => setIsPlaying(true)}
+                          className="p-4 bg-white/20 backdrop-blur-md rounded-full text-white shadow-2xl scale-110 active:scale-95 transition-transform"
+                        >
+                           <PlayCircle size={64} fill="white" className="opacity-80" />
+                        </button>
+                      </div>
+                    )}
+                    {isPlaying && (
+                       <button 
+                         onClick={() => setIsPlaying(false)}
+                         className="absolute bottom-4 right-4 z-[85] p-2 bg-black/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                       >
+                          <X size={20} />
+                       </button>
+                    )}
+                    
+                    {/* Audio for image+music */}
+                    {!currentTemplate.videoUrl && currentTemplate.audioUrl && isPlaying && (
+                       <audio src={currentTemplate.audioUrl} autoPlay loop />
+                    )}
+                 </div>
+               ) : (
+                 <img
+                   src={currentTemplate.image}
+                   alt={currentTemplate.title}
+                   crossOrigin="anonymous"
+                   className="w-full h-full object-cover relative z-[1]"
+                 />
+               )}
 
                {/* Frame Layer */}
                {activeFrame && (
@@ -362,7 +439,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                <div className="text-layer absolute inset-0 z-[75]">
 
                  {/* Name */}
-                 {userData.enabledFields?.name !== false && (() => {
+                 {hasFrameApplied && userData.enabledFields?.name !== false && (() => {
                    const pos = localPos.name || effectiveNamePos;
                    return (
                      <div
@@ -378,7 +455,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* Business Name */}
-                 {userData.enabledFields?.business_name !== false && (() => {
+                 {hasFrameApplied && userData.enabledFields?.business_name !== false && (() => {
                    const pos = localPos.business_name || effectiveBusinessNamePos;
                    return (
                      <div
@@ -394,7 +471,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* Phone */}
-                 {userData.enabledFields?.phone && (() => {
+                 {hasFrameApplied && userData.enabledFields?.phone && (() => {
                    const pos = localPos.phone || effectivePhonePos;
                    return (
                      <div
@@ -410,7 +487,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* Website */}
-                 {userData.enabledFields?.website && userData.website && (() => {
+                 {hasFrameApplied && userData.enabledFields?.website && userData.website && (() => {
                    const pos = localPos.website || effectiveWebsitePos;
                    return (
                      <div
@@ -426,7 +503,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* Email */}
-                 {userData.enabledFields?.email && userData.email && (() => {
+                 {hasFrameApplied && userData.enabledFields?.email && userData.email && (() => {
                    const pos = localPos.email || effectiveEmailPos;
                    return (
                      <div
@@ -442,7 +519,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* Address */}
-                 {userData.enabledFields?.address && userData.address && (() => {
+                 {hasFrameApplied && userData.enabledFields?.address && userData.address && (() => {
                    const pos = localPos.address || effectiveAddressPos;
                    return (
                      <div
@@ -458,7 +535,8 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* GST */}
-                 {(userData.enabledFields?.gst || (userData.gst_number || '').trim()) && (() => {
+                 {/* GST */}
+                 {(hasFrameApplied && (userData.enabledFields?.gst || (userData.gst_number || '').trim())) && (() => {
                    const pos = localPos.gst || effectiveGstPos;
                    return (
                      <div
@@ -485,7 +563,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                <div className="absolute inset-0 z-[80]">
 
                  {/* Profile Photo */}
-                 {userData.enabledFields?.userPhoto && (() => {
+                 {hasFrameApplied && userData.enabledFields?.userPhoto && (() => {
                    const pos = localPos.photo || { x: userData.userPhotoPos?.x || userPhotoDefault.x, y: userData.userPhotoPos?.y || userPhotoDefault.y };
                    const dim = hasFrameApplied ? '14%' : '18%';
                    return (
@@ -506,7 +584,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  })()}
 
                  {/* Logo */}
-                 {userData.enabledFields?.logo && userData.logo && (() => {
+                 {hasFrameApplied && userData.enabledFields?.logo && userData.logo && (() => {
                    const pos = localPos.logo || { x: userData.logoPos?.x || logoDefault.x, y: userData.logoPos?.y || logoDefault.y };
                    const dim = hasFrameApplied ? '9%' : '12%';
                    return (
@@ -535,50 +613,45 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  ))}
                </div>
 
-               {/* Fallback Branding Bar */}
-               {!hasFrameApplied && (
-                 <div className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-none w-full">
-                   <div 
-                     className="flex h-[50px] lg:h-[100px] border-t border-white/10 shadow-2xl space-between"
-                     style={{ backgroundColor: '#0a0a0a' }}
-                   >
-                     <div className="flex-1" />
-                     <div className="relative w-[80px] lg:w-[150px] shrink-0" />
-                   </div>
-                 </div>
-               )}
-              
                <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 z-[20] bg-black/30 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-2 text-[0.75rem] font-black shadow-lg border border-white/10 tracking-widest">
                  <Heart size={14} className="text-white" fill="currentColor" />
                  <span>1.1K</span>
                </div>
+             </div>
+
+             {/* Branding Info - Appended below inside the capturable posterRef container */}
+             {!hasFrameApplied && (
+               <BrandingOverlay 
+                 userData={userData} 
+                 size="regular" 
+                 isOverlay={false} 
+               />
+             )}
             </div>
           </div>
 
+          {/* Action Buttons - Repositioned just after image end */}
+          <div className="flex justify-around items-center py-4 px-2 bg-white border-b border-slate-100 shadow-sm">
+            <ActionIcon icon={Edit2} label="Edit" color="#6366f1" onClick={() => onEdit(template)} />
+            <ActionIcon icon={Video} label="Video" color="#f43f5e" onClick={() => setShowVideoEditor(true)} />
+            <ActionIcon icon={Download} label="Save" color="#475569" onClick={handleDownload} />
+            <ActionIcon icon={MessageCircle} label="WhatsApp" color="#22c55e" onClick={handleWhatsApp} />
+            <ActionIcon icon={Share2} label="Share" color="#f59e0b" onClick={handleShare} />
+          </div>
+
+          {/* Frame Selection - Moved below actions */}
           <div className="px-5 py-6">
-             <h4 className="text-[0.75rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Select Frame Overlay</h4>
-             <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
-                <div className={`min-w-[80px] h-[80px] rounded-2xl flex items-center justify-center border-2 cursor-pointer ${!selectedFrame ? 'border-indigo-600 bg-indigo-50 shadow-lg' : 'border-slate-200 bg-slate-50'}`} onClick={() => setSelectedFrame(null)}>
-                   <div className="w-10 h-10 rounded-full border-2 border-slate-300 relative flex items-center justify-center"><div className="w-12 h-[2px] bg-slate-300 rotate-45 absolute" /></div>
+             <h4 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Select Frame Overlay</h4>
+             <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
+                <div className={`min-w-[70px] h-[70px] rounded-2xl flex items-center justify-center border-2 cursor-pointer transition-all ${!selectedFrame ? 'border-primary bg-indigo-50/50 shadow-md' : 'border-slate-100 bg-slate-50/50'}`} onClick={() => setSelectedFrame(null)}>
+                   <div className="w-8 h-8 rounded-full border-2 border-slate-300 relative flex items-center justify-center"><div className="w-10 h-[2px] bg-slate-300 rotate-45 absolute" /></div>
                 </div>
                 {frames.map(frame => (
-                   <div key={frame._id} className={`min-w-[80px] h-[80px] rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${activeFrame === frame.image ? 'border-indigo-600 scale-95 shadow-lg' : 'border-slate-200 opacity-80'}`} onClick={() => setSelectedFrame(frame.image)}>
+                   <div key={frame._id} className={`min-w-[70px] h-[70px] rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${activeFrame === frame.image ? 'border-primary scale-95 shadow-md shadow-indigo-100' : 'border-slate-100 opacity-80'}`} onClick={() => setSelectedFrame(frame.image)}>
                        <img src={frame.image} className="w-full h-full object-fill" />
                    </div>
                 ))}
              </div>
-          </div>
-
-          <div className="p-5 space-y-8 bg-white border-t border-slate-100 pb-12">
-            <button className="w-full h-14 bg-indigo-600 text-white rounded-[1.25rem] text-[0.9rem] font-black uppercase tracking-[0.15em] border-none shadow-xl shadow-indigo-200" onClick={() => onEdit(template)}>
-              Edit Poster
-            </button>
-            <div className="flex justify-between items-center px-2">
-              <ActionIcon icon={Video} label="Video" color="#f43f5e" onClick={() => setShowVideoEditor(true)} />
-              <ActionIcon icon={Download} label="Save" color="#475569" onClick={handleDownload} />
-              <ActionIcon icon={MessageCircle} label="Whatsapp" color="#22c55e" onClick={handleWhatsApp} />
-              <ActionIcon icon={Share2} label="Share" color="#f59e0b" onClick={handleWhatsApp} />
-            </div>
           </div>
         </div>
       </motion.div>
