@@ -7,10 +7,30 @@ import BrandingOverlay from './BrandingOverlay';
 
 const POTDCard = ({ poster, onEdit }) => {
   const { user } = useAuth();
-  const { openEditor } = useEditor();
+  const { openEditor, userData } = useEditor();
   const [isLiked, setIsLiked] = React.useState(poster.isLiked || false);
   const [likeCount, setLikeCount] = React.useState(poster.likeCount || 0);
   const [isPlaying, setIsPlaying] = React.useState(false);
+
+  const cleanUrl = (url) => {
+    if (!url || url.includes('default_logo.png')) return null;
+    return url;
+  };
+
+  const normalizeFrameValue = (frame) => {
+    if (!frame) return null;
+    if (typeof frame === 'string') return frame;
+    if (typeof frame === 'object') return frame.image || frame.url || null;
+    return null;
+  };
+
+  const rawUserData = poster.customData || userData;
+  const effectiveUserData = {
+    ...rawUserData,
+    logo: cleanUrl(rawUserData.logo),
+    userPhoto: cleanUrl(rawUserData.userPhoto)
+  };
+  const activeFrame = normalizeFrameValue(effectiveUserData.selectedFrame);
 
   React.useEffect(() => {
      return () => setIsPlaying(false);
@@ -147,11 +167,20 @@ const POTDCard = ({ poster, onEdit }) => {
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {activeFrame && (
+          <img 
+            src={activeFrame} 
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
+            alt="Frame Overlay"
+            crossOrigin="anonymous"
+          />
+        )}
       </div>
 
       {/* Branding Info - Appended below as requested */}
       <BrandingOverlay 
-        userData={poster.customData || {}} 
+        userData={effectiveUserData} 
         size="regular" 
         isOverlay={false} 
       />
