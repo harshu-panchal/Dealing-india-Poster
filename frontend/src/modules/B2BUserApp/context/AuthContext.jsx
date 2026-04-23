@@ -58,13 +58,17 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
-  const login = async (identifier, otp, referralCode) => {
+  const login = async (identifier, otp, referralCode, agreedToPolicies) => {
     try {
       const isEmail = identifier.includes('@');
       const payload = isEmail ? { email: identifier, otp } : { mobileNumber: identifier, otp };
       
       if (referralCode) {
         payload.referralCode = referralCode;
+      }
+
+      if (agreedToPolicies !== undefined) {
+        payload.agreedToPolicies = agreedToPolicies;
       }
 
       const { data } = await axios.post(`${API_URL}/user/verify-otp`, payload);

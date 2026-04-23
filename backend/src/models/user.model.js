@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    agreedToPolicies: {
+      type: Boolean,
+      default: false,
+    },
     savedTemplates: [
       {
         templateId: {
@@ -77,7 +81,15 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// Force sparse unique indexes to handle multiple users with missing email/mobile
+userSchema.index({ email: 1 }, { unique: true, sparse: true });
+userSchema.index({ mobileNumber: 1 }, { unique: true, sparse: true });
+
 userSchema.pre('save', async function () {
+  // Ensure empty strings/nulls are treated as undefined for sparse unique index
+  if (this.email === null || this.email === "") this.email = undefined;
+  if (this.mobileNumber === null || this.mobileNumber === "") this.mobileNumber = undefined;
+
   if (!this.referralCode) {
     // Generate a simple referral code based on name or random string
     const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();

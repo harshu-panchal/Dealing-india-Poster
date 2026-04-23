@@ -38,6 +38,7 @@ const SystemSettings = () => {
       appVersion: '2.15.10'
     },
     termsAndConditions: '',
+    privacyPolicy: '',
     faqs: []
   });
 
@@ -58,6 +59,7 @@ const SystemSettings = () => {
             socialLinks: data.socialLinks || prev.socialLinks,
             appConfig: data.appConfig || prev.appConfig,
             termsAndConditions: data.termsAndConditions || prev.termsAndConditions || '',
+            privacyPolicy: data.privacyPolicy || prev.privacyPolicy || '',
             faqs: (data.faqs && data.faqs.length > 0) ? data.faqs : prev.faqs
           }));
         }
@@ -317,6 +319,16 @@ const SystemSettings = () => {
                     value={settings.termsAndConditions}
                     onChange={(e) => setSettings(prev => ({ ...prev, termsAndConditions: e.target.value }))}
                     placeholder="Enter your terms and conditions here..."
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 outline-none focus:border-red-100 focus:bg-white focus:ring-8 focus:ring-red-500/5 transition-all shadow-sm min-h-[300px] font-sans"
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">Privacy Policy</label>
+                  <textarea 
+                    value={settings.privacyPolicy}
+                    onChange={(e) => setSettings(prev => ({ ...prev, privacyPolicy: e.target.value }))}
+                    placeholder="Enter your privacy policy here..."
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 outline-none focus:border-red-100 focus:bg-white focus:ring-8 focus:ring-red-500/5 transition-all shadow-sm min-h-[300px] font-sans"
                   />
                 </div>

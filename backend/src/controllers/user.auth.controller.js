@@ -46,7 +46,7 @@ export const sendOTP = async (req, res) => {
 // @desc    Verify OTP and Login/Register
 // @route   POST /api/user/verify-otp
 export const verifyOTP = async (req, res) => {
-  const { mobileNumber, email, otp, referralCode } = req.body;
+  const { mobileNumber, email, otp, referralCode, agreedToPolicies } = req.body;
 
   if ((!mobileNumber && !email) || !otp) {
     return res.status(400).json({ message: 'Identity and OTP are required' });
@@ -81,6 +81,7 @@ export const verifyOTP = async (req, res) => {
         mobileNumber: mobileNumber || undefined,
         email: email || undefined,
         isVerified: true,
+        agreedToPolicies: agreedToPolicies || false,
       });
 
       // Handle Referral
@@ -88,31 +89,31 @@ export const verifyOTP = async (req, res) => {
         console.log(`[DEBUG]: Attempting referral validation for code: ${referralCode}`);
         const uppercaseCode = referralCode.toUpperCase().trim();
         const referrer = await User.findOne({ referralCode: uppercaseCode });
-        
+
         if (!referrer) {
-           console.log(`[DEBUG]: REFERRAL FAILED - No user found with code: ${uppercaseCode}`);
+          console.log(`[DEBUG]: REFERRAL FAILED - No user found with code: ${uppercaseCode}`);
         } else {
           console.log(`[DEBUG]: Referrer found: ${referrer.name || 'Unnamed'} (${referrer._id})`);
           console.log(`[DEBUG]: Referrer Identifiers - Mobile: ${referrer.mobileNumber}, Email: ${referrer.email}`);
           console.log(`[DEBUG]: Current Registrant - Mobile: ${mobileNumber}, Email: ${email}`);
-          
+
           const isSelfReferral = referrer.mobileNumber === mobileNumber || (email && referrer.email === email);
-          
+
           if (!isSelfReferral) {
             console.log(`[DEBUG]: REFERRAL SUCCESS - Applying points...`);
             user.referredBy = referrer._id;
-            
+
             const referralPointsSetting = await Settings.findOne({ key: 'referralPoints' });
             const pointsValue = referralPointsSetting ? referralPointsSetting.value : 10;
             const pointsToAdd = isNaN(parseInt(pointsValue)) ? 10 : parseInt(pointsValue);
-            
+
             // Referrer gets points
             referrer.points = (Number(referrer.points) || 0) + pointsToAdd;
             referrer.referralCount = (Number(referrer.referralCount) || 0) + 1;
-            
+
             // New user also gets points
             user.points = (Number(user.points) || 0) + pointsToAdd;
-            
+
             await referrer.save();
             console.log(`[DEBUG]: Referrer awarded ${pointsToAdd} pts. Total: ${referrer.points}, Count: ${referrer.referralCount}`);
             console.log(`[DEBUG]: New user awarded ${pointsToAdd} pts. Total: ${user.points}`);
@@ -124,6 +125,9 @@ export const verifyOTP = async (req, res) => {
       await user.save();
     } else {
       user.isVerified = true;
+      if (agreedToPolicies !== undefined) {
+        user.agreedToPolicies = agreedToPolicies;
+      }
       // Ensure existing users get a referral code if they don't have one
       if (!user.referralCode) {
         const generateCode = () => 'DI' + Math.random().toString(36).substring(2, 9).toUpperCase();
@@ -167,8 +171,20 @@ export const verifyOTP = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(`[DEBUG ERROR]: verifyOTP failed:`, error);
-    res.status(500).json({ message: error.message });
+    console.error(`[DEBUG ERROR]: verifyOTP failed at ${new Date().toISOString()}:`);
+    console.error(error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: 'This email or mobile number is already registered with another account.',
+        details: error.keyValue 
+      });
+    }
+
+    res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -249,13 +265,13 @@ export const updateProfile = async (req, res) => {
 
     // 🕵️ Checking for uniqueness conflicts with OTHER users
     if (mobileNumber && mobileNumber !== user.mobileNumber) {
-        const existingMobile = await User.findOne({ mobileNumber, _id: { $ne: user._id } });
-        if (existingMobile) return res.status(400).json({ message: 'This mobile number is already linked to another account' });
+      const existingMobile = await User.findOne({ mobileNumber, _id: { $ne: user._id } });
+      if (existingMobile) return res.status(400).json({ message: 'This mobile number is already linked to another account' });
     }
 
     if (email && email !== user.email) {
-        const existingEmail = await User.findOne({ email, _id: { $ne: user._id } });
-        if (existingEmail) return res.status(400).json({ message: 'This email is already linked to another account' });
+      const existingEmail = await User.findOne({ email, _id: { $ne: user._id } });
+      if (existingEmail) return res.status(400).json({ message: 'This email is already linked to another account' });
     }
 
     // 🛡️ Apply Updates
@@ -296,7 +312,7 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-        return res.status(400).json({ message: 'Details already in use by another account' });
+      return res.status(400).json({ message: 'Details already in use by another account' });
     }
     res.status(500).json({ message: error.message });
   }
@@ -316,15 +332,15 @@ export const saveTemplate = async (req, res) => {
     );
 
     if (existingIndex > -1) {
-        user.savedTemplates.splice(existingIndex, 1);
+      user.savedTemplates.splice(existingIndex, 1);
     }
-    
+
     user.savedTemplates.unshift({ templateId, customData, savedAt: new Date() });
 
     if (user.savedTemplates.length > 50) {
-        user.savedTemplates = user.savedTemplates.slice(0, 50);
+      user.savedTemplates = user.savedTemplates.slice(0, 50);
     }
-    
+
     await user.save();
     res.status(200).json({ message: 'Template saved to history', savedTemplates: user.savedTemplates });
   } catch (error) {
@@ -338,10 +354,10 @@ export const saveTemplate = async (req, res) => {
 export const getSavedTemplates = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate({
-        path: 'savedTemplates.templateId',
-        match: { isActive: true }
+      path: 'savedTemplates.templateId',
+      match: { isActive: true }
     });
-    
+
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json(user.savedTemplates);
@@ -357,12 +373,14 @@ export const getPublicSettings = async (req, res) => {
     const referralPointsSetting = await Settings.findOne({ key: 'referralPoints' });
     const supportContact = await Settings.findOne({ key: 'supportContact' });
     const termsAndConditions = await Settings.findOne({ key: 'termsAndConditions' });
+    const privacyPolicy = await Settings.findOne({ key: 'privacyPolicy' });
     const socialLinks = await Settings.findOne({ key: 'socialLinks' });
     const faqs = await Settings.findOne({ key: 'faqs' });
-    
+
     res.status(200).json({
       referralPoints: referralPointsSetting ? parseInt(referralPointsSetting.value) : 10,
       termsAndConditions: termsAndConditions ? termsAndConditions.value : '',
+      privacyPolicy: privacyPolicy ? privacyPolicy.value : '',
       faqs: faqs ? faqs.value : [],
       supportContact: supportContact ? supportContact.value : {
         email: 'support@appzeto.com',

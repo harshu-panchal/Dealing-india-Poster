@@ -60,7 +60,7 @@ const Profile = () => {
 
     setUploading(prev => ({ ...prev, [type]: true }));
     const uploadData = new FormData();
-    uploadData.append('image', file);
+    uploadData.append('file', file);
 
     try {
       const config = {

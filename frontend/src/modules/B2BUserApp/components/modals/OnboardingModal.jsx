@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Phone, Camera, Image as ImageIcon, Globe, ChevronRight, Loader2, Check, Upload } from 'lucide-react';
+import { User, Phone, Camera, Image as ImageIcon, Globe, ChevronRight, Loader2, Check, Upload, Mail } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
@@ -9,6 +9,7 @@ const OnboardingModal = ({ isOpen }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState({ profile: false, logo: false });
+  const [errors, setErrors] = useState({ name: '', mobileNumber: '', email: '' });
 
   const profileInputRef = useRef(null);
   const logoInputRef = useRef(null);
@@ -22,11 +23,52 @@ const OnboardingModal = ({ isOpen }) => {
     contentLanguage: 'English'
   });
 
+  // Sync formData when user changes (e.g. login with different account)
+  React.useEffect(() => {
+    if (user?.user) {
+      setFormData({
+        name: user.user.name || '',
+        mobileNumber: user.user.mobileNumber || '',
+        email: user.user.email || '',
+        profilePhoto: user.user.profilePhoto || '',
+        logo: user.user.logo || '',
+        contentLanguage: user.user.contentLanguage || 'English'
+      });
+    }
+  }, [user]);
+
   if (!isOpen) return null;
 
   const handleStep1Submit = (e) => {
     e.preventDefault();
-    if (formData.name && formData.mobileNumber) {
+    const newErrors = { name: '', mobileNumber: '', email: '' };
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+      isValid = false;
+    }
+
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!formData.mobileNumber.trim()) {
+      newErrors.mobileNumber = 'Mobile number is required';
+      isValid = false;
+    } else if (!mobileRegex.test(formData.mobileNumber)) {
+      newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number';
+      isValid = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    if (isValid) {
       setStep(2);
     }
   };
@@ -37,7 +79,7 @@ const OnboardingModal = ({ isOpen }) => {
 
     setUploading(prev => ({ ...prev, [type]: true }));
     const uploadData = new FormData();
-    uploadData.append('image', file);
+    uploadData.append('file', file);
 
     try {
       const config = {
@@ -121,31 +163,57 @@ const OnboardingModal = ({ isOpen }) => {
                   <div className="relative group">
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Full Name</label>
                     <div className="relative flex items-center">
-                      <User size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
+                      <User size={18} className={`absolute left-4 transition-colors ${errors.name ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#ef4444]'}`} />
                       <input
                         type="text"
-                        required
                         placeholder="Enter your full name"
-                        className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
+                        className={`w-full h-14 bg-slate-50 border-2 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 transition-all font-sans ${errors.name ? 'border-red-500 bg-red-50/30' : 'border-slate-50 focus:bg-white focus:border-[#ef4444]/20'}`}
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, name: e.target.value });
+                          if (errors.name) setErrors({ ...errors, name: '' });
+                        }}
                       />
                     </div>
+                    {errors.name && <p className="text-[0.7rem] font-bold text-red-500 mt-1.5 ml-2 italic">{errors.name}</p>}
                   </div>
 
                   <div className="relative group">
                     <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Mobile Number</label>
                     <div className="relative flex items-center">
-                      <Phone size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
+                      <Phone size={18} className={`absolute left-4 transition-colors ${errors.mobileNumber ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#ef4444]'}`} />
                       <input
                         type="tel"
-                        required
+                        maxLength={10}
                         placeholder="Enter mobile number"
-                        className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 focus:bg-white focus:border-[#ef4444]/20 transition-all font-sans"
+                        className={`w-full h-14 bg-slate-50 border-2 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 transition-all font-sans ${errors.mobileNumber ? 'border-red-500 bg-red-50/30' : 'border-slate-50 focus:bg-white focus:border-[#ef4444]/20'}`}
                         value={formData.mobileNumber}
-                        onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setFormData({ ...formData, mobileNumber: val });
+                          if (errors.mobileNumber) setErrors({ ...errors, mobileNumber: '' });
+                        }}
                       />
                     </div>
+                    {errors.mobileNumber && <p className="text-[0.7rem] font-bold text-red-500 mt-1.5 ml-2 italic">{errors.mobileNumber}</p>}
+                  </div>
+
+                  <div className="relative group">
+                    <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Email Address</label>
+                    <div className="relative flex items-center">
+                      <Mail size={18} className={`absolute left-4 transition-colors ${errors.email ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#ef4444]'}`} />
+                      <input
+                        type="email"
+                        placeholder="Enter email address"
+                        className={`w-full h-14 bg-slate-50 border-2 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 transition-all font-sans ${errors.email ? 'border-red-500 bg-red-50/30' : 'border-slate-50 focus:bg-white focus:border-[#ef4444]/20'}`}
+                        value={formData.email}
+                        onChange={(e) => {
+                          setFormData({ ...formData, email: e.target.value });
+                          if (errors.email) setErrors({ ...errors, email: '' });
+                        }}
+                      />
+                    </div>
+                    {errors.email && <p className="text-[0.7rem] font-bold text-red-500 mt-1.5 ml-2 italic">{errors.email}</p>}
                   </div>
                 </div>
 

@@ -21,6 +21,7 @@ const Referral = lazy(() => import('./modules/B2BUserApp/pages/Referral'));
 const HelpCenter = lazy(() => import('./modules/B2BUserApp/pages/HelpCenter'));
 const EventTemplates = lazy(() => import('./modules/B2BUserApp/pages/EventTemplates'));
 const TermsAndConditions = lazy(() => import('./modules/B2BUserApp/pages/TermsAndConditions'));
+const PrivacyPolicy = lazy(() => import('./modules/B2BUserApp/pages/PrivacyPolicy'));
 const LikedPosters = lazy(() => import('./modules/B2BUserApp/pages/LikedPosters'));
 
 // Lazy loading Admin pages
@@ -59,7 +60,7 @@ function AppContent() {
   const [showSidebar, setShowSidebar] = useState(false);
   const { user, loading } = useAuth();
   const isAuthenticated = !!user; 
-  const isNewUser = isAuthenticated && !user.user?.name;
+  const isProfileIncomplete = isAuthenticated && (!user.user?.name || !user.user?.email || !user.user?.mobileNumber);
 
   const { 
     editingTemplate, closeEditor, 
@@ -72,7 +73,7 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
   const showSearchInHeaderPages = ['/', '/trending', '/categories'];
   const showSearch = showSearchInHeaderPages.includes(location.pathname);
-  const hideBarsPaths = ['/login', '/register', '/terms'];
+  const hideBarsPaths = ['/login', '/register', '/terms', '/privacy'];
   const showBars = !hideBarsPaths.includes(location.pathname) && !isAdminPath;
 
   // Handle routing for Admin Panel separately
@@ -103,8 +104,8 @@ function AppContent() {
 
   return (
     <div className="flex bg-bg h-full w-full overflow-hidden">
-      {/* Onboarding Modal - Mandatory for new users */}
-      <OnboardingModal isOpen={isNewUser} />
+      {/* Onboarding Modal - Mandatory for incomplete profiles */}
+      <OnboardingModal isOpen={isProfileIncomplete} />
       
       {/* User Sidebar - Only shown if Not Admin Route and Not in Hidden Paths */}
       {showBars && !isAdminPath && (
@@ -135,6 +136,7 @@ function AppContent() {
                 {/* Public Routes */}
                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
 
                 {/* Private User Routes */}
                 <Route path="/" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Home /></UserPrivateRoute>} />
