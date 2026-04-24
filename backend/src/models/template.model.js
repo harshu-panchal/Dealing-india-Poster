@@ -19,6 +19,31 @@ const templateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subcategory',
   },
+  fields: [
+    {
+      _id: false,
+      key: { type: String, required: true },
+      label: { type: String },
+      type: { type: String, enum: ['text', 'image'], default: 'text' },
+      position: {
+        x: { type: String, default: '10%' },
+        y: { type: String, default: '10%' },
+      },
+      style: {
+        fontSize: { type: String, default: '14px' },
+        color: { type: String, default: '#000000' },
+        fontWeight: { type: String, default: 'bold' },
+      },
+      size: {
+        width: { type: String, default: 'auto' },
+        height: { type: String, default: 'auto' },
+      },
+    }
+  ],
+  canvasSize: {
+    width: { type: Number, default: 500 },
+    height: { type: Number, default: 286 },
+  },
   eventId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event',

@@ -29,7 +29,7 @@ const TabNavigation = () => {
           )}
         </NavLink>
         
-        <NavLink to="/categories" className={({ isActive }) => `flex flex-col items-center gap-1 flex-1 no-underline text-[0.7rem] font-bold ${isActive ? 'text-[#ef4444]' : 'text-[#64748b]'}`}>
+        <NavLink to="/business" className={({ isActive }) => `flex flex-col items-center gap-1 flex-1 no-underline text-[0.7rem] font-bold ${isActive ? 'text-[#ef4444]' : 'text-[#64748b]'}`}>
           {({ isActive }) => (
             <>
               <Briefcase size={22} className={`transition-transform ${isActive ? 'stroke-[2.5px]' : ''}`} />

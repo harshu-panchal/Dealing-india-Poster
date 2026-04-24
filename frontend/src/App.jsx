@@ -23,6 +23,8 @@ const EventTemplates = lazy(() => import('./modules/B2BUserApp/pages/EventTempla
 const TermsAndConditions = lazy(() => import('./modules/B2BUserApp/pages/TermsAndConditions'));
 const PrivacyPolicy = lazy(() => import('./modules/B2BUserApp/pages/PrivacyPolicy'));
 const LikedPosters = lazy(() => import('./modules/B2BUserApp/pages/LikedPosters'));
+const Business = lazy(() => import('./modules/B2BUserApp/pages/Business'));
+const ViewAll = lazy(() => import('./modules/B2BUserApp/pages/ViewAll'));
 
 // Lazy loading Admin pages
 const AdminLayout = lazy(() => import('./modules/Admin/components/AdminLayout'));
@@ -152,6 +154,8 @@ function AppContent() {
                 <Route path="/dashboard" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Dashboard /></UserPrivateRoute>} />
                 <Route path="/help" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><HelpCenter /></UserPrivateRoute>} />
                 <Route path="/liked-posters" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><LikedPosters /></UserPrivateRoute>} />
+                <Route path="/business" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Business /></UserPrivateRoute>} />
+                <Route path="/view-all/:type/:id" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><ViewAll /></UserPrivateRoute>} />
                 <Route path="/event/:id/templates" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><EventTemplates /></UserPrivateRoute>} />
                 
                 {/* Fallback */}
