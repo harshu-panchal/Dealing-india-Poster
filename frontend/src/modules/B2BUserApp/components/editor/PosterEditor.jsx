@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import {
   Type, X, Check, ImageIcon as ImageIcon, Layers,
   User, Star, Smile, Plus, Video, Music, Sparkles, PlayCircle, MessageCircle, Globe as GlobeIcon,
   Mail, MapPin, Hash, PlusCircle, Trash2, Palette, Move
@@ -28,15 +28,22 @@ const PosterEditor = ({ template, onClose }) => {
       setShowVideoEditor(true);
     }
   }, [activeTab]);
-  
+
   const currentTemplate = template.templateId && typeof template.templateId === 'object' ? template.templateId : template;
+
+  const isBusinessCard =
+    currentTemplate?.subcategoryId?.name?.toLowerCase().includes('business card') ||
+    currentTemplate?.categoryId?.name?.toLowerCase().includes('business card') ||
+    currentTemplate?.category?.toLowerCase().includes('business card') ||
+    !!currentTemplate?.fields;
+
   const normalizeFrameValue = (frame) => {
     if (!frame) return null;
     if (typeof frame === 'string') return frame;
     if (typeof frame === 'object') return frame.image || frame.url || null;
     return null;
   };
-  
+
   // Local state for edits - initialized from saved customData if available
   const [localUserData, setLocalUserData] = useState(() => {
     const savedData = template.customData || userData;
@@ -135,39 +142,37 @@ const PosterEditor = ({ template, onClose }) => {
 
   const nameFontClass = ''; // Managed via inline style now
   const detailFontClass = ''; // Managed via inline style now
-  
+
   // Frame-defined per-field positions (admin set via drag)
   const framePos = frameStyle.positions || {};
 
   // New poster-relative defaults — frame positions take priority
-  const nameDefault      = { x: framePos.name?.x      || '5%', y: framePos.name?.y      || (hasFrameApplied ? '82%' : '80%') };
+  const nameDefault = { x: framePos.name?.x || '5%', y: framePos.name?.y || (hasFrameApplied ? '82%' : '80%') };
   const businessNameDefault = { x: framePos.businessName?.x || '5%', y: framePos.businessName?.y || (hasFrameApplied ? '84%' : '82%') };
-  const phoneDefault     = { x: framePos.phone?.x     || '5%', y: framePos.phone?.y     || (hasFrameApplied ? '86%' : '85%') };
-  const websiteDefault   = { x: framePos.website?.x   || '5%', y: framePos.website?.y   || (hasFrameApplied ? '88%' : '88%') };
-  const emailDefault     = { x: framePos.email?.x     || '5%', y: framePos.email?.y     || (hasFrameApplied ? '90%' : '91%') };
-  const addressDefault   = { x: framePos.address?.x   || '5%', y: framePos.address?.y   || (hasFrameApplied ? '92%' : '94%') };
-  const gstDefault       = { x: framePos.gst?.x       || '5%', y: framePos.gst?.y       || (hasFrameApplied ? '94%' : '97%') };
+  const phoneDefaultY = framePos.phone?.y || (hasFrameApplied ? '86%' : '85%');
+  const websiteDefaultY = framePos.website?.y || (hasFrameApplied ? '88%' : '88%');
+  const emailDefaultY = framePos.email?.y || (hasFrameApplied ? '90%' : '91%');
+  const addressDefaultY = framePos.address?.y || (hasFrameApplied ? '92%' : '94%');
   const userPhotoDefault = { x: framePos.userPhoto?.x || '70%', y: framePos.userPhoto?.y || (hasFrameApplied ? '74%' : '70%') };
-  const logoDefault      = { x: framePos.logo?.x      || '10%', y: framePos.logo?.y      || (hasFrameApplied ? '80%' : '75%') };
+  const logoDefault = { x: framePos.logo?.x || '10%', y: framePos.logo?.y || (hasFrameApplied ? '80%' : '75%') };
 
   // Migration helper for old pixel-based data
   const migratePos = (val, defaultVal) => {
     if (!val) return defaultVal;
     if (typeof val === 'object') {
-       const x = (!val.x || (typeof val.x === 'string' && !val.x.endsWith('%'))) ? '5%' : val.x;
-       const y = (!val.y || (typeof val.y === 'string' && !val.y.endsWith('%'))) ? defaultVal : val.y;
-       return { x, y };
+      const x = (!val.x || (typeof val.x === 'string' && !val.x.endsWith('%'))) ? '5%' : val.x;
+      const y = (!val.y || (typeof val.y === 'string' && !val.y.endsWith('%'))) ? defaultVal : val.y;
+      return { x, y };
     }
     return val;
   };
 
-  const effectiveNamePos         = migratePos(localUserData.namePos,         nameDefault);
+  const effectiveNamePos = migratePos(localUserData.namePos, nameDefault);
   const effectiveBusinessNamePos = migratePos(localUserData.businessNamePos, businessNameDefault);
-  const effectivePhonePos        = migratePos(localUserData.phonePos,        phoneDefault);
-  const effectiveWebsitePos      = migratePos(localUserData.websitePos,      websiteDefault);
-  const effectiveEmailPos        = migratePos(localUserData.emailPos,        emailDefault);
-  const effectiveAddressPos      = migratePos(localUserData.addressPos,      addressDefault);
-  const effectiveGstPos          = migratePos(localUserData.gstPos,          gstDefault);
+  const effectivePhonePos = migratePos(localUserData.phonePos, { x: framePos.phone?.x || '5%', y: phoneDefaultY });
+  const effectiveWebsitePos = migratePos(localUserData.websitePos, { x: framePos.website?.x || '5%', y: websiteDefaultY });
+  const effectiveEmailPos = migratePos(localUserData.emailPos, { x: framePos.email?.x || '5%', y: emailDefaultY });
+  const effectiveAddressPos = migratePos(localUserData.addressPos, { x: framePos.address?.x || '5%', y: addressDefaultY });
 
   const toPx = (value, axis = 'x', customRef = null) => {
     if (value === undefined || value === null) return 0;
@@ -252,8 +257,8 @@ const PosterEditor = ({ template, onClose }) => {
 
     try {
       if (user?.accessToken && currentTemplate?._id) {
-        await axios.post(`${API_URL}/user/save-template`, 
-          { 
+        await axios.post(`${API_URL}/user/save-template`,
+          {
             templateId: currentTemplate._id,
             customData: savedCustomData
           },
@@ -271,250 +276,255 @@ const PosterEditor = ({ template, onClose }) => {
       {/* Premium Header */}
       <div className="p-4 md:px-8 flex justify-between items-center bg-white border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-4">
-           <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={onClose}>
-              <X size={20} className="text-gray-500" />
-           </div>
-           <div>
-              <h2 className="text-xl font-black text-gray-800 tracking-tight">Edit Poster</h2>
-              <p className="hidden md:block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Refine your design in real-time</p>
-           </div>
+          <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={onClose}>
+            <X size={20} className="text-gray-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-gray-800 tracking-tight">Edit Poster</h2>
+            <p className="hidden md:block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Refine your design in real-time</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-           <button className="hidden md:flex px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-colors border-none" onClick={onClose}>Discard</button>
-           <button 
-             className="px-6 py-2.5 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 border-none" 
-             onClick={handleApplyEdits}
-           >
-             <Check size={16} strokeWidth={3} /> Save Design
-           </button>
+          <button className="hidden md:flex px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-colors border-none" onClick={onClose}>Discard</button>
+          <button
+            className="px-6 py-2.5 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-red-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 border-none"
+            onClick={handleApplyEdits}
+          >
+            <Check size={16} strokeWidth={3} /> Save Design
+          </button>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#f1f5f9]">
         {/* Preview Area with Dot Grid */}
         <div className="flex h-[40%] lg:h-auto lg:flex-1 items-center justify-center p-4 lg:p-12 bg-[#f8fafc] relative overflow-hidden shrink-0 lg:shrink">
-           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ef4444 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-           
-           <div ref={previewBoundsRef} className="relative w-full max-w-[300px] lg:max-w-[500px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] lg:shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-xl lg:rounded-2xl overflow-hidden border-4 lg:border-8 border-white group">
-               {/* Main Poster Content (Square) */}
-               <div className="relative aspect-square overflow-hidden bg-white">
-                 {/* Poster Background */}
-                 <img src={currentTemplate.image} className="w-full h-full object-cover relative z-[1]" alt="Preview" crossOrigin="anonymous" />
-                 
-                 {/* Frame Layer (Inside square only) */}
-                 {effectiveSelectedFrame && (
-                   <img 
-                     src={effectiveSelectedFrame} 
-                     className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
-                     alt="Frame Overlay"
-                     crossOrigin="anonymous"
-                   />
-                 )}
-               </div>
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ef4444 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
-               {/* Dedicated Text & Content Layer (Top - Covers full bounds) */}
-               <div className="text-layer absolute inset-0 z-[75]">
-                   {/* Branding Items - Now directly in text-layer, relative to whole poster */}
-                   {localUserData.enabledFields?.name !== false && (
-                      <motion.div 
-                        drag
-                        dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragEnd={(e, info) => updateLocalField('namePos', getNextPosition(e, info, effectiveNamePos, nameDefault))}
-                        className="inline-block pointer-events-auto absolute cursor-move touch-none"
-                        style={{ 
-                          left: effectiveNamePos.x,
-                          top: effectiveNamePos.y,
-                          zIndex: 95
-                        }}
-                      >
-                         <div 
-                           className="whitespace-nowrap leading-tight" 
-                           style={{ 
-                             ...getStyle('name')
-                           }}
-                         >
-                             {localUserData.name || 'Your Name'}
-                         </div>
-                      </motion.div>
-                    )}
+          <div ref={previewBoundsRef} className={`relative w-full ${isBusinessCard ? 'max-w-md' : 'max-w-[300px] lg:max-w-[500px]'} bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] lg:shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-xl lg:rounded-2xl overflow-hidden border-4 lg:border-8 border-white group`}>
+            {/* Main Poster Content */}
+            <div className={`relative ${isBusinessCard ? 'aspect-[1.75/1]' : 'aspect-square'} overflow-hidden bg-white`}>
+              {/* Poster Background */}
+              <img src={currentTemplate.image} className="w-full h-full object-cover relative z-[1]" alt="Preview" crossOrigin="anonymous" />
 
-                    {localUserData.enabledFields?.business_name !== false && (
-                      <motion.div 
-                        drag
-                        dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragEnd={(e, info) => updateLocalField('businessNamePos', getNextPosition(e, info, effectiveBusinessNamePos, businessNameDefault))}
-                        className="inline-block pointer-events-auto absolute cursor-move touch-none"
-                        style={{ 
-                          left: effectiveBusinessNamePos.x,
-                          top: effectiveBusinessNamePos.y,
-                          zIndex: 95
-                        }}
-                      >
-                         <div 
-                           className="whitespace-nowrap leading-tight" 
-                           style={{ 
-                             ...getStyle('name')
-                           }}
-                         >
-                             {localUserData.business_name || 'Your Business Name'}
-                         </div>
-                      </motion.div>
-                    )}
-
-                   <div className="flex flex-col relative h-full pointer-events-none">
-                      {localUserData.enabledFields?.phone && (
-                        <motion.div 
-                          drag
-                          dragMomentum={false}
-                          dragConstraints={previewBoundsRef}
-                          onDragEnd={(e, info) => updateLocalField('phonePos', getNextPosition(e, info, effectivePhonePos, { x: '5%', y: phoneDefaultY }))}
-                          className="pointer-events-auto absolute cursor-move touch-none"
-                          style={{ 
-                            left: effectivePhonePos.x,
-                            top: effectivePhonePos.y,
-                            zIndex: 95
-                          }}
-                        >
-                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
-                            {localUserData.phone_number || '9876543210'}
-                          </div>
-                        </motion.div>
-                      )}
-                      {localUserData.enabledFields?.website && localUserData.website && (
-                        <motion.div 
-                          drag
-                          dragMomentum={false}
-                          dragConstraints={previewBoundsRef}
-                          onDragEnd={(e, info) => updateLocalField('websitePos', getNextPosition(e, info, effectiveWebsitePos, { x: '5%', y: websiteDefaultY }))}
-                          className="pointer-events-auto absolute cursor-move touch-none"
-                          style={{ 
-                            left: effectiveWebsitePos.x,
-                            top: effectiveWebsitePos.y,
-                            zIndex: 95
-                          }}
-                        >
-                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
-                            {localUserData.website}
-                          </div>
-                        </motion.div>
-                      )}
-                      {localUserData.enabledFields?.email && localUserData.email && (
-                        <motion.div 
-                          drag
-                          dragMomentum={false}
-                          dragConstraints={previewBoundsRef}
-                          onDragEnd={(e, info) => updateLocalField('emailPos', getNextPosition(e, info, effectiveEmailPos, { x: '5%', y: emailDefaultY }))}
-                          className="pointer-events-auto absolute cursor-move touch-none"
-                          style={{ 
-                            left: effectiveEmailPos.x,
-                            top: effectiveEmailPos.y,
-                            zIndex: 95
-                          }}
-                        >
-                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
-                            {localUserData.email}
-                          </div>
-                        </motion.div>
-                      )}
-                      {localUserData.enabledFields?.address && localUserData.address && (
-                        <motion.div 
-                          drag
-                          dragMomentum={false}
-                          dragConstraints={previewBoundsRef}
-                          onDragEnd={(e, info) => updateLocalField('addressPos', getNextPosition(e, info, effectiveAddressPos, { x: '5%', y: addressDefaultY }))}
-                          className="pointer-events-auto absolute cursor-move touch-none"
-                          style={{ 
-                            left: effectiveAddressPos.x,
-                            top: effectiveAddressPos.y,
-                            zIndex: 95
-                          }}
-                        >
-                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
-                            {localUserData.address}
-                          </div>
-                        </motion.div>
-                      )}
-                      {(localUserData.enabledFields?.gst || (localUserData.gst_number || '').trim()) && (
-                        <motion.div 
-                          drag
-                          dragMomentum={false}
-                          dragConstraints={previewBoundsRef}
-                          onDragEnd={(e, info) => updateLocalField('gstPos', getNextPosition(e, info, effectiveGstPos, { x: '5%', y: gstDefaultY }))}
-                          className="pointer-events-auto absolute cursor-move touch-none"
-                          style={{ 
-                            left: effectiveGstPos.x,
-                            top: effectiveGstPos.y,
-                            zIndex: 95
-                          }}
-                        >
-                          <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
-                            {localUserData.gst_number}
-                          </div>
-                        </motion.div>
-                      )}
-                   </div>
-
-                   {/* Branding Bar Visual Reference Only */}
-                   <div ref={brandingBarRef} className="absolute bottom-0 left-0 right-0 h-[50px] lg:h-[100px] flex items-center px-4 lg:px-8 pointer-events-none group-hover:bg-black/5 transition-colors">
-                   </div>
-
-                  {/* Extra Custom Texts */}
-                  {localUserData.extraTexts?.map(t => (
-                    <motion.div key={t.id} drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateExtraText(t.id, getNextPosition(e, info, { x: t.x, y: t.y }, { x: '40%', y: '40%' }))} className="absolute cursor-move select-none p-1 pointer-events-auto touch-none" style={{ left: t.x || '40%', top: t.y || '40%', color: t.color, fontSize: `${t.size}px`, fontWeight: 'black', textShadow: '0 2px 6px rgba(0,0,0,0.8)', zIndex: 90 }}>
-                      {t.text}
-                    </motion.div>
-                  ))}
-               </div>
-
-               {/* Non-Text Interactive Overlays (Stickers, Photos) */}
-               <div className="absolute inset-0 z-[80] pointer-events-none">
-                 {localUserData.enabledFields?.userPhoto && (
-                   <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('userPhotoPos', getNextPosition(e, info, localUserData.userPhotoPos, userPhotoDefault))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.userPhotoPos?.x || userPhotoDefault.x, top: localUserData.userPhotoPos?.y || userPhotoDefault.y, width: hasFrameApplied ? 62 : 80, height: hasFrameApplied ? 62 : 80, zIndex: 85 }}>
-                     <div className="w-full h-full p-1 bg-white rounded-full shadow-2xl border-2 border-white overflow-hidden relative"><img src={localUserData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} className="w-full h-full object-cover rounded-full" crossOrigin="anonymous" /></div>
-                   </motion.div>
-                 )}
-                 {localUserData.enabledFields?.logo && localUserData.logo && (
-                   <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('logoPos', getNextPosition(e, info, localUserData.logoPos, logoDefault))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.logoPos?.x || logoDefault.x, top: localUserData.logoPos?.y || logoDefault.y, width: hasFrameApplied ? 44 : 60, height: hasFrameApplied ? 44 : 60, zIndex: 85 }}>
-                     <div className="w-full h-full p-2 bg-white rounded-xl shadow-xl border border-white overflow-hidden"><img src={localUserData.logo} className="w-full h-full object-contain" crossOrigin="anonymous" /></div>
-                   </motion.div>
-                 )}
-                 {localUserData.extraPhotos?.map(p => (
-                   <motion.div key={p.id} drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateDraggable('extraPhotos', p.id, getNextPosition(e, info, { x: p.x, y: p.y }, { x: '50%', y: '30%' }))} className="absolute cursor-move group pointer-events-auto touch-none" style={{ left: p.x || '50%', top: p.y || '30%', width: p.size, height: p.size, zIndex: 82 }}>
-                     <div className="relative w-full h-full">
-                       <img src={p.url} className="w-full h-full object-cover rounded-lg shadow-xl border-2 border-white" />
-                       <button
-                         onClick={(e) => { e.stopPropagation(); removeItem('extraPhotos', p.id); }}
-                         className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-none cursor-pointer"
-                       >
-                         <Trash2 size={12} />
-                       </button>
-                     </div>
-                   </motion.div>
-                 ))}
-                 {localUserData.stickers?.map(s => (
-                   <motion.div key={s.id} drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateDraggable('stickers', s.id, getNextPosition(e, info, { x: s.x, y: s.y }, { x: '20%', y: '20%' }))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: s.x || '20%', top: s.y || '20%', width: s.size, height: s.size, zIndex: 80 }}>
-                     <div className="relative w-full h-full">
-                       <img src={s.url} className="w-full h-full object-contain" />
-                       <button
-                         onClick={(e) => { e.stopPropagation(); removeItem('stickers', s.id); }}
-                         className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-none cursor-pointer"
-                       >
-                         <Trash2 size={12} />
-                       </button>
-                     </div>
-                   </motion.div>
-                 ))}
-               </div>
-
-               {/* Branding Bar Visuals (Appended below if no frame) */}
-               {!effectiveSelectedFrame && (
-                 <div ref={brandingBarRef} className="relative z-[10] w-full bg-[#0a0a0a] border-t border-white/10 h-[85px] lg:h-[110px]">
-                    {/* Items like name, phone, userPhoto will be placed via absolute coordinates in text-layer */}
-                 </div>
-               )}
+              {/* Frame Layer (Inside square only) */}
+              {effectiveSelectedFrame && (
+                <img
+                  src={effectiveSelectedFrame}
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]"
+                  alt="Frame Overlay"
+                  crossOrigin="anonymous"
+                />
+              )}
             </div>
+
+            {/* Dedicated Content Layer */}
+            <div className="absolute inset-0 z-[75]">
+              {/* Business Card Fields (if applicable) */}
+              {isBusinessCard && currentTemplate.fields?.map((field, idx) => {
+                const userValue = localUserData[field.key] || field.label;
+                const style = {
+                  position: 'absolute',
+                  left: field.position?.x || '0%',
+                  top: field.position?.y || '0%',
+                  fontSize: field.style?.fontSize || '10px',
+                  color: field.style?.color || '#000',
+                  fontWeight: field.style?.fontWeight || 'bold',
+                };
+
+                if (field.type === 'image') {
+                  const imageUrl = localUserData[field.key] || (field.key === 'logo' ? localUserData.logo : null);
+                  return imageUrl ? (
+                    <img key={idx} src={imageUrl} style={{ ...style, width: '12%', objectFit: 'contain' }} alt={field.label} />
+                  ) : null;
+                }
+
+                return (
+                  <div key={idx} style={{ ...style, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+                    {userValue}
+                  </div>
+                );
+              })}
+
+              {/* Standard Poster Branding Items (Only if NOT a business card) */}
+              {!isBusinessCard && localUserData.enabledFields?.name !== false && (
+                <motion.div
+                  drag
+                  dragMomentum={false}
+                  dragConstraints={previewBoundsRef}
+                  onDragEnd={(e, info) => updateLocalField('namePos', getNextPosition(e, info, effectiveNamePos, nameDefault))}
+                  className="inline-block pointer-events-auto absolute cursor-move touch-none"
+                  style={{
+                    left: effectiveNamePos.x,
+                    top: effectiveNamePos.y,
+                    zIndex: 95
+                  }}
+                >
+                  <div
+                    className="whitespace-nowrap leading-tight"
+                    style={{
+                      ...getStyle('name')
+                    }}
+                  >
+                    {localUserData.name || 'Your Name'}
+                  </div>
+                </motion.div>
+              )}
+
+              {!isBusinessCard && localUserData.enabledFields?.business_name !== false && (
+                <motion.div
+                  drag
+                  dragMomentum={false}
+                  dragConstraints={previewBoundsRef}
+                  onDragEnd={(e, info) => updateLocalField('businessNamePos', getNextPosition(e, info, effectiveBusinessNamePos, businessNameDefault))}
+                  className="inline-block pointer-events-auto absolute cursor-move touch-none"
+                  style={{
+                    left: effectiveBusinessNamePos.x,
+                    top: effectiveBusinessNamePos.y,
+                    zIndex: 95
+                  }}
+                >
+                  <div
+                    className="whitespace-nowrap leading-tight"
+                    style={{
+                      ...getStyle('name')
+                    }}
+                  >
+                    {localUserData.business_name || 'Your Business Name'}
+                  </div>
+                </motion.div>
+              )}
+
+              {!isBusinessCard && (
+                <div className="flex flex-col relative h-full pointer-events-none">
+                  {localUserData.enabledFields?.phone && (
+                    <motion.div
+                      drag
+                      dragMomentum={false}
+                      dragConstraints={previewBoundsRef}
+                      onDragEnd={(e, info) => updateLocalField('phonePos', getNextPosition(e, info, effectivePhonePos, { x: '5%', y: phoneDefaultY }))}
+                      className="pointer-events-auto absolute cursor-move touch-none"
+                      style={{
+                        left: effectivePhonePos.x,
+                        top: effectivePhonePos.y,
+                        zIndex: 95
+                      }}
+                    >
+                      <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
+                        {localUserData.phone_number || '9876543210'}
+                      </div>
+                    </motion.div>
+                  )}
+                  {localUserData.enabledFields?.website && localUserData.website && (
+                    <motion.div
+                      drag
+                      dragMomentum={false}
+                      dragConstraints={previewBoundsRef}
+                      onDragEnd={(e, info) => updateLocalField('websitePos', getNextPosition(e, info, effectiveWebsitePos, { x: '5%', y: websiteDefaultY }))}
+                      className="pointer-events-auto absolute cursor-move touch-none"
+                      style={{
+                        left: effectiveWebsitePos.x,
+                        top: effectiveWebsitePos.y,
+                        zIndex: 95
+                      }}
+                    >
+                      <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
+                        {localUserData.website}
+                      </div>
+                    </motion.div>
+                  )}
+                  {localUserData.enabledFields?.email && localUserData.email && (
+                    <motion.div
+                      drag
+                      dragMomentum={false}
+                      dragConstraints={previewBoundsRef}
+                      onDragEnd={(e, info) => updateLocalField('emailPos', getNextPosition(e, info, effectiveEmailPos, { x: '5%', y: emailDefaultY }))}
+                      className="pointer-events-auto absolute cursor-move touch-none"
+                      style={{
+                        left: effectiveEmailPos.x,
+                        top: effectiveEmailPos.y,
+                        zIndex: 95
+                      }}
+                    >
+                      <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
+                        {localUserData.email}
+                      </div>
+                    </motion.div>
+                  )}
+                  {localUserData.enabledFields?.address && localUserData.address && (
+                    <motion.div
+                      drag
+                      dragMomentum={false}
+                      dragConstraints={previewBoundsRef}
+                      onDragEnd={(e, info) => updateLocalField('addressPos', getNextPosition(e, info, effectiveAddressPos, { x: '5%', y: addressDefaultY }))}
+                      className="pointer-events-auto absolute cursor-move touch-none"
+                      style={{
+                        left: effectiveAddressPos.x,
+                        top: effectiveAddressPos.y,
+                        zIndex: 95
+                      }}
+                    >
+                      <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
+                        {localUserData.address}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
+              {/* Extra Custom Texts */}
+              {localUserData.extraTexts?.map(t => (
+                <motion.div key={t.id} drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateExtraText(t.id, getNextPosition(e, info, { x: t.x, y: t.y }, { x: '40%', y: '40%' }))} className="absolute cursor-move select-none p-1 pointer-events-auto touch-none" style={{ left: t.x || '40%', top: t.y || '40%', color: t.color, fontSize: `${t.size}px`, fontWeight: 'black', textShadow: '0 2px 6px rgba(0,0,0,0.8)', zIndex: 90 }}>
+                  {t.text}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Non-Text Interactive Overlays (Stickers, Photos) */}
+            <div className="absolute inset-0 z-[80] pointer-events-none">
+              {localUserData.enabledFields?.userPhoto && (
+                <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('userPhotoPos', getNextPosition(e, info, localUserData.userPhotoPos, userPhotoDefault))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.userPhotoPos?.x || userPhotoDefault.x, top: localUserData.userPhotoPos?.y || userPhotoDefault.y, width: hasFrameApplied ? 62 : 80, height: hasFrameApplied ? 62 : 80, zIndex: 85 }}>
+                  <div className="w-full h-full p-1 bg-white rounded-full shadow-2xl border-2 border-white overflow-hidden relative"><img src={localUserData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} className="w-full h-full object-cover rounded-full" crossOrigin="anonymous" /></div>
+                </motion.div>
+              )}
+              {localUserData.enabledFields?.logo && localUserData.logo && (
+                <motion.div drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateLocalField('logoPos', getNextPosition(e, info, localUserData.logoPos, logoDefault))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: localUserData.logoPos?.x || logoDefault.x, top: localUserData.logoPos?.y || logoDefault.y, width: hasFrameApplied ? 44 : 60, height: hasFrameApplied ? 44 : 60, zIndex: 85 }}>
+                  <div className="w-full h-full p-2 bg-white rounded-xl shadow-xl border border-white overflow-hidden"><img src={localUserData.logo} className="w-full h-full object-contain" crossOrigin="anonymous" /></div>
+                </motion.div>
+              )}
+              {localUserData.extraPhotos?.map(p => (
+                <motion.div key={p.id} drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateDraggable('extraPhotos', p.id, getNextPosition(e, info, { x: p.x, y: p.y }, { x: '50%', y: '30%' }))} className="absolute cursor-move group pointer-events-auto touch-none" style={{ left: p.x || '50%', top: p.y || '30%', width: p.size, height: p.size, zIndex: 82 }}>
+                  <div className="relative w-full h-full">
+                    <img src={p.url} className="w-full h-full object-cover rounded-lg shadow-xl border-2 border-white" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeItem('extraPhotos', p.id); }}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-none cursor-pointer"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+              {localUserData.stickers?.map(s => (
+                <motion.div key={s.id} drag dragMomentum={false} dragConstraints={previewBoundsRef} onDragEnd={(e, info) => updateDraggable('stickers', s.id, getNextPosition(e, info, { x: s.x, y: s.y }, { x: '20%', y: '20%' }))} className="absolute cursor-move pointer-events-auto touch-none" style={{ left: s.x || '20%', top: s.y || '20%', width: s.size, height: s.size, zIndex: 80 }}>
+                  <div className="relative w-full h-full">
+                    <img src={s.url} className="w-full h-full object-contain" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeItem('stickers', s.id); }}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-none cursor-pointer"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Branding Bar Visuals (Only for standard posters) */}
+            {!isBusinessCard && !effectiveSelectedFrame && (
+              <div ref={brandingBarRef} className="relative z-[10] w-full bg-[#0a0a0a] border-t border-white/10 h-[85px] lg:h-[110px]">
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Premium Sidebar */}
@@ -522,7 +532,7 @@ const PosterEditor = ({ template, onClose }) => {
           {/* Custom Aesthetic Tabs */}
           <div className="flex border-b border-gray-100 relative shrink-0">
             {tabs.map((tab, idx) => (
-              <button 
+              <button
                 key={tab.id}
                 className={`flex-1 py-5 text-[0.85rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 border-none bg-transparent transition-all ${activeTab === tab.id ? 'text-red-500 bg-red-50/10' : 'text-gray-400'}`}
                 onClick={() => {
@@ -710,27 +720,27 @@ const PosterEditor = ({ template, onClose }) => {
             {activeTab === 'frames' && (
               <div className="p-5 flex flex-col gap-6">
                 <div className="flex items-center justify-between">
-                   <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2 mb-1"><Layers size={20} className="text-blue-500" /> Frame Overlays</h3>
-                   {effectiveSelectedFrame && (
-                     <button 
-                       onClick={() => setSelectedFrame(null)}
-                       className="text-[0.65rem] font-black text-red-500 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-lg border-none hover:bg-red-100 transition-colors"
-                     >
-                       Reset Frame
-                     </button>
-                   )}
+                  <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2 mb-1"><Layers size={20} className="text-blue-500" /> Frame Overlays</h3>
+                  {effectiveSelectedFrame && (
+                    <button
+                      onClick={() => setSelectedFrame(null)}
+                      className="text-[0.65rem] font-black text-red-500 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-lg border-none hover:bg-red-100 transition-colors"
+                    >
+                      Reset Frame
+                    </button>
+                  )}
                 </div>
                 <p className="text-[0.7rem] font-bold text-gray-400 uppercase tracking-widest -mt-4">Apply transparent border overlays</p>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   {frames.length === 0 ? (
                     <div className="col-span-2 py-10 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                       <ImageIcon className="mx-auto text-slate-300 mb-2" size={32} />
-                       <p className="text-xs font-bold text-slate-400">No frames available</p>
+                      <ImageIcon className="mx-auto text-slate-300 mb-2" size={32} />
+                      <p className="text-xs font-bold text-slate-400">No frames available</p>
                     </div>
                   ) : frames.map(f => (
-                    <div 
-                      key={f._id} 
+                    <div
+                      key={f._id}
                       onClick={() => setSelectedFrame(f.image)}
                       className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${effectiveSelectedFrame === f.image ? 'border-red-500 shadow-xl scale-[1.02]' : 'border-gray-100 hover:border-gray-200'}`}
                     >
@@ -750,17 +760,17 @@ const PosterEditor = ({ template, onClose }) => {
             )}
             {activeTab === 'video' && (
               <div className="p-10 flex flex-col items-center justify-center gap-6 text-center">
-                 <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 shadow-inner">
-                    <Video size={40} />
-                 </div>
-                 <div className="animate-pulse">
-                    <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">Redirecting to Video Editor...</h3>
-                    <p className="text-[0.75rem] font-bold text-gray-400 uppercase tracking-widest mt-2">Opening specialized tools</p>
-                 </div>
+                <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 shadow-inner">
+                  <Video size={40} />
+                </div>
+                <div className="animate-pulse">
+                  <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">Redirecting to Video Editor...</h3>
+                  <p className="text-[0.75rem] font-bold text-gray-400 uppercase tracking-widest mt-2">Opening specialized tools</p>
+                </div>
               </div>
             )}
           </div>
-          
+
           <div className="p-4 px-6 border-t border-gray-100 bg-white flex items-center justify-between gap-6" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
             <button className="bg-transparent text-gray-400 font-black text-xs uppercase tracking-widest border-none" onClick={onClose}>Discard</button>
             <button className="flex-1 max-w-[200px] bg-red-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-red-200 active:scale-[0.98] transition-all border-none uppercase tracking-widest text-xs" onClick={handleApplyEdits}>Apply Edits</button>
@@ -772,14 +782,14 @@ const PosterEditor = ({ template, onClose }) => {
       <AnimatePresence>
         {showStickerModal && (
           <div className="fixed inset-0 z-[4000] flex items-end lg:items-center justify-center bg-black/60 backdrop-blur-sm p-0 lg:p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0"
               onClick={() => setShowStickerModal(false)}
             />
-            <motion.div 
+            <motion.div
               initial={{ y: '100%', opacity: 0.5 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.5 }}
@@ -788,20 +798,20 @@ const PosterEditor = ({ template, onClose }) => {
             >
               {/* Mobile Handle */}
               <div className="h-1.5 w-12 bg-gray-200 rounded-full mx-auto mt-4 mb-2 lg:hidden" />
-              
+
               <div className="p-6 lg:p-8 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
                 <div>
                   <h3 className="text-2xl font-black text-gray-800 tracking-tight">Select Stickers</h3>
                   <p className="text-[0.7rem] font-bold text-gray-400 uppercase tracking-widest mt-1">Personalize your design</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowStickerModal(false)}
                   className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors border-none cursor-pointer"
                 >
                   <X size={24} className="text-gray-500" />
                 </button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-6 lg:p-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
                   {[
@@ -818,7 +828,7 @@ const PosterEditor = ({ template, onClose }) => {
                     'https://cdn-icons-png.flaticon.com/512/1047/1047681.png',
                     'https://cdn-icons-png.flaticon.com/512/2275/2275066.png'
                   ].map((url, i) => (
-                    <motion.div 
+                    <motion.div
                       key={i}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -837,10 +847,10 @@ const PosterEditor = ({ template, onClose }) => {
           </div>
         )}
       </AnimatePresence>
-      
+
       <AnimatePresence>
         {showVideoEditor && (
-          <VideoEditor 
+          <VideoEditor
             template={template}
             userData={userData}
             onClose={() => {

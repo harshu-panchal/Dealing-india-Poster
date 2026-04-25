@@ -4,7 +4,7 @@ import {
   Globe, LayoutGrid, FolderPlus, Heart, 
   CalendarDays, Settings, Share2, HelpCircle, 
   ThumbsUp, Info, User, X, LogOut, AlertCircle, Award, Briefcase, 
-  MessageSquare, Instagram, Facebook, Youtube, ChevronDown
+  MessageSquare, Instagram, Facebook, Youtube, ChevronDown, ShieldCheck, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,6 +17,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   const { user, logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [appSettings, setAppSettings] = useState(null);
+  const [expandedGroupId, setExpandedGroupId] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   const userName = user?.user?.name || "User";
@@ -50,10 +51,21 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
     { icon: <FolderPlus size={20} />, label: "Collections", path: "/my-posters" },
     { icon: <Heart size={20} />, label: "Trending", path: "/trending" },
     { icon: <CalendarDays size={20} />, label: "Events Calendar", path: "/calendar" },
-    { icon: <ThumbsUp size={20} />, label: "What's New", path: "/whats-new" },
+    { icon: <Globe size={20} />, label: "App Language", path: "/language" },
     { icon: <Award size={20} />, label: "Refer & Earn", path: "/referral" },
     { icon: <Settings size={20} />, label: "Settings", path: "/dashboard" },
 
+    { 
+        id: 'about-group',
+        icon: <Info size={20} />, 
+        label: "About Us", 
+        isGroup: true,
+        subItems: [
+           { icon: <Info size={16} />, label: "About Appzeto", path: "/about" },
+           { icon: <ShieldCheck size={16} />, label: "Privacy Policy", path: "/privacy-policy" },
+           { icon: <FileText size={16} />, label: "Terms & Conditions", path: "/terms-conditions" }
+        ]
+    },
     { 
         id: 'help-group',
         icon: <HelpCircle size={20} />, 
@@ -119,7 +131,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
                return (
                   <div key={index} className="flex flex-col">
                      <button 
-                       onClick={() => setIsHelpExpanded(!isHelpExpanded)}
+                       onClick={() => setExpandedGroupId(expandedGroupId === item.id ? null : item.id)}
                        className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group`}
                      >
                         <div className="flex items-center gap-4 text-[#334155]">
@@ -130,11 +142,11 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
                              {item.label}
                            </span>
                         </div>
-                        <ChevronDown size={16} className={`text-[#64748b] transition-transform duration-300 ${isHelpExpanded ? 'rotate-180' : ''}`} />
+                        <ChevronDown size={16} className={`text-[#64748b] transition-transform duration-300 ${expandedGroupId === item.id ? 'rotate-180' : ''}`} />
                      </button>
                      
                      <AnimatePresence>
-                        {isHelpExpanded && (
+                        {expandedGroupId === item.id && (
                            <motion.div 
                              initial={{ height: 0, opacity: 0 }}
                              animate={{ height: 'auto', opacity: 1 }}

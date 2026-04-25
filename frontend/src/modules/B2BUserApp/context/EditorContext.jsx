@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const EditorContext = createContext();
 
 export const EditorProvider = ({ children }) => {
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [initialEditorTab, setInitialEditorTab] = useState('branding');
   const [viewingDetail, setViewingDetail] = useState(null);
@@ -115,6 +117,23 @@ export const EditorProvider = ({ children }) => {
   };
 
   const openDetail = (template) => {
+    // Thorough check for business card templates (including nested history objects)
+    const tplData = template?.templateId && typeof template.templateId === 'object' ? template.templateId : template;
+    const subcatName = tplData?.subcategoryId?.name?.toLowerCase() || '';
+    const catName = tplData?.categoryId?.name?.toLowerCase() || '';
+    
+    const isBusinessCard = 
+      subcatName.includes('business card') || 
+      subcatName.includes('business-card') ||
+      catName.includes('business card') ||
+      catName.includes('business-card');
+
+    if (isBusinessCard) {
+      const tplId = getTemplateId(template);
+      navigate(`/business-card/editor/${tplId}`);
+      return;
+    }
+
     const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setViewingDetail(injectUserData(template));
     if (normalizedFrame) {

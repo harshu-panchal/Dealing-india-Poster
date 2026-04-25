@@ -20,9 +20,12 @@ const Trending = lazy(() => import('./modules/B2BUserApp/pages/Trending'));
 const Referral = lazy(() => import('./modules/B2BUserApp/pages/Referral'));
 const HelpCenter = lazy(() => import('./modules/B2BUserApp/pages/HelpCenter'));
 const EventTemplates = lazy(() => import('./modules/B2BUserApp/pages/EventTemplates'));
+const BusinessCardEditor = lazy(() => import('./modules/B2BUserApp/components/editor/BusinessCardEditor'));
 const TermsAndConditions = lazy(() => import('./modules/B2BUserApp/pages/TermsAndConditions'));
 const PrivacyPolicy = lazy(() => import('./modules/B2BUserApp/pages/PrivacyPolicy'));
 const LikedPosters = lazy(() => import('./modules/B2BUserApp/pages/LikedPosters'));
+const AboutUs = lazy(() => import('./modules/B2BUserApp/pages/AboutUs'));
+const LanguageSelector = lazy(() => import('./modules/B2BUserApp/pages/LanguageSelector'));
 const Business = lazy(() => import('./modules/B2BUserApp/pages/Business'));
 const ViewAll = lazy(() => import('./modules/B2BUserApp/pages/ViewAll'));
 
@@ -75,8 +78,9 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
   const showSearchInHeaderPages = ['/', '/trending', '/categories'];
   const showSearch = showSearchInHeaderPages.includes(location.pathname);
+  const isBusinessCardEditor = location.pathname.startsWith('/business-card/editor');
   const hideBarsPaths = ['/login', '/register', '/terms', '/privacy'];
-  const showBars = !hideBarsPaths.includes(location.pathname) && !isAdminPath;
+  const showBars = !hideBarsPaths.includes(location.pathname) && !isAdminPath && !isBusinessCardEditor;
 
   // Handle routing for Admin Panel separately
   if (isAdminPath) {
@@ -157,6 +161,9 @@ function AppContent() {
                 <Route path="/business" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><Business /></UserPrivateRoute>} />
                 <Route path="/view-all/:type/:id" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><ViewAll /></UserPrivateRoute>} />
                 <Route path="/event/:id/templates" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><EventTemplates /></UserPrivateRoute>} />
+                <Route path="/business-card/editor/:id" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><BusinessCardEditor /></UserPrivateRoute>} />
+                <Route path="/about" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><AboutUs /></UserPrivateRoute>} />
+                <Route path="/language" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><LanguageSelector /></UserPrivateRoute>} />
                 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />

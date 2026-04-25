@@ -32,7 +32,13 @@ export const toggleLikeTemplate = async (req, res) => {
 export const getLikedTemplates = async (req, res) => {
   try {
     const userId = req.user._id;
-    const likedRelations = await Like.find({ userId }).populate('templateId');
+    const likedRelations = await Like.find({ userId }).populate({
+      path: 'templateId',
+      populate: [
+        { path: 'subcategoryId', select: 'name' },
+        { path: 'categoryId', select: 'name' }
+      ]
+    });
     
     // Filter out if template was deleted
     const templates = likedRelations
