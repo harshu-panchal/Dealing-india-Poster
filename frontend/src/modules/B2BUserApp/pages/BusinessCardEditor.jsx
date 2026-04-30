@@ -119,74 +119,193 @@ const BusinessCardEditor = () => {
         </div>
 
         {/* Form Controls (Desktop Slide-in or Tooltip?) - Let's keep it clean on mobile */}
-        <div className="flex-1 bg-slate-50 p-6 flex flex-col items-center overflow-y-auto">
-          {/* Card Preview Container */}
-          <div 
-            ref={canvasRef}
-            className="w-full max-w-[500px] aspect-[1.75/1] bg-white shadow-2xl relative overflow-hidden rounded-xl border border-slate-200"
-            style={{ 
-               backgroundImage: `url(${template.image})`, 
-               backgroundSize: 'cover'
-            }}
-          >
-            {/* Field Indicators/Pencils from Screenshot 3 */}
-            {template.fields?.map(field => (
-              <div 
-                key={field.key}
-                onClick={() => handleFieldClick(field.key)}
-                className="absolute flex items-center gap-1 cursor-pointer group"
-                style={{
-                  top: field.position.y || '10%',
-                  left: field.position.x || '10%',
-                  zIndex: 20
-                }}
-              >
-                <div className="bg-[#3b82f6] text-white p-1 rounded shadow-lg group-hover:scale-110 transition-transform">
-                   <Pencil size={10} strokeWidth={3} />
-                </div>
-                <span className="text-[8px] font-black bg-white/80 backdrop-blur-sm px-1.5 rounded text-slate-800 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  {userData[field.key] || field.label}
-                </span>
-              </div>
-            ))}
-
-            {/* Actual dynamic text for the final look */}
-            {template.fields?.map(field => {
-               if (field.type !== 'text') return null;
-               return (
-                 <div
-                   key={`${field.key}-text`}
-                   className="absolute pointer-events-none"
-                   style={{
-                     top: field.position.y || '10%',
-                     left: field.position.x || '10%',
-                     ...(field.style || {}),
-                     ...(fieldStyles[field.key] || {})
-                   }}
+        {/* Main Content Area - Three Column Studio Layout for Desktop */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-50">
+          
+          {/* COLUMN 1: Template Gallery (Left Sidebar) */}
+          <div className="hidden md:flex w-64 flex-col bg-white border-r border-slate-100 overflow-hidden">
+            <div className="p-4 border-b border-slate-50">
+               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                 <Layout size={12} className="text-red-500" />
+                 Templates ({allTemplates.length})
+               </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+               {allTemplates.map(t => (
+                 <div 
+                   key={t._id}
+                   onClick={() => { setTemplate(t); navigate(`/business-card/editor/${t._id}`); }}
+                   className={`group relative aspect-[1.75/1] rounded-xl overflow-hidden cursor-pointer transition-all border-2 ${template?._id === t._id ? 'border-red-500 shadow-lg' : 'border-transparent hover:border-slate-200'}`}
                  >
-                   {userData[field.key] || field.label}
-                 </div>
-               );
-            })}
-          </div>
-
-          {/* Quick Input Fields - Inline scrolling matching mobile UX */}
-          <div className="w-full max-w-[500px] mt-8 space-y-4">
-             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Card Details</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-               {['name', 'designation', 'phone', 'email', 'business_name', 'website'].map(key => (
-                 <div key={key} className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-                    <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block">{key.replace('_', ' ')}</label>
-                    <input 
-                      type="text" 
-                      value={userData[key]} 
-                      onChange={(e) => setUserData({...userData, [key]: e.target.value})}
-                      placeholder={`Enter ${key}...`}
-                      className="w-full border-none p-0 text-xs font-bold text-slate-700 focus:outline-none"
-                    />
+                   <img src={t.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                   {template?._id === t._id && (
+                     <div className="absolute inset-0 bg-red-500/10 backdrop-blur-[1px] flex items-center justify-center">
+                        <Check size={20} className="text-red-500 bg-white rounded-full p-0.5 shadow-sm" />
+                     </div>
+                   )}
                  </div>
                ))}
-             </div>
+            </div>
+          </div>
+
+          {/* COLUMN 2: Center Stage (Card Preview) */}
+          <div className="flex-1 p-4 lg:p-8 flex flex-col items-center justify-start overflow-y-auto bg-slate-50/30">
+            <div className="w-full max-w-[650px] sticky top-0">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Live Editor</span>
+                </div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Landscape • Standard Size</p>
+              </div>
+
+              {/* Card Preview Container */}
+              <div 
+                ref={canvasRef}
+                className="w-full aspect-[1.75/1] bg-white shadow-[0_30px_70px_rgba(0,0,0,0.12)] relative overflow-hidden rounded-2xl border border-slate-200"
+                style={{ 
+                   backgroundImage: `url(${template.image})`, 
+                   backgroundSize: 'cover'
+                }}
+              >
+                {/* Field Indicators/Pencils */}
+                {template.fields?.map(field => (
+                  <div 
+                    key={field.key}
+                    onClick={() => handleFieldClick(field.key)}
+                    className="absolute flex items-center gap-1 cursor-pointer group"
+                    style={{
+                      top: field.position.y || '10%',
+                      left: field.position.x || '10%',
+                      zIndex: 20
+                    }}
+                  >
+                    <div className="bg-[#3b82f6] text-white p-1 rounded shadow-lg group-hover:scale-110 transition-transform">
+                       <Pencil size={10} strokeWidth={3} />
+                    </div>
+                    <span className="text-[8px] font-black bg-white/80 backdrop-blur-sm px-1.5 rounded text-slate-800 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {userData[field.key] || field.label}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Actual dynamic content (Text & Images) */}
+                {template.fields?.map(field => {
+                   if (field.type === 'image') {
+                     const imgUrl = userData[field.key];
+                     if (!imgUrl) return null;
+                     return (
+                       <div
+                         key={`${field.key}-img`}
+                         className="absolute overflow-hidden"
+                         style={{
+                           top: field.position.y || '10%',
+                           left: field.position.x || '10%',
+                           width: field.size?.width || '50px',
+                           height: field.size?.height || '50px',
+                           borderRadius: field.key === 'userPhoto' ? '50%' : '0'
+                         }}
+                       >
+                         <img src={imgUrl} className="w-full h-full object-contain" alt="" />
+                       </div>
+                     );
+                   }
+
+                   if (field.type !== 'text') return null;
+                   return (
+                     <div
+                       key={`${field.key}-text`}
+                       className="absolute pointer-events-none"
+                       style={{
+                         top: field.position.y || '10%',
+                         left: field.position.x || '10%',
+                         ...(field.style || {}),
+                         ...(fieldStyles[field.key] || {})
+                       }}
+                     >
+                       {userData[field.key] || field.label}
+                     </div>
+                   );
+                })}
+              </div>
+              <div className="mt-6 flex justify-center gap-4">
+                 <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors">
+                   <ImageIcon size={14} className="text-red-500" /> Change Background
+                 </button>
+                 <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors">
+                   <Palette size={14} className="text-red-500" /> Global Styles
+                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* COLUMN 3: Right Panel (Form Controls) */}
+          <div className="w-full md:w-80 lg:w-96 flex flex-col bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)]">
+            <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+              <div className="mb-8">
+                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-[0.2em] mb-1">Editor Options</h3>
+                <p className="text-[10px] font-bold text-slate-400">Fill your card details below</p>
+              </div>
+
+              <div className="space-y-6">
+                {/* Image Uploaders */}
+                {['logo', 'userPhoto'].map(key => (
+                  <div key={key} className="group">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
+                      {key === 'logo' ? 'Company Logo' : 'Profile Image'}
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-16 h-16 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-red-500/30 ${userData[key] ? 'border-solid border-red-500' : ''}`}>
+                        {userData[key] ? (
+                          <img src={userData[key]} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <ImageIcon size={20} className="text-slate-300" />
+                        )}
+                      </div>
+                      <label className="flex-1">
+                        <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer text-center uppercase tracking-widest">
+                          {userData[key] ? 'Change Image' : 'Upload Image'}
+                        </div>
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => setUserData({...userData, [key]: reader.result});
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Text Fields */}
+                {['name', 'designation', 'phone', 'email', 'business_name', 'website', 'address'].map(key => (
+                  <div key={key} className="group">
+                    <div className="flex items-center justify-between mb-2">
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-red-500">
+                         {key.replace('_', ' ')}
+                       </label>
+                       {userData[key] && <Check size={12} className="text-green-500" />}
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group-focus-within:border-red-500/30 group-focus-within:bg-white group-focus-within:shadow-lg transition-all duration-300">
+                      <input 
+                        type="text" 
+                        value={userData[key]} 
+                        onChange={(e) => setUserData({...userData, [key]: e.target.value})}
+                        placeholder={`Your ${key}...`}
+                        className="w-full border-none p-0 bg-transparent text-[13px] font-black text-slate-800 focus:outline-none placeholder:text-slate-300"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

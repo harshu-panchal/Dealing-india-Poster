@@ -3,10 +3,9 @@ import { ArrowLeft, Video, Download, MessageCircle, Share2, Play, Pause, X, Spar
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
-const VideoEditor = ({ template, userData, onClose }) => {
+const VideoEditor = ({ template, userData, onClose, isBusinessCard = false }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showMusicModal, setShowMusicModal] = useState(false);
-  const [showEffects, setShowEffects] = useState(false);
   const [selectedEffect, setSelectedEffect] = useState('none');
   const [isPlaying, setIsPlaying] = useState(false);
   
@@ -126,7 +125,9 @@ const VideoEditor = ({ template, userData, onClose }) => {
     const render = () => {
       const time = (Date.now() - startTime) / 1000;
       const w = 1080;
-      const h = 1250; // Increased height to append branding
+      // If business card, match image aspect ratio. Otherwise use fixed height for branding.
+      const h = isBusinessCard && posterImg.width ? Math.round(1080 / (posterImg.width / posterImg.height)) : 1250;
+      
       canvas.width = w;
       canvas.height = h;
 
@@ -154,8 +155,13 @@ const VideoEditor = ({ template, userData, onClose }) => {
       }
 
       // Draw Main Image
-      // Draw Main Image (Top Square)
-      ctx.drawImage(posterImg, 0, 0, 1080, 1080);
+      if (isBusinessCard) {
+        // Draw to fill the dynamic canvas
+        ctx.drawImage(posterImg, 0, 0, w, h);
+      } else {
+        // Standard Square Poster in 1080x1080 area
+        ctx.drawImage(posterImg, 0, 0, 1080, 1080);
+      }
       ctx.restore();
 
       // Draw Noise for Arti
@@ -164,8 +170,8 @@ const VideoEditor = ({ template, userData, onClose }) => {
         for(let i=0; i<100; i++) ctx.fillRect(Math.random()*w, Math.random()*h, 2, 2);
       }
 
-      // Draw Branding Overlays (Matches Image 3)
-      if (userImg.complete && (userData.userPhoto || userData.logo)) {
+      // Draw Branding Overlays (Skip for Business Cards as they are already branded)
+      if (!isBusinessCard && userImg.complete && (userData.userPhoto || userData.logo)) {
         // Branding Bar (Appended Bottom)
         ctx.save();
         ctx.fillStyle = '#0a0a0a';
@@ -208,7 +214,7 @@ const VideoEditor = ({ template, userData, onClose }) => {
     };
 
     return () => cancelAnimationFrame(animationId);
-  }, [template.image, userData, selectedEffect, isLoading]);
+  }, [template.image, userData, selectedEffect, isLoading, isBusinessCard]);
 
   // ── Recording Functionality ──────────────────────────────────────────
   const handleDownloadVideo = async () => {
@@ -411,11 +417,11 @@ const VideoEditor = ({ template, userData, onClose }) => {
       <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
         {/* Poster Preview with Live Canvas (New Phase 1) */}
         <div className="p-6 pb-2 flex flex-col items-center">
-          <div className="relative w-full max-w-[340px] rounded-[2rem] overflow-hidden shadow-2xl bg-white border-[6px] border-white">
+          <div className={`relative w-full ${isBusinessCard ? 'max-w-[400px]' : 'max-w-[340px]'} rounded-[1.5rem] overflow-hidden shadow-2xl bg-white border-[6px] border-white transition-all duration-500`}>
              <canvas 
                ref={canvasRef} 
                width={1080} 
-               height={1250}
+               height={isBusinessCard ? 617 : 1250}
                className="w-full h-auto object-contain"
              />
              
@@ -465,13 +471,24 @@ const VideoEditor = ({ template, userData, onClose }) => {
               </div>
            </div>
 
-           {/* Video Effects Button */}
-           <button 
-             onClick={() => setShowEffects(true)}
-             className="w-full h-14 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center gap-3 font-black text-[0.9rem] uppercase tracking-widest shadow-sm hover:bg-indigo-100 transition-all active:scale-95"
-           >
-              <Zap size={20} className="fill-current" /> Video Effects
-           </button>
+           {/* ── Direct Video Effects Scroller ── */}
+           <div className="space-y-3 pt-2">
+              <h4 className="text-[0.7rem] font-black text-gray-400 uppercase tracking-[0.2em] pl-1">Video Transitions</h4>
+              <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-hide">
+                 {effects.map(fx => (
+                   <div 
+                     key={fx.id} 
+                     className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group"
+                     onClick={() => setSelectedEffect(fx.id)}
+                   >
+                      <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center transition-all ${selectedEffect === fx.id ? 'bg-[#b91c1c] text-white shadow-lg shadow-red-100 scale-105' : 'bg-white border border-gray-100 text-gray-400 group-hover:bg-gray-50'}`}>
+                         {React.cloneElement(fx.icon, { size: 24, strokeWidth: selectedEffect === fx.id ? 2.5 : 2 })}
+                      </div>
+                      <span className={`text-[0.6rem] font-black uppercase tracking-widest transition-colors ${selectedEffect === fx.id ? 'text-[#b91c1c]' : 'text-gray-400'}`}>{fx.title}</span>
+                   </div>
+                 ))}
+              </div>
+           </div>
         </div>
       </div>
 
@@ -617,54 +634,6 @@ const VideoEditor = ({ template, userData, onClose }) => {
                      )}
                   </div>
                </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Video Effects Modal (Image 4) ── */}
-      <AnimatePresence>
-        {showEffects && (
-          <motion.div 
-            className="fixed inset-0 bg-black/20 z-[4000] flex items-end"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowEffects(false)}
-          >
-            <motion.div 
-              className="w-full bg-white rounded-t-[3rem] p-8 pb-12 flex flex-col gap-8 shadow-2xl overflow-hidden"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              onClick={e => e.stopPropagation()}
-            >
-               <div className="flex flex-col gap-1">
-                  <h4 className="text-xl font-black text-gray-900 uppercase tracking-tight">Video Transitions</h4>
-                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Select your motion style</p>
-               </div>
-               
-               <div className="flex items-center overflow-x-auto gap-8 scrollbar-hide py-2 px-1">
-                  {effects.map(fx => (
-                    <div 
-                      key={fx.id} 
-                      className="flex flex-col items-center gap-3 shrink-0 cursor-pointer group"
-                      onClick={() => setSelectedEffect(fx.id)}
-                    >
-                       <div className={`w-20 h-20 rounded-[2.25rem] flex items-center justify-center transition-all ${selectedEffect === fx.id ? 'bg-orange-600 text-white scale-110 shadow-2xl shadow-orange-200' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100'}`}>
-                          {React.cloneElement(fx.icon, { size: 32, strokeWidth: selectedEffect === fx.id ? 2.5 : 2 })}
-                       </div>
-                       <span className={`text-[0.65rem] font-black uppercase tracking-widest transition-colors ${selectedEffect === fx.id ? 'text-orange-600' : 'text-gray-400'}`}>{fx.title}</span>
-                    </div>
-                  ))}
-               </div>
-
-               <button 
-                 className="w-full h-16 bg-rose-500 text-white rounded-[1.5rem] font-black text-lg shadow-2xl shadow-rose-200 active:scale-[0.98] transition-all border-none uppercase tracking-widest cursor-pointer"
-                 onClick={() => setShowEffects(false)}
-               >
-                 Apply Effect
-               </button>
             </motion.div>
           </motion.div>
         )}

@@ -11,6 +11,7 @@ export const EditorProvider = ({ children }) => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [initialEditorTab, setInitialEditorTab] = useState('branding');
   const [viewingDetail, setViewingDetail] = useState(null);
+  const [likedTemplates, setLikedTemplates] = useState(new Set());
   const [userData, setUserData] = useState({
     name: 'Your Name',
     business_name: 'Your Business',
@@ -37,6 +38,8 @@ export const EditorProvider = ({ children }) => {
     }
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
+
   // Sync with AuthContext user data
   useEffect(() => {
     if (authUser?.user) {
@@ -53,12 +56,26 @@ export const EditorProvider = ({ children }) => {
         logo: cleanLogo || prev.logo,
         userPhoto: u.profilePhoto || prev.userPhoto
       }));
+
+      // Fetch Likes
+      const fetchLikes = async () => {
+        try {
+          const { data } = await axios.get(`${API_URL}/user/templates/liked`, {
+            headers: { Authorization: `Bearer ${authUser.accessToken}` }
+          });
+          setLikedTemplates(new Set(data.map(t => t._id)));
+        } catch (e) {
+          console.error('Failed to fetch likes:', e);
+        }
+      };
+      fetchLikes();
+    } else {
+      setLikedTemplates(new Set());
     }
-  }, [authUser]);
+  }, [authUser, API_URL]);
 
   const [frames, setFrames] = useState([]);
   const [selectedFrame, setSelectedFrame] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   useEffect(() => {
     const fetchFrames = async () => {
@@ -165,6 +182,40 @@ export const EditorProvider = ({ children }) => {
     });
   };
 
+  const toggleLike = async (templateId, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!authUser?.accessToken) {
+      navigate('/login');
+      return;
+    }
+
+    // Optimistic UI update
+    setLikedTemplates(prev => {
+      const next = new Set(prev);
+      if (next.has(templateId)) next.delete(templateId);
+      else next.add(templateId);
+      return next;
+    });
+
+    try {
+      await axios.post(`${API_URL}/user/templates/${templateId}/like`, {}, {
+        headers: { Authorization: `Bearer ${authUser.accessToken}` }
+      });
+    } catch (error) {
+      console.error('Like toggle failed:', error);
+      // Rollback on failure
+      setLikedTemplates(prev => {
+        const next = new Set(prev);
+        if (next.has(templateId)) next.delete(templateId);
+        else next.add(templateId);
+        return next;
+      });
+    }
+  };
+
   return (
     <EditorContext.Provider value={{ 
       editingTemplate, openEditor, closeEditor, 
@@ -172,7 +223,8 @@ export const EditorProvider = ({ children }) => {
       syncSavedEditsToDetail,
       userData, setUserData,
       frames, selectedFrame, setSelectedFrame,
-      initialEditorTab
+      initialEditorTab,
+      likedTemplates, toggleLike
     }}>
       {children}
     </EditorContext.Provider>

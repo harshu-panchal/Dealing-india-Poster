@@ -66,13 +66,13 @@ export const createTemplate = async (req, res) => {
 // @route   PUT /api/admin/templates/:id
 export const updateTemplate = async (req, res) => {
   try {
-    const template = await Template.findById(req.params.id);
+    const template = await Template.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true, runValidators: false }
+    );
     if (!template) return res.status(404).json({ message: 'Template not found' });
-
-    // Update with req.body and save (ensures nested arrays like 'fields' are tracked)
-    Object.assign(template, req.body);
-    const updated = await template.save();
-    res.status(200).json(updated);
+    res.status(200).json(template);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

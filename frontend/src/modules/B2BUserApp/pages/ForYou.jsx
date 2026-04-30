@@ -44,6 +44,20 @@ const ForYou = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  const isBusinessCardTemplate = useCallback((t) => {
+    if (!t) return false;
+    const subName = t.subcategoryId?.name?.toLowerCase() || '';
+    const catName = t.categoryId?.name?.toLowerCase() || '';
+    const tplCategory = t.category?.toLowerCase() || '';
+    
+    return subName.includes('business card') || 
+           subName.includes('business-card') ||
+           catName.includes('business card') || 
+           catName.includes('business-card') ||
+           tplCategory.includes('business card') ||
+           tplCategory.includes('business-card');
+  }, []);
+
   // Handle Dynamic Search
   useEffect(() => {
     const performSearch = async () => {
@@ -83,10 +97,12 @@ const ForYou = () => {
       const { data: catData } = await axios.get(`${API_URL}/user/categories`);
       setCategories(catData);
 
-      // Flatten subcategories for Today's Special
+      // Flatten subcategories for Today's Special (Filter out business cards)
       const mixedSubcategories = [];
       catData.forEach(cat => {
+        if (cat.name.toLowerCase().includes('business card')) return;
         cat.subcategories?.forEach(sub => {
+          if (sub.name.toLowerCase().includes('business card')) return;
           mixedSubcategories.push({ ...sub, parentName: cat.name });
         });
       });
@@ -94,7 +110,7 @@ const ForYou = () => {
 
       // Fetch Templates
       const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400`);
-      const templates = tplData.templates;
+      const templates = (tplData.templates || []).filter(t => !isBusinessCardTemplate(t));
       setAllTemplates(templates);
       
 
@@ -102,9 +118,11 @@ const ForYou = () => {
       
       // Fetch Poster of the Day
       try {
-        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=10`);
-        if (potdData.templates && potdData.templates.length > 0) {
-          setPotdTemplates(potdData.templates);
+        const { data: potdData } = await axios.get(`${API_URL}/user/templates?potd=true&limit=20`);
+        const potdTpls = (potdData.templates || []).filter(t => !isBusinessCardTemplate(t));
+        
+        if (potdTpls.length > 0) {
+          setPotdTemplates(potdTpls.slice(0, 3));
         } else {
           setPotdTemplates(templates.slice(0, 3));
         }
@@ -113,16 +131,18 @@ const ForYou = () => {
       }
 
       // Organize Sections
-      const organizedSections = catData.map(cat => ({
-        id: cat._id,
-        title: cat.name,
-        subcategories: cat.subcategories,
-        templates: templates.filter(t => {
-           const matchesCategory = t.categoryId === cat._id || t.categoryId?._id === cat._id;
-           const matchesType = filterByType(t);
-           return matchesCategory && matchesType;
-        })
-      })).filter(s => s.templates.length > 0 || (s.subcategories && s.subcategories.length > 0 && activeType === 'image'));
+      const organizedSections = catData
+        .filter(cat => !cat.name.toLowerCase().includes('business card'))
+        .map(cat => ({
+          id: cat._id,
+          title: cat.name,
+          subcategories: cat.subcategories?.filter(sub => !sub.name.toLowerCase().includes('business card')),
+          templates: templates.filter(t => {
+             const matchesCategory = t.categoryId === cat._id || t.categoryId?._id === cat._id;
+             const matchesType = filterByType(t);
+             return matchesCategory && matchesType && !isBusinessCardTemplate(t);
+          })
+        })).filter(s => s.templates.length > 0 || (s.subcategories && s.subcategories.length > 0 && activeType === 'image'));
 
       setSections(organizedSections);
     } catch (error) {
@@ -248,7 +268,7 @@ const ForYou = () => {
               All
             </button>
 
-            {categories.map(cat => (
+            {categories.filter(cat => !cat.name.toLowerCase().includes('business card')).map(cat => (
               <button
                 key={cat._id}
                 onClick={() => { 

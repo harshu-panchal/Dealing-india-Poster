@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Move, Type, ImageIcon, Plus, Trash2,
-  Briefcase, Phone, Mail, Globe, MapPin, Building, Save, X
+  Briefcase, Phone, Mail, Globe, MapPin, Building, Save, X, User
 } from 'lucide-react';
 
 const FIELD_TYPES = [
@@ -13,6 +13,7 @@ const FIELD_TYPES = [
   { key: 'address',       label: 'Address',        icon: MapPin,    type: 'text'  },
   { key: 'business_name', label: 'Business Name',  icon: Building,  type: 'text'  },
   { key: 'logo',          label: 'Logo',           icon: ImageIcon, type: 'image' },
+  { key: 'userPhoto',     label: 'Profile Image',  icon: User,      type: 'image' },
 ];
 
 const BusinessCardFieldDesigner = ({ imageUrl, fields = [], onSave, onClose }) => {
@@ -84,6 +85,13 @@ const BusinessCardFieldDesigner = ({ imageUrl, fields = [], onSave, onClose }) =
       )
     );
 
+  const updateSize = (key, patch) =>
+    setLocalFields(prev =>
+      prev.map(f =>
+        f.key === key ? { ...f, size: { ...f.size, ...patch } } : f
+      )
+    );
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 bg-white h-full overflow-hidden min-h-[500px]">
       <div className="w-full lg:w-64 flex flex-col gap-5 shrink-0 overflow-y-auto border-r border-slate-100 pr-4">
@@ -132,6 +140,21 @@ const BusinessCardFieldDesigner = ({ imageUrl, fields = [], onSave, onClose }) =
                       <span className="text-[8px] text-slate-400 font-bold">px</span>
                     </div>
                   )}
+                  {f.type === 'image' && (
+                    <div className="flex items-center gap-2 pl-4">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Size</span>
+                      <input 
+                        type="number" 
+                        value={parseInt(f.size?.width || '50')} 
+                        min={10} 
+                        max={300} 
+                        onChange={e => updateSize(f.key, { width: `${e.target.value}px`, height: `${e.target.value}px` })} 
+                        className="w-12 text-[9px] font-black border border-slate-200 rounded-lg px-1.5 py-1 text-center" 
+                        title="Image Size" 
+                      />
+                      <span className="text-[8px] text-slate-400 font-bold">px</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -151,18 +174,40 @@ const BusinessCardFieldDesigner = ({ imageUrl, fields = [], onSave, onClose }) =
           </div>
         </div>
 
-        <div ref={containerRef} className="w-full relative rounded-xl overflow-hidden shadow-2xl bg-slate-200" style={{ aspectRatio: '1.75/1' }} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
+        <div ref={containerRef} className="w-full relative rounded-xl overflow-hidden shadow-2xl bg-slate-200" style={{ aspectRatio: '1.75/1', containerType: 'inline-size' }} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
           {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover pointer-events-none select-none" alt="" /> : <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Upload Template First</p></div>}
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(148,163,184,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.15) 1px, transparent 1px)', backgroundSize: '10% 10%' }} />
           {localFields.map(field => (
             <div key={field.key} onPointerDown={e => handlePointerDown(e, field.key)} className="absolute cursor-move select-none group" style={{ top: field.position.y, left: field.position.x, zIndex: 10, touchAction: 'none' }}>
-              <div className="flex items-center gap-1.5 bg-[#ef4444]/90 backdrop-blur-sm px-2 py-1 rounded-md shadow-lg hover:bg-[#ef4444] transition-colors">
-                <Move size={9} className="text-white" />
-                <span className="text-[8px] font-black text-white uppercase tracking-tighter whitespace-nowrap">{field.label}</span>
-              </div>
-              <div className="absolute -top-5 left-0 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[7px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap">x:{field.position.x} y:{field.position.y}</div>
-              {field.type === 'text' && <div className="mt-0.5 pointer-events-none" style={{ fontSize: field.style?.fontSize || '14px', color: field.style?.color || '#000000', fontWeight: field.style?.fontWeight || 'bold', opacity: 0.85, lineHeight: 1.2, maxWidth: '120px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>{field.label}</div>}
-              {field.type === 'image' && <div className="bg-white/60 rounded border border-white/80 flex items-center justify-center" style={{ width: field.size?.width || '50px', height: field.size?.height || '50px' }}><ImageIcon size={16} className="text-slate-400" /></div>}
+              <div className="absolute -top-5 left-0 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[7px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-50">x:{field.position.x} y:{field.position.y} | {field.label}</div>
+              
+              {field.type === 'text' && (
+                <div className="hover:ring-1 hover:ring-red-500/50 hover:bg-red-500/5 rounded-sm transition-all" style={{ 
+                  fontSize: `${(parseFloat(field.style?.fontSize || '14px') / 8).toFixed(2)}cqw`, 
+                  color: field.style?.color || '#000000', 
+                  fontWeight: field.style?.fontWeight || 'bold', 
+                  opacity: 0.85, 
+                  lineHeight: 1.2, 
+                  maxWidth: '120px', 
+                  overflow: 'hidden', 
+                  whiteSpace: 'nowrap', 
+                  textOverflow: 'ellipsis', 
+                  textShadow: '0 1px 2px rgba(255,255,255,0.8)' 
+                }}>
+                  {field.label}
+                </div>
+              )}
+              {field.type === 'image' && (
+                <div 
+                  className="bg-white/60 rounded border border-white/80 flex items-center justify-center" 
+                  style={{ 
+                    width: `${(parseFloat(field.size?.width || '50px') / 8).toFixed(2)}cqw`, 
+                    height: `${(parseFloat(field.size?.height || '50px') / 8).toFixed(2)}cqw` 
+                  }}
+                >
+                  <ImageIcon size={16} className="text-slate-400" />
+                </div>
+              )}
             </div>
           ))}
         </div>

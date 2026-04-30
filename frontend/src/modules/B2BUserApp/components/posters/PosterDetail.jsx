@@ -140,6 +140,13 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     logo: cleanUrl(rawUserData.logo),
     userPhoto: cleanUrl(rawUserData.userPhoto)
   };
+
+  const formatCount = (count) => {
+    if (!count) return '0';
+    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+    return count.toString();
+  };
   const normalizeFrameValue = (frame) => {
     if (!frame) return null;
     if (typeof frame === 'string') return frame;
@@ -615,7 +622,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
 
                <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 z-[20] bg-black/30 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-2 text-[0.75rem] font-black shadow-lg border border-white/10 tracking-widest">
                  <Heart size={14} className="text-white" fill="currentColor" />
-                 <span>1.1K</span>
+                 <span>{formatCount(currentTemplate.likeCount)}</span>
                </div>
              </div>
 

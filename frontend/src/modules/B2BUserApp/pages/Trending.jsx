@@ -114,19 +114,6 @@ const Trending = () => {
         )}
       </div>
 
-      {/* Banner */}
-      <div className="m-4 mx-3 bg-[#4d7c0f] rounded-xl p-4 flex justify-between items-center text-white relative shadow-md">
-        <div className="flex-1">
-          <button className="bg-white text-[#4d7c0f] px-4 py-2 rounded-lg text-[0.8rem] font-black flex items-center gap-1.5 shadow-lg active:scale-95 transition-transform border-none">
-             Make Profile Photo ↗
-          </button>
-        </div>
-        <div className="flex gap-2 relative">
-           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50" alt="p1" />
-           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50" alt="p2" />
-           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&h=120&fit=crop" className="w-[45px] h-[55px] object-cover rounded-md border-2 border-white/50" alt="p3" />
-        </div>
-      </div>
 
       {/* Loader */}
       {isLoading && (

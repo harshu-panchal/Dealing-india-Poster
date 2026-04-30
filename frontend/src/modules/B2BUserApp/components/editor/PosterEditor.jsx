@@ -35,7 +35,8 @@ const PosterEditor = ({ template, onClose }) => {
     currentTemplate?.subcategoryId?.name?.toLowerCase().includes('business card') ||
     currentTemplate?.categoryId?.name?.toLowerCase().includes('business card') ||
     currentTemplate?.category?.toLowerCase().includes('business card') ||
-    !!currentTemplate?.fields;
+    currentTemplate?.type === 'business_card' ||
+    (currentTemplate?.fields && currentTemplate.fields.length > 0);
 
   const normalizeFrameValue = (frame) => {
     if (!frame) return null;
@@ -297,10 +298,10 @@ const PosterEditor = ({ template, onClose }) => {
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[#f1f5f9]">
         {/* Preview Area with Dot Grid */}
-        <div className="flex h-[40%] lg:h-auto lg:flex-1 items-center justify-center p-4 lg:p-12 bg-[#f8fafc] relative overflow-hidden shrink-0 lg:shrink">
+        <div className="flex h-[45%] lg:h-auto lg:flex-1 items-center justify-center p-4 lg:p-8 bg-[#f8fafc] relative overflow-hidden shrink-0 lg:shrink">
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ef4444 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
-          <div ref={previewBoundsRef} className={`relative w-full ${isBusinessCard ? 'max-w-md' : 'max-w-[300px] lg:max-w-[500px]'} bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] lg:shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-xl lg:rounded-2xl overflow-hidden border-4 lg:border-8 border-white group`}>
+          <div ref={previewBoundsRef} className={`relative w-full ${isBusinessCard ? 'max-w-[95%] lg:max-w-3xl' : 'max-w-[90%] lg:max-w-[600px]'} bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] lg:shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-xl lg:rounded-3xl overflow-hidden border-4 lg:border-[12px] border-white group transition-all duration-500`}>
             {/* Main Poster Content */}
             <div className={`relative ${isBusinessCard ? 'aspect-[1.75/1]' : 'aspect-square'} overflow-hidden bg-white`}>
               {/* Poster Background */}

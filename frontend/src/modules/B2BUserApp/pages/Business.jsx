@@ -9,13 +9,12 @@ import SearchBar from '../components/common/SearchBar';
 import { useEditor } from '../context/EditorContext';
 
 const Business = () => {
-  const { openDetail } = useEditor();
-  const navigate = useNavigate();
+  const { openDetail, likedTemplates, toggleLike: globalToggleLike } = useEditor();
   const [categories, setCategories] = useState([]);
   const [allTemplates, setAllTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [likedCards, setLikedCards] = useState({});
+  const navigate = useNavigate();
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -134,11 +133,6 @@ const Business = () => {
     );
   }, [searchQuery, allTemplates]);
 
-  const toggleLike = (id, e) => {
-    e.stopPropagation();
-    setLikedCards(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
@@ -199,6 +193,39 @@ const Business = () => {
       {!searchQuery.trim() && (
         <div className="pt-3 space-y-2">
 
+          {/* 🎁 Digital Business Cards Studio Section */}
+          {categories.find(c => c.name.toLowerCase().includes('business card')) && (
+            <div className="bg-white py-6 mb-1 shadow-sm">
+               <div className="w-full">
+                 <div className="flex items-center justify-between px-4 mb-4">
+                    <div className="flex flex-col">
+                       <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] leading-none mb-1">Premium Studio</p>
+                       <h3 className="text-xl font-black text-slate-800 tracking-tight">Digital Business Cards</h3>
+                    </div>
+                 </div>
+                 <div className="px-4">
+                   <div className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-2">
+                     {categories.find(c => c.name.toLowerCase().includes('business card')).subcategories?.map((sub, i) => (
+                        <div 
+                          key={`bc-${sub._id}-${i}`} 
+                          onClick={() => {
+                            navigate(`/view-all/subcategory/${sub._id}`);
+                          }}
+                          className="min-w-[160px] w-[160px] h-[100px] rounded-2xl overflow-hidden bg-slate-900 relative cursor-pointer group shadow-lg active:scale-95 transition-all"
+                        >
+                           <img src={sub.image} className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt={sub.name} />
+                           <div className="absolute inset-0 flex flex-col justify-center items-center p-3 text-center">
+                              <h4 className="text-[0.8rem] font-black text-white uppercase tracking-wider">{sub.name}</h4>
+                              <div className="h-0.5 w-8 bg-blue-500 mt-2 group-hover:w-12 transition-all" />
+                           </div>
+                        </div>
+                     ))}
+                   </div>
+                 </div>
+               </div>
+            </div>
+          )}
+
           {/* ── SECTION 1: BUSINESS CARDS (horizontal landscape scroller) ── */}
           {businessCards.length > 0 && (
             <div className="bg-white py-4 shadow-sm">
@@ -236,12 +263,12 @@ const Business = () => {
                       />
                       {/* Like button */}
                       <button
-                        onClick={(e) => toggleLike(tpl._id, e)}
+                        onClick={(e) => globalToggleLike(tpl._id, e)}
                         className="absolute top-2 right-2 w-7 h-7 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow border-none cursor-pointer transition-transform active:scale-90"
                       >
                         <Heart
                           size={14}
-                          className={likedCards[tpl._id] ? 'fill-red-500 text-red-500' : 'text-slate-400'}
+                          className={likedTemplates.has(tpl._id) ? 'fill-red-500 text-red-500' : 'text-slate-400'}
                         />
                       </button>
                       {/* Hover overlay */}
