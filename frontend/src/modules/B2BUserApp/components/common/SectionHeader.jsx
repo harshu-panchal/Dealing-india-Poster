@@ -1,7 +1,9 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SectionHeader = ({ title, subtitle, onViewAll, showViewAll = false, rightContent }) => {
+  const { t } = useTranslation();
   return (
     <div className="flex justify-between items-center mb-sm px-[10px]">
       <div className="flex flex-col lg:gap-1">
@@ -13,7 +15,7 @@ const SectionHeader = ({ title, subtitle, onViewAll, showViewAll = false, rightC
         {rightContent && <div className="flex items-center gap-3">{rightContent}</div>}
         {showViewAll && (
           <button className="flex items-center gap-xs bg-transparent text-primary font-bold text-[0.8rem]" onClick={onViewAll}>
-            View All <ArrowRight size={16} />
+            {t("viewAll")} <ArrowRight size={16} />
           </button>
         )}
       </div>

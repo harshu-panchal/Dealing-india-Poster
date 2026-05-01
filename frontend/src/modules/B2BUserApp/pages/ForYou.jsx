@@ -10,8 +10,10 @@ import axios from 'axios';
 import { useEditor } from '../context/EditorContext';
 import { useAuth } from '../context/AuthContext';
 import SubcategoryCard from '../components/posters/SubcategoryCard';
+import { useTranslation } from 'react-i18next';
 
 const ForYou = () => {
+  const { t } = useTranslation();
   const { openDetail } = useEditor();
   const { user } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -69,7 +71,13 @@ const ForYou = () => {
 
       try {
         setIsSearching(true);
-        const params = { search: debouncedQuery, limit: 50, type: activeType };
+        const preferredLanguage = localStorage.getItem('preferred_language') || 'English';
+        const params = { 
+          search: debouncedQuery, 
+          limit: 50, 
+          type: activeType,
+          language: preferredLanguage
+        };
         if (activeCategory !== 'All') {
           params.category = activeCategory;
         }
@@ -109,7 +117,8 @@ const ForYou = () => {
       setSpecialItems(mixedSubcategories.sort(() => 0.5 - Math.random()));
 
       // Fetch Templates
-      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400`);
+      const preferredLanguage = localStorage.getItem('preferred_language') || 'English';
+      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400&language=${preferredLanguage}`);
       const templates = (tplData.templates || []).filter(t => !isBusinessCardTemplate(t));
       setAllTemplates(templates);
       
@@ -199,8 +208,8 @@ const ForYou = () => {
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between px-4 lg:px-0">
               <div className="flex flex-col">
-                <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] leading-none mb-2">Featured Collection</p>
-                <h2 className="text-2xl lg:text-3xl font-black text-slate-800 tracking-tight">Poster of the Day</h2>
+                <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] leading-none mb-2">{t("featuredCollection")}</p>
+                <h2 className="text-2xl lg:text-3xl font-black text-slate-800 tracking-tight">{t("posterOfTheDay")}</h2>
               </div>
             </div>
             
@@ -241,7 +250,7 @@ const ForYou = () => {
       {/* Sticky Top Header */}
       <div className="sticky top-0 z-[50] shadow-sm bg-white">
         <div className="bg-white p-1 px-4 text-center border-b border-[#f1f5f9]">
-          <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">🙏 Support us & give 5* rating - click here! 🙏</p>
+          <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">{t("supportRating")}</p>
         </div>
 
         <section className="p-3 px-2 bg-white flex justify-center">
@@ -256,7 +265,7 @@ const ForYou = () => {
               onClick={() => setActiveType(prev => prev === 'video' ? 'image' : 'video')}
               className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 shadow-sm ${activeType === 'video' ? 'bg-[#b91c1c] text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
             >
-              <Video size={18} fill={activeType === 'video' ? 'white' : 'none'} className={activeType === 'video' ? 'text-white' : 'text-slate-400'} /> Video
+              <Video size={18} fill={activeType === 'video' ? 'white' : 'none'} className={activeType === 'video' ? 'text-white' : 'text-slate-400'} /> {t("video")}
             </button>
 
             <div className="w-[1px] h-8 bg-slate-200 mx-1.5 self-center shrink-0" />
@@ -265,7 +274,7 @@ const ForYou = () => {
                onClick={() => { setActiveCategory('All'); setActiveSubcategory(null); }}
                className={`px-6 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap shrink-0 transition-colors ${activeCategory === 'All' ? 'bg-[#1e1e1e] text-white' : 'bg-slate-100 text-slate-500'}`}
             >
-              All
+              {t("all")}
             </button>
 
             {categories.filter(cat => !cat.name.toLowerCase().includes('business card')).map(cat => (
@@ -288,9 +297,9 @@ const ForYou = () => {
         {searchQuery.trim() !== '' ? (
           <div className="p-4">
             <div className="mb-6">
-               <h2 className="text-xl font-bold text-slate-800 tracking-tight">Search Results</h2>
+               <h2 className="text-xl font-bold text-slate-800 tracking-tight">{t("searchResults")}</h2>
                <p className="text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                 {isSearching ? 'Searching...' : `Found ${searchData.templates.length + searchData.categories.length + searchData.subcategories.length} matches for "${searchQuery}"`}
+                 {isSearching ? t("loading") : t("foundMatches", { count: searchData.templates.length + searchData.categories.length + searchData.subcategories.length })}
                </p>
             </div>
             
@@ -342,7 +351,7 @@ const ForYou = () => {
             ) : (
                <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-50">
                   <Search size={48} className="text-slate-200 mx-auto mb-4" />
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">No Matches Found</h3>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">{t("noMatchesFound")}</h3>
                   <p className="text-[0.65rem] font-bold text-slate-400 mt-2 max-w-[200px] mx-auto">Try searching for keywords like "Festival", "Business" or "Video"</p>
                </div>
             )}
@@ -350,7 +359,7 @@ const ForYou = () => {
         ) : (activeCategory === 'All' && activeType === 'video') ? (
           <div className="p-2">
             <div className="px-2 mb-4">
-              <h2 className="text-xl font-bold text-[#0f172a]">Video Templates</h2>
+              <h2 className="text-xl font-bold text-[#0f172a]">{t("videoTemplates")}</h2>
               <p className="text-sm text-[#64748b]">Found {videoPosters.length} trending videos</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -396,7 +405,7 @@ const ForYou = () => {
              <section className="bg-white py-6 mb-0 border-b border-slate-50">
                 <div className="w-full lg:px-4">
                   <SectionHeader 
-                    title="Today's Special" 
+                    title={t("todaysSpecial")} 
                     showViewAll={true} 
                     onViewAll={() => setShowAllSpecials(!showAllSpecials)}
                   />
@@ -452,7 +461,7 @@ const ForYou = () => {
 
              {/* 2. Initial High-Impact Posters (Grid of 3 on desktop) */}
              <div className="bg-white py-4 lg:px-4 mb-2 border-b border-slate-50">
-                <SectionHeader title={`Recommended ${activeType === 'video' ? 'Videos' : 'Posters'}`} showViewAll={true} />
+                <SectionHeader title={`${t("recommended")} ${activeType === 'video' ? t("video") : t("myPosters")}`} showViewAll={true} />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 lg:px-0">
                    {allTemplates.filter(filterByType).slice(0, 6).map((tpl, i) => (
                       <TemplateCard key={`init-grid-${tpl._id}`} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
@@ -463,7 +472,7 @@ const ForYou = () => {
              {/* 3. Trending Posters Slider (Shifted after 5 posters) */}
              <section className="bg-white py-6 mt-4 mb-2">
                 <div className="w-full lg:px-4">
-                  <SectionHeader title={`Trending ${activeType === 'video' ? 'Videos' : 'Posters'}`} showViewAll={true} />
+                  <SectionHeader title={`${t("trending")} ${activeType === 'video' ? t("video") : t("myPosters")}`} showViewAll={true} />
                   <HorizontalScrollList className="pt-2">
                     {allTemplates.filter(filterByType).length > 5 ? allTemplates.filter(filterByType).slice(5, 15).map(tpl => (
                       <TemplateCard key={tpl._id} template={tpl} variant="compact" onClick={() => openDetail(tpl)} />
@@ -489,10 +498,10 @@ const ForYou = () => {
                        <div className="w-full lg:px-4">
                          <div className="flex items-center justify-between px-4 mb-4">
                             <div className="flex flex-col">
-                               <p className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] leading-none mb-1">Discover Now</p>
+                               <p className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] leading-none mb-1">{t("discoverNow")}</p>
                                <h3 className="text-lg font-black text-slate-800 tracking-tight">{section.title}</h3>
                             </div>
-                            <button onClick={() => setActiveCategory(section.id)} className="text-[0.65rem] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-full uppercase tracking-widest border-none">View All</button>
+                            <button onClick={() => setActiveCategory(section.id)} className="text-[0.65rem] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-full uppercase tracking-widest border-none">{t("viewAll")}</button>
                          </div>
                          <HorizontalScrollList className="pt-2">
                            {section.subcategories?.length > 0 ? (
@@ -518,7 +527,7 @@ const ForYou = () => {
                     {/* Interspersed cards for continuous scroll variety - 3 in a row on desktop */}
                     {allTemplates.filter(filterByType).length > 0 && (
                       <div className="bg-white py-6 mb-2 lg:px-4 border-b border-slate-50">
-                        <SectionHeader title="Staff Picks" showViewAll={false} />
+                        <SectionHeader title={t("staffPicks")} showViewAll={false} />
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 lg:px-0">
                           {[0, 1, 2].map(offset => {
                             const filteredList = allTemplates.filter(filterByType);

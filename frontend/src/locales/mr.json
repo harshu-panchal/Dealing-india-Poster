@@ -1,0 +1,23 @@
+{
+  "welcome": "स्वागत आहे",
+  "download": "डाउनलोड करा",
+  "editPoster": "पोस्टर संपादित करा",
+  "selectLanguage": "भाषा निवडा",
+  "appLanguage": "अॅपची भाषा",
+  "contentLanguage": "कंटेंटची भाषा",
+  "home": "होम",
+  "profile": "प्रोफाईल",
+  "trending": "ट्रेंडिंग",
+  "categories": "श्रेण्या",
+  "myPosters": "माझे पोस्टर्स",
+  "calendar": "इव्हेंट कॅलेंडर",
+  "settings": "सेटिंग्ज",
+  "logout": "लॉगआउट",
+  "searchPlaceholder": "पोस्टर शोधा...",
+  "viewAll": "सर्व पहा",
+  "premium": "प्रीमियम",
+  "free": "मोफत",
+  "save": "जतन करा",
+  "cancel": "रद्द करा",
+  "loading": "लोड होत आहे..."
+}

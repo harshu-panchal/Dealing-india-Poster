@@ -1,0 +1,23 @@
+{
+  "welcome": "Welcome",
+  "download": "Download",
+  "editPoster": "Edit Poster",
+  "selectLanguage": "Select Language",
+  "appLanguage": "App Language",
+  "contentLanguage": "Content Language",
+  "home": "Home",
+  "profile": "Profile",
+  "trending": "Trending",
+  "categories": "Categories",
+  "myPosters": "My Posters",
+  "calendar": "Events Calendar",
+  "settings": "Settings",
+  "logout": "Logout",
+  "searchPlaceholder": "Search Posters...",
+  "viewAll": "View All",
+  "premium": "Premium",
+  "free": "Free",
+  "save": "Save",
+  "cancel": "Cancel",
+  "loading": "Loading..."
+}

@@ -10,14 +10,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [appSettings, setAppSettings] = useState(null);
   const [expandedGroupId, setExpandedGroupId] = useState(null);
+  const [contentLanguage, setContentLanguage] = useState(localStorage.getItem('preferred_language') || 'English');
+  const LANGUAGES_APP = [
+    { id: 'en', name: 'English' },
+    { id: 'hi', name: 'Hindi' },
+    { id: 'gu', name: 'Gujarati' },
+    { id: 'mr', name: 'Marathi' }
+  ];
+
+  const LANGUAGES_CONTENT = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Punjabi', 'Bengali'];
+
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   const userName = user?.user?.name || "User";
@@ -43,48 +55,55 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   };
 
   const menuItems = [
-    { icon: <LayoutGrid size={20} />, label: "Home", path: "/" },
-    { icon: <User size={20} />, label: "Profile", path: "/profile" },
-    { icon: <Globe size={20} />, label: "Make Your Website", color: "text-blue-600", path: "/dashboard" },
-    { icon: <Briefcase size={20} />, label: "Business", path: "/categories" },
-    { icon: <Heart size={20} />, label: "Liked Posters", path: "/liked-posters" },
-    { icon: <FolderPlus size={20} />, label: "Collections", path: "/my-posters" },
-    { icon: <Heart size={20} />, label: "Trending", path: "/trending" },
-    { icon: <CalendarDays size={20} />, label: "Events Calendar", path: "/calendar" },
-    { icon: <Globe size={20} />, label: "App Language", path: "/language" },
-    { icon: <Award size={20} />, label: "Refer & Earn", path: "/referral" },
-    { icon: <Settings size={20} />, label: "Settings", path: "/dashboard" },
+    { icon: <LayoutGrid size={20} />, label: t("home"), path: "/" },
+    { icon: <User size={20} />, label: t("profile"), path: "/profile" },
+    { icon: <Globe size={20} />, label: t("makeYourWebsite"), color: "text-blue-600", path: "/dashboard" },
+    { icon: <Briefcase size={20} />, label: t("categories"), path: "/categories" },
+    { icon: <Heart size={20} />, label: t("likedPosters"), path: "/liked-posters" },
+    { icon: <FolderPlus size={20} />, label: t("myPosters"), path: "/my-posters" },
+    { icon: <Heart size={20} />, label: t("trending"), path: "/trending" },
+    { icon: <CalendarDays size={20} />, label: t("calendar"), path: "/calendar" },
+    { 
+        id: 'language-group',
+        icon: <Globe size={20} />, 
+        label: t("selectLanguage"), 
+        isGroup: true,
+        isLanguage: true,
+        subItems: []
+    },
+    { icon: <Award size={20} />, label: t("referAndEarn"), path: "/referral" },
+    { icon: <Settings size={20} />, label: t("settings"), path: "/dashboard" },
 
     { 
         id: 'about-group',
         icon: <Info size={20} />, 
-        label: "About Us", 
+        label: t("aboutUs"), 
         isGroup: true,
         subItems: [
-           { icon: <Info size={16} />, label: "About Appzeto", path: "/about" },
-           { icon: <ShieldCheck size={16} />, label: "Privacy Policy", path: "/privacy-policy" },
-           { icon: <FileText size={16} />, label: "Terms & Conditions", path: "/terms-conditions" }
+           { icon: <Info size={16} />, label: t("aboutAppzeto"), path: "/about" },
+           { icon: <ShieldCheck size={16} />, label: t("privacyPolicy"), path: "/privacy-policy" },
+           { icon: <FileText size={16} />, label: t("termsAndConditions"), path: "/terms-conditions" }
         ]
     },
     { 
         id: 'help-group',
         icon: <HelpCircle size={20} />, 
-        label: "Help & Support", 
+        label: t("helpAndSupport"), 
         isGroup: true,
         subItems: [
            { 
                icon: <HelpCircle size={16} />, 
-               label: "How to use app", 
+               label: t("howToUseApp"), 
                path: "/help?tab=faq"
            },
            { 
                icon: <MessageSquare size={16} />, 
-               label: "Direct Support", 
+               label: t("directSupport"), 
                path: "/help?tab=support"
            }
         ]
     },
-    { icon: <LogOut size={20} />, label: "Logout", color: "text-red-500", onClick: () => setShowLogoutModal(true) },
+    { icon: <LogOut size={20} />, label: t("logout"), color: "text-red-500", onClick: () => setShowLogoutModal(true) },
   ];
 
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
@@ -118,7 +137,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
             onClick={() => navigate('/profile')}
             className="text-sm font-bold underline underline-offset-4 text-white/90 active:opacity-70 transition-opacity w-fit"
           >
-            View full profile
+            {t("viewFullProfile")}
           </button>
         </div>
       </div>
@@ -127,7 +146,77 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
       <div className="flex-1 overflow-y-auto py-2">
         <div className="flex flex-col">
           {menuItems.map((item, index) => {
-            if (item.isGroup) {
+                if (item.isLanguage) {
+                   return (
+                      <div key={index} className="flex flex-col">
+                         <button 
+                           onClick={() => setExpandedGroupId(expandedGroupId === item.id ? null : item.id)}
+                           className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group`}
+                         >
+                            <div className="flex items-center gap-4 text-[#334155]">
+                               <div className="text-[#64748b] group-hover:text-[#ef4444] transition-colors">
+                                 {item.icon}
+                               </div>
+                               <span className="text-[0.92rem] font-bold group-hover:text-[#ef4444] transition-colors">
+                                 {item.label}
+                               </span>
+                            </div>
+                            <ChevronDown size={16} className={`text-[#64748b] transition-transform duration-300 ${expandedGroupId === item.id ? 'rotate-180' : ''}`} />
+                         </button>
+                         
+                         <AnimatePresence>
+                            {expandedGroupId === item.id && (
+                               <motion.div 
+                                 initial={{ height: 0, opacity: 0 }}
+                                 animate={{ height: 'auto', opacity: 1 }}
+                                 exit={{ height: 0, opacity: 0 }}
+                                 className="overflow-hidden bg-slate-50/50 px-6 py-4 space-y-4"
+                               >
+                                  {/* App Language Dropdown */}
+                                  <div className="space-y-1.5">
+                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("appLanguage")}</label>
+                                     <div className="relative">
+                                        <select 
+                                          value={i18n.language}
+                                          onChange={(e) => {
+                                             const val = e.target.value;
+                                             i18n.changeLanguage(val);
+                                          }}
+                                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none focus:border-red-500 transition-colors"
+                                        >
+                                           {LANGUAGES_APP.map(lang => <option key={lang.id} value={lang.id}>{lang.name}</option>)}
+                                        </select>
+                                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                     </div>
+                                  </div>
+
+                                  {/* Content Language Dropdown */}
+                                  <div className="space-y-1.5">
+                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("contentLanguage")}</label>
+                                     <div className="relative">
+                                        <select 
+                                          value={contentLanguage}
+                                          onChange={(e) => {
+                                             const val = e.target.value;
+                                             setContentLanguage(val);
+                                             localStorage.setItem('preferred_language', val);
+                                             window.location.reload();
+                                          }}
+                                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none focus:border-red-500 transition-colors"
+                                        >
+                                           {LANGUAGES_CONTENT.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                                        </select>
+                                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                     </div>
+                                  </div>
+                               </motion.div>
+                            )}
+                         </AnimatePresence>
+                      </div>
+                   );
+                }
+
+                if (item.isGroup) {
                return (
                   <div key={index} className="flex flex-col">
                      <button 
@@ -210,7 +299,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
       {/* Social & Version Footer */}
       <div className="p-6 border-t border-gray-100 space-y-5 bg-gray-50/30">
          <div className="flex flex-col gap-3">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Connect with us</span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{t("connectWithUs")}</span>
             <div className="flex items-center gap-4">
                {appSettings?.socialLinks?.instagram && (
                  <a href={appSettings.socialLinks.instagram} target="_blank" rel="noreferrer" className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-rose-500 shadow-sm border border-gray-100 hover:scale-110 active:scale-95 transition-all">
@@ -258,9 +347,9 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
                 <AlertCircle size={32} />
               </div>
               
-              <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Logout Session</h3>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">{t("logoutSession")}</h3>
               <p className="text-slate-500 text-sm font-semibold mb-8 leading-relaxed">
-                Are you sure you want to end your current session? You'll need to verify your OTP again to log back in.
+                {t("logoutConfirmMsg")}
               </p>
 
               <div className="flex flex-col w-full gap-3">
@@ -268,7 +357,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
                   onClick={handleActualLogout}
                   className="w-full h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 active:scale-[0.98] transition-all border-none cursor-pointer"
                 >
-                  Yes, Logout
+                  {t("yesLogout")}
                 </button>
                 <button 
                   onClick={() => setShowLogoutModal(false)}

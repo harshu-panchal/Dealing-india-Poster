@@ -81,10 +81,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Force sparse unique indexes to handle multiple users with missing email/mobile
-userSchema.index({ email: 1 }, { unique: true, sparse: true });
-userSchema.index({ mobileNumber: 1 }, { unique: true, sparse: true });
-
+// Pre-save middleware for referral code and field cleanup
 userSchema.pre('save', async function () {
   // Ensure empty strings/nulls are treated as undefined for sparse unique index
   if (this.email === null || this.email === "") this.email = undefined;

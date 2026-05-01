@@ -4,22 +4,24 @@ import { useNavigate } from 'react-router-dom';
 
 const LanguageSelector = () => {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState('en');
+  const [selected, setSelected] = useState(localStorage.getItem('preferred_language') || 'English');
 
   const languages = [
-    { id: 'en', name: 'English', native: 'English' },
-    { id: 'hi', name: 'Hindi', native: 'हिन्दी' },
-    { id: 'gu', name: 'Gujarati', native: 'ગુજરાતી' },
-    { id: 'mr', name: 'Marathi', native: 'मराठी' },
-    { id: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
-    { id: 'ta', name: 'Tamil', native: 'தமிழ்' },
-    { id: 'te', name: 'Telugu', native: 'తెలుగు' },
-    { id: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ' }
+    { id: 'English', name: 'English', native: 'English' },
+    { id: 'Hindi', name: 'Hindi', native: 'हिन्दी' },
+    { id: 'Gujarati', name: 'Gujarati', native: 'ગુજરાતી' },
+    { id: 'Marathi', name: 'Marathi', native: 'मराठी' },
+    { id: 'Punjabi', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
+    { id: 'Tamil', name: 'Tamil', native: 'தமிழ்' },
+    { id: 'Telugu', name: 'Telugu', native: 'తెలుగు' },
+    { id: 'Kannada', name: 'Kannada', native: 'ಕನ್ನಡ' },
+    { id: 'Malayalam', name: 'Malayalam', native: 'മലയാളം' },
+    { id: 'Bengali', name: 'Bengali', native: 'বাংলা' }
   ];
 
   const handleSelect = (id) => {
     setSelected(id);
-    // In a real app, you'd save this to localStorage/database and trigger i18n change
+    localStorage.setItem('preferred_language', id);
     setTimeout(() => navigate(-1), 300);
   };
 

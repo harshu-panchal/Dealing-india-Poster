@@ -2,19 +2,22 @@ import Category from '../models/category.model.js';
 import Subcategory from '../models/subcategory.model.js';
 import Template from '../models/template.model.js';
 import Event from '../models/event.model.js';
+import { localizeObject } from '../utils/localization.js';
 
 // @desc    Get all active categories with subcategories
 // @route   GET /api/user/categories
 export const getPublicCategories = async (req, res) => {
   try {
+    const lang = req.headers['lang'] || req.query.lang || 'en';
     const categories = await Category.find({ isActive: true }).sort({ displayOrder: 1 });
     
     const categoryList = await Promise.all(categories.map(async (cat) => {
       const subcategories = await Subcategory.find({ parentId: cat._id, isActive: true }).sort({ displayOrder: 1 });
-      return {
-        ...cat._doc,
-        subcategories
-      };
+      
+      const localizedCat = localizeObject(cat.toObject ? cat.toObject() : cat, lang);
+      localizedCat.subcategories = subcategories.map(sub => localizeObject(sub.toObject ? sub.toObject() : sub, lang));
+      
+      return localizedCat;
     }));
 
     res.status(200).json(categoryList);
@@ -27,12 +30,13 @@ export const getPublicCategories = async (req, res) => {
 // @route   GET /api/user/templates
 export const getPublicTemplates = async (req, res) => {
   try {
-    const { category, subcategory, type, isPremium, featured, potd, search, limit = 20, page = 1 } = req.query;
+    const { category, subcategory, type, isPremium, featured, potd, search, language, limit = 20, page = 1 } = req.query;
     const filter = { isActive: true };
 
     if (category) filter.categoryId = category;
     if (subcategory) filter.subcategoryId = subcategory;
     if (type) filter.type = type;
+    if (language) filter.language = language;
     if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
     if (featured === 'true') filter.isPosterOfTheDay = true;
     if (potd === 'true') filter.isPosterOfTheDay = true;
@@ -60,12 +64,21 @@ export const getPublicTemplates = async (req, res) => {
       ];
     }
 
+    const lang = req.headers['lang'] || req.query.lang || 'en';
     const templates = await Template.find(filter)
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .sort({ createdAt: -1 })
       .populate('categoryId', 'name image')
       .populate('subcategoryId', 'name image');
+
+    const localizedTemplates = templates.map(tpl => {
+      const t = tpl.toObject();
+      const localized = localizeObject(t, lang);
+      if (t.categoryId) localized.categoryId = localizeObject(t.categoryId, lang);
+      if (t.subcategoryId) localized.subcategoryId = localizeObject(t.subcategoryId, lang);
+      return localized;
+    });
 
     // Find total count for templates
     const total = await Template.countDocuments(filter);
@@ -76,14 +89,16 @@ export const getPublicTemplates = async (req, res) => {
     
     if (search) {
       const searchRegex = { $regex: search, $options: 'i' };
-      [foundCategories, foundSubcategories] = await Promise.all([
+      const [cats, subs] = await Promise.all([
         Category.find({ name: searchRegex, isActive: true }).limit(5),
         Subcategory.find({ name: searchRegex, isActive: true }).limit(5)
       ]);
+      foundCategories = cats.map(c => localizeObject(c.toObject(), lang));
+      foundSubcategories = subs.map(s => localizeObject(s.toObject(), lang));
     }
 
     res.status(200).json({
-      templates,
+      templates: localizedTemplates,
       categories: foundCategories,
       subcategories: foundSubcategories,
       total,

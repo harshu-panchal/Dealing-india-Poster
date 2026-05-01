@@ -61,9 +61,17 @@ const UserPrivateRoute = ({ children, isAuthenticated }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
+import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+
 function AppContent() {
+  const { i18n } = useTranslation();
   const [showSidebar, setShowSidebar] = useState(false);
   const { user, loading } = useAuth();
+
+  React.useEffect(() => {
+    axios.defaults.headers.common['lang'] = i18n.language || 'en';
+  }, [i18n.language]);
   const isAuthenticated = !!user; 
   const isProfileIncomplete = isAuthenticated && (!user.user?.name || !user.user?.email || !user.user?.mobileNumber);
 

@@ -17,6 +17,8 @@ import AdminModal from '../components/ui/AdminModal';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import BusinessCardFieldDesigner from '../components/BusinessCardFieldDesigner';
 
+const LANGUAGES = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Punjabi', 'Bengali'];
+
 const TemplateManager = () => {
   const { admin } = useAdminAuth();
   const [templates, setTemplates] = useState([]);
@@ -165,7 +167,12 @@ const TemplateManager = () => {
     }
 
     const data = {
-      name: formData.get('title'),
+      name: {
+        en: formData.get('name_en'),
+        hi: formData.get('name_hi') || '',
+        gu: formData.get('name_gu') || '',
+        mr: formData.get('name_mr') || '',
+      },
       categoryId: formData.get('category'),
       subcategoryId: formData.get('subcategory') || undefined,
       eventId: formData.get('eventId') || undefined,
@@ -175,6 +182,7 @@ const TemplateManager = () => {
       audioUrl: assetType === 'video' && videoMode === 'image-music' ? audioUrl : '',
       duration: assetType === 'video' ? Number(formData.get('duration')) : 10,
       isPremium: formData.get('isPremium') === 'true',
+      language: formData.get('language') || 'English',
     };
 
     try {
@@ -389,7 +397,16 @@ const TemplateManager = () => {
         icon={editingTemplate ? Edit2 : Plus}
       >
         <form onSubmit={handleCreateOrUpdate} className="space-y-6">
-          <Input name="title" defaultValue={editingTemplate?.name} placeholder="Template Title" required className="h-12" />
+          <div className="space-y-4">
+             <div className="grid grid-cols-2 gap-4">
+                <Input name="name_en" defaultValue={editingTemplate?.name?.en || (typeof editingTemplate?.name === 'string' ? editingTemplate.name : '')} placeholder="Name (English)" required className="h-12 font-bold" />
+                <Input name="name_hi" defaultValue={editingTemplate?.name?.hi} placeholder="Name (Hindi)" className="h-12 font-bold" />
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+                <Input name="name_gu" defaultValue={editingTemplate?.name?.gu} placeholder="Name (Gujarati)" className="h-12 font-bold" />
+                <Input name="name_mr" defaultValue={editingTemplate?.name?.mr} placeholder="Name (Marathi)" className="h-12 font-bold" />
+             </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <select
@@ -445,6 +462,29 @@ const TemplateManager = () => {
               {events.map(event => (
                 <option key={event._id} value={event._id}>{event.name}</option>
               ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <select
+              name="language"
+              defaultValue={editingTemplate?.language || 'English'}
+              required
+              className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs"
+            >
+              <option value="">Select Language</option>
+              {LANGUAGES.map(lang => (
+                <option key={lang} value={lang}>{lang}</option>
+              ))}
+            </select>
+
+            <select
+              name="isPremium"
+              defaultValue={editingTemplate?.isPremium ? 'true' : 'false'}
+              className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs"
+            >
+              <option value="false">Free Access</option>
+              <option value="true">Premium Only</option>
             </select>
           </div>
 

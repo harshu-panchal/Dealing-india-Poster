@@ -1,13 +1,15 @@
 import React from 'react';
 import { Search, Mic } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const SearchBar = ({ value, onChange, placeholder = "Search Posters", className = "" }) => {
+const SearchBar = ({ value, onChange, placeholder, className = "" }) => {
+  const { t } = useTranslation();
   return (
     <div className={`bg-[#f1f5f9] rounded-full px-4 py-2.5 lg:px-6 lg:py-3 flex items-center gap-3 transition-all focus-within:ring-2 focus-within:ring-primary/20 ${className}`}>
       <Search className="text-[#64748b] lg:w-5 lg:h-5" size={18} />
       <input 
         type="text" 
-        placeholder={placeholder} 
+        placeholder={placeholder || t("searchPosters")} 
         className="flex-1 border-none bg-transparent outline-none text-[0.95rem] lg:text-base"
         value={value}
         onChange={(e) => onChange(e.target.value)}

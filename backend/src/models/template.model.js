@@ -2,9 +2,10 @@ import mongoose from 'mongoose';
 
 const templateSchema = new mongoose.Schema({
   name: {
-    type: String,
-    required: [true, 'Template name is required'],
-    trim: true,
+    en: { type: String, required: [true, 'English name is required'], trim: true },
+    hi: { type: String, trim: true },
+    gu: { type: String, trim: true },
+    mr: { type: String, trim: true },
   },
   image: {
     type: String,
@@ -86,6 +87,11 @@ const templateSchema = new mongoose.Schema({
     default: false,
   },
   tags: [String],
+  language: {
+    type: String,
+    enum: ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Punjabi', 'Bengali'],
+    default: 'English',
+  },
 }, {
   timestamps: true,
 });

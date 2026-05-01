@@ -6,11 +6,12 @@ import Subcategory from '../models/subcategory.model.js';
 // @route   GET /api/admin/templates
 export const getAdminTemplates = async (req, res) => {
   try {
-    const { category, type, search, page = 1, limit = 20 } = req.query;
+    const { category, type, search, language, page = 1, limit = 20 } = req.query;
     const filter = {};
 
     if (category) filter.categoryId = category;
     if (type) filter.type = type;
+    if (language) filter.language = language;
     if (search) {
       filter.name = { $regex: search, $options: 'i' };
     }
@@ -39,7 +40,7 @@ export const getAdminTemplates = async (req, res) => {
 // @route   POST /api/admin/templates
 export const createTemplate = async (req, res) => {
   try {
-    const { name, image, categoryId, subcategoryId, eventId, type, isVideo, videoUrl, audioUrl, duration, isPremium, tags } = req.body;
+    const { name, image, categoryId, subcategoryId, eventId, type, isVideo, videoUrl, audioUrl, duration, isPremium, tags, language } = req.body;
     
     const template = await Template.create({
       name,
@@ -53,7 +54,8 @@ export const createTemplate = async (req, res) => {
       audioUrl,
       duration: duration || 10,
       isPremium,
-      tags
+      tags,
+      language: language || 'English'
     });
 
     res.status(201).json(template);
