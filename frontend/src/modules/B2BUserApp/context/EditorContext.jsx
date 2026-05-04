@@ -127,9 +127,8 @@ export const EditorProvider = ({ children }) => {
     const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setEditingTemplate(injectUserData(template));
     setInitialEditorTab(initialTab);
-    if (normalizedFrame) {
-      setSelectedFrame(normalizedFrame);
-    }
+    // Load frame from this template's customData, or CLEAR it if there's no saved frame
+    setSelectedFrame(normalizedFrame || null);
     // Keep viewingDetail open
   };
 
@@ -153,13 +152,12 @@ export const EditorProvider = ({ children }) => {
 
     const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setViewingDetail(injectUserData(template));
-    if (normalizedFrame) {
-      setSelectedFrame(normalizedFrame);
-    }
+    // Load frame from this template's customData, or CLEAR it if there's no saved frame
+    setSelectedFrame(normalizedFrame || null);
   };
 
-  const closeEditor = () => setEditingTemplate(null);
-  const closeDetail = () => setViewingDetail(null);
+  const closeEditor = () => { setEditingTemplate(null); setSelectedFrame(null); };
+  const closeDetail = () => { setViewingDetail(null); setSelectedFrame(null); };
 
   const getTemplateId = (template) => {
     if (!template) return null;

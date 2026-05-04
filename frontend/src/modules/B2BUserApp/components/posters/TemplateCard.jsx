@@ -51,7 +51,9 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     logo: cleanUrl(rawUserData.logo),
     userPhoto: cleanUrl(rawUserData.userPhoto)
   };
-  const activeFrame = normalizeFrameValue(effectiveUserData.selectedFrame);
+  // Only read selectedFrame from THIS template's own saved customData.
+  // NEVER fall back to global userData.selectedFrame — that would pollute all cards.
+  const activeFrame = template.customData ? normalizeFrameValue(effectiveUserData.selectedFrame) : null;
 
   // Dynamic position fallbacks from the frame object itself (for Saved Posters)
   const activeFrameObj = (frames || []).find(f => normalizeFrameValue(f) === activeFrame);

@@ -32,7 +32,7 @@ const ForYou = () => {
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
   const [activeType, setActiveType] = useState('image'); // 'image' or 'video'
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
   const filterByType = useCallback((t) => {
     if (!t) return false;
@@ -139,7 +139,7 @@ const ForYou = () => {
         setPotdTemplates(templates.slice(0, 3));
       }
 
-      // Organize Sections
+      // Organize Sections — use string comparison to handle ObjectId vs string mismatch
       const organizedSections = catData
         .filter(cat => !cat.name.toLowerCase().includes('business card'))
         .map(cat => ({
@@ -147,7 +147,8 @@ const ForYou = () => {
           title: cat.name,
           subcategories: cat.subcategories?.filter(sub => !sub.name.toLowerCase().includes('business card')),
           templates: templates.filter(t => {
-             const matchesCategory = t.categoryId === cat._id || t.categoryId?._id === cat._id;
+             const catIdStr = t.categoryId?._id?.toString() || t.categoryId?.toString() || '';
+             const matchesCategory = catIdStr === cat._id?.toString();
              const matchesType = filterByType(t);
              return matchesCategory && matchesType && !isBusinessCardTemplate(t);
           })

@@ -253,7 +253,17 @@ const PosterEditor = ({ template, onClose }) => {
       selectedFrame: effectiveSelectedFrame
     };
 
-    setUserData(savedCustomData);
+    // Update global userData WITHOUT selectedFrame so it doesn't bleed into
+    // every TemplateCard on the home page (they all share global userData).
+    // The frame is preserved inside savedCustomData for THIS template only.
+    setUserData(prev => ({
+      ...prev,
+      ...localUserData,
+      name: savedCustomData.name,
+      business_name: savedCustomData.business_name,
+      musicId: activeMusicId,
+      selectedFrame: null  // ← CLEAR global frame; it lives in customData per-template
+    }));
     syncSavedEditsToDetail(template, savedCustomData);
 
     try {
@@ -269,6 +279,7 @@ const PosterEditor = ({ template, onClose }) => {
     } catch (err) { console.error('History update failed:', err); }
     onClose();
   };
+
 
   const updateLocalField = (field, value) => setLocalUserData(prev => ({ ...prev, [field]: value }));
 

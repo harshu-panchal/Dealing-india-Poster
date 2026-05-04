@@ -71,11 +71,13 @@ export const getPublicTemplates = async (req, res) => {
     };
 
     // Try language-specific filter first; fall back to ALL available if no results
+    // Skip language filter for 'English' (default) — all templates qualify, avoids edge cases
     let filter = buildFilter(searchCondition);
-    if (language) {
+    if (language && language !== 'English') {
       const langCondition = {
         $or: [
           { language: language },
+          { language: 'English' },      // always include English as fallback content
           { language: { $exists: false } },
           { language: null },
           { language: '' }
@@ -84,7 +86,6 @@ export const getPublicTemplates = async (req, res) => {
       const langFilter = buildFilter(langCondition, searchCondition);
       const langCount = await Template.countDocuments(langFilter);
       if (langCount > 0) {
-        // Language has content — use it
         filter = langFilter;
       }
       // If langCount === 0, fall through and use all-language filter (show whatever is available)
@@ -100,8 +101,22 @@ export const getPublicTemplates = async (req, res) => {
     const localizedTemplates = templates.map(tpl => {
       const t = tpl.toObject();
       const localized = localizeObject(t, lang);
-      if (t.categoryId) localized.categoryId = localizeObject(t.categoryId, lang);
-      if (t.subcategoryId) localized.subcategoryId = localizeObject(t.subcategoryId, lang);
+
+      // Preserve _id as string to ensure consistent frontend comparisons
+      localized._id = t._id?.toString();
+
+      if (t.categoryId) {
+        const localizedCat = localizeObject(t.categoryId, lang);
+        // Ensure _id is a string for reliable === comparisons on frontend
+        localizedCat._id = t.categoryId._id?.toString();
+        localized.categoryId = localizedCat;
+      }
+      if (t.subcategoryId) {
+        const localizedSub = localizeObject(t.subcategoryId, lang);
+        localizedSub._id = t.subcategoryId._id?.toString();
+        localized.subcategoryId = localizedSub;
+      }
+
       return localized;
     });
 
