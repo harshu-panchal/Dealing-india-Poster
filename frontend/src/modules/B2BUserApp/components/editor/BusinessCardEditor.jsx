@@ -233,7 +233,7 @@ const BusinessCardEditor = () => {
         };
 
         // Relative scaling (Treat px as relative to 800px reference width)
-        const SCALE_FACTOR = 8;
+        const SCALE_FACTOR = 6;
         if (typeof style.fontSize === 'string' && style.fontSize.includes('px')) {
             style.fontSize = `${(parseFloat(style.fontSize) / SCALE_FACTOR).toFixed(2)}cqw`;
         }
@@ -342,12 +342,12 @@ const BusinessCardEditor = () => {
               centeredSlides={true}
               slidesPerView={'auto'}
               initialSlide={activeIndex}
-              coverflowEffect={{ rotate: 0, stretch: 0, depth: 100, modifier: 2.5, slideShadows: false }}
+              coverflowEffect={{ rotate: 0, stretch: 0, depth: 40, modifier: 1.2, slideShadows: false }}
               onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
               className="w-full"
             >
               {templates.map((tpl, idx) => (
-                <SwiperSlide key={tpl._id} className="flex flex-col items-center justify-center !w-[80%] !h-fit self-center">
+                <SwiperSlide key={tpl._id} className="flex flex-col items-center justify-center !w-[92%] !h-fit self-center">
                   <div className="relative w-full aspect-[1.75/1] shadow-[0_10px_30px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden border border-white" style={{ containerType: 'inline-size' }}>
                     <div ref={activeIndex === idx ? cardRef : null} className="relative w-full h-full bg-white">
                       <img src={tpl.image} className="w-full h-full object-cover relative z-0" alt="card-bg" crossOrigin="anonymous" />
@@ -356,7 +356,7 @@ const BusinessCardEditor = () => {
                   </div>
                   
                   {/* ❤️ HEART COUNTER (DYNAMIC) */}
-                  <div className="mt-4 bg-black/30 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-2 text-white border border-white/20">
+                  <div className="mt-4 w-fit bg-black/30 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-2 text-white border border-white/20">
                     <Heart size={18} fill="white" />
                     <span className="text-[12px] font-bold">{formatCount(tpl.likeCount)}</span>
                   </div>
