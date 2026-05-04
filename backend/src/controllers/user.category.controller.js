@@ -31,40 +31,65 @@ export const getPublicCategories = async (req, res) => {
 export const getPublicTemplates = async (req, res) => {
   try {
     const { category, subcategory, type, isPremium, featured, potd, search, language, limit = 20, page = 1 } = req.query;
-    const filter = { isActive: true };
 
-    if (category) filter.categoryId = category;
-    if (subcategory) filter.subcategoryId = subcategory;
-    if (type) filter.type = type;
-    if (language) filter.language = language;
-    if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
-    if (featured === 'true') filter.isPosterOfTheDay = true;
-    if (potd === 'true') filter.isPosterOfTheDay = true;
-    
+    // Base filter — always applied
+    const baseFilter = { isActive: true };
+    if (category) baseFilter.categoryId = category;
+    if (subcategory) baseFilter.subcategoryId = subcategory;
+    if (type) baseFilter.type = type;
+    if (isPremium !== undefined) baseFilter.isPremium = isPremium === 'true';
+    if (featured === 'true') baseFilter.isPosterOfTheDay = true;
+    if (potd === 'true') baseFilter.isPosterOfTheDay = true;
+
+    const lang = req.headers['lang'] || req.query.lang || 'en';
+
+    // Build search condition (if any)
+    let searchCondition = null;
     if (search) {
       const searchRegex = { $regex: search, $options: 'i' };
-      
-      // Find matching active categories, subcategories, and events to include their templates in results
       const [matchingCats, matchingSubs, matchingEvents] = await Promise.all([
         Category.find({ name: searchRegex, isActive: true }).select('_id'),
         Subcategory.find({ name: searchRegex, isActive: true }).select('_id'),
         Event.find({ name: searchRegex, isActive: true }).select('_id')
       ]);
-
-      const catIds = matchingCats.map(c => c._id);
-      const subIds = matchingSubs.map(s => s._id);
-      const eventIds = matchingEvents.map(e => e._id);
-
-      filter.$or = [
-        { name: searchRegex },
-        { tags: searchRegex },
-        { categoryId: { $in: catIds } },
-        { subcategoryId: { $in: subIds } },
-        { eventId: { $in: eventIds } }
-      ];
+      searchCondition = {
+        $or: [
+          { name: searchRegex },
+          { tags: searchRegex },
+          { categoryId: { $in: matchingCats.map(c => c._id) } },
+          { subcategoryId: { $in: matchingSubs.map(s => s._id) } },
+          { eventId: { $in: matchingEvents.map(e => e._id) } }
+        ]
+      };
     }
 
-    const lang = req.headers['lang'] || req.query.lang || 'en';
+    // Helper: compose final filter from base + optional conditions
+    const buildFilter = (...conditions) => {
+      const active = conditions.filter(Boolean);
+      if (active.length === 0) return { ...baseFilter };
+      return { ...baseFilter, $and: active };
+    };
+
+    // Try language-specific filter first; fall back to ALL available if no results
+    let filter = buildFilter(searchCondition);
+    if (language) {
+      const langCondition = {
+        $or: [
+          { language: language },
+          { language: { $exists: false } },
+          { language: null },
+          { language: '' }
+        ]
+      };
+      const langFilter = buildFilter(langCondition, searchCondition);
+      const langCount = await Template.countDocuments(langFilter);
+      if (langCount > 0) {
+        // Language has content — use it
+        filter = langFilter;
+      }
+      // If langCount === 0, fall through and use all-language filter (show whatever is available)
+    }
+
     const templates = await Template.find(filter)
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
@@ -80,13 +105,11 @@ export const getPublicTemplates = async (req, res) => {
       return localized;
     });
 
-    // Find total count for templates
     const total = await Template.countDocuments(filter);
 
     // If searching, also return matching categories and subcategories
     let foundCategories = [];
     let foundSubcategories = [];
-    
     if (search) {
       const searchRegex = { $regex: search, $options: 'i' };
       const [cats, subs] = await Promise.all([

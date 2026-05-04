@@ -43,17 +43,30 @@ const BusinessCardEditor = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const { data: initialTplData } = await axios.get(`${API_URL}/user/templates?id=${id}`);
-        const initialTpl = Array.isArray(initialTplData.templates) ? initialTplData.templates[0] : initialTplData.templates;
+
+        // Step 1: Fetch a batch of templates and find the target template by ID
+        const { data: batchData } = await axios.get(`${API_URL}/user/templates?limit=200`);
+        const allFetched = batchData.templates || [];
+        const initialTpl = allFetched.find(t => t._id === id);
+
+        if (!initialTpl) {
+          // Template not found — show empty
+          setTemplates([]);
+          return;
+        }
+
+        // Step 2: Get the subcategory ID from the found template
         const subId = initialTpl?.subcategoryId?._id || initialTpl?.subcategoryId;
-        
+
         if (subId) {
-          const { data: categoryData } = await axios.get(`${API_URL}/user/templates?subcategory=${subId}&limit=100`);
-          const allTemplates = categoryData.templates || [];
-          setTemplates(allTemplates);
-          const startIdx = allTemplates.findIndex(t => t._id === id);
+          // Step 3: Fetch ONLY templates from that same subcategory (business card subcategory)
+          const { data: subData } = await axios.get(`${API_URL}/user/templates?subcategory=${subId}&limit=100`);
+          const subTemplates = subData.templates || [];
+          setTemplates(subTemplates);
+          const startIdx = subTemplates.findIndex(t => t._id === id);
           setActiveIndex(startIdx >= 0 ? startIdx : 0);
         } else {
+          // No subcategory — show only this one template
           setTemplates([initialTpl]);
           setActiveIndex(0);
         }
@@ -64,7 +77,7 @@ const BusinessCardEditor = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [id, API_URL]);
 
   const activeTemplate = useMemo(() => templates[activeIndex], [templates, activeIndex]);
   const subCategoryName = activeTemplate?.subcategoryId?.name || "Business Cards";
