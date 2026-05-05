@@ -33,6 +33,14 @@ export const uploadFile = async (req, res) => {
        fs.unlinkSync(req.file.path);
     }
     console.error('Cloudinary upload error:', error);
+    
+    if (error.message && error.message.includes('File size too large')) {
+      return res.status(400).json({ 
+        message: 'File is too large. Max limit is 10MB.',
+        error: error.message 
+      });
+    }
+
     res.status(500).json({ message: 'Failed to upload file to Cloudinary' });
   }
 };

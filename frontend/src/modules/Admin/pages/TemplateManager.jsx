@@ -104,7 +104,7 @@ const TemplateManager = () => {
       const { data } = await axios.post(`${API_URL}/admin/upload`, formData, config);
       setPreviewUrl(data.url);
     } catch (error) {
-      alert('Upload failed');
+      alert(error.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -236,7 +236,7 @@ const TemplateManager = () => {
       const { data } = await axios.post(`${API_URL}/admin/upload`, formData, config);
       setVideoUrl(data.url);
     } catch (error) {
-      alert('Video upload failed');
+      alert(error.response?.data?.message || 'Video upload failed');
     } finally {
       setUploading(false);
     }
@@ -254,11 +254,18 @@ const TemplateManager = () => {
   };
 
   const filteredTemplates = useMemo(() => {
-    return templates.filter(t =>
-      (activeType === 'all' || t.type === activeType) &&
-      (!eventFilter || (t.eventId?._id === eventFilter || t.eventId === eventFilter)) &&
-      (t.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    return templates.filter(t => {
+      const nameObj = t.name || {};
+      const searchableName = typeof nameObj === 'string' 
+        ? nameObj 
+        : `${nameObj.en || ''} ${nameObj.hi || ''} ${nameObj.gu || ''} ${nameObj.mr || ''}`;
+        
+      return (
+        (activeType === 'all' || t.type === activeType) &&
+        (!eventFilter || (t.eventId?._id === eventFilter || t.eventId === eventFilter)) &&
+        (searchableName.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    });
   }, [templates, activeType, searchQuery, eventFilter]);
 
   const isVideoUrl = (url) => {
@@ -360,7 +367,9 @@ const TemplateManager = () => {
                 )}
               </div>
               <div className="p-4">
-                <h4 className="font-bold text-sm text-slate-800">{tpl.name}</h4>
+                <h4 className="font-bold text-sm text-slate-800">
+                  {typeof tpl.name === 'object' ? tpl.name.en : tpl.name}
+                </h4>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <p className="text-[9px] font-black text-[#ef4444] uppercase tracking-tighter">{tpl.categoryId?.name || 'Uncategorized'}</p>
                   {tpl.subcategoryId && (
@@ -591,7 +600,9 @@ const TemplateManager = () => {
         variant="danger"
       >
         <div className="text-center p-4">
-          <p className="mb-6 font-bold text-slate-500 uppercase text-xs">Permanently remove "{showDeleteConfirm?.name}"?</p>
+          <p className="mb-6 font-bold text-slate-500 uppercase text-xs">
+            Permanently remove "{typeof showDeleteConfirm?.name === 'object' ? showDeleteConfirm?.name?.en : showDeleteConfirm?.name}"?
+          </p>
           <div className="flex gap-4">
             <Button onClick={() => setShowDeleteConfirm(null)} variant="ghost" className="flex-1">Cancel</Button>
             <Button onClick={handleDelete} className="flex-1 bg-red-500 text-white">Delete</Button>
@@ -606,7 +617,9 @@ const TemplateManager = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
               <div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Business Card Field Designer</p>
-                <h2 className="text-sm font-black text-slate-800 tracking-tight">{fieldDesignerTemplate.name}</h2>
+                <h2 className="text-sm font-black text-slate-800 tracking-tight">
+                  {typeof fieldDesignerTemplate.name === 'object' ? fieldDesignerTemplate.name.en : fieldDesignerTemplate.name}
+                </h2>
               </div>
               <button
                 onClick={() => { setShowFieldDesigner(false); setFieldDesignerTemplate(null); }}

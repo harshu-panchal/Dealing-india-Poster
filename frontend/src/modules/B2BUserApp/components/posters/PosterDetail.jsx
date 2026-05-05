@@ -367,7 +367,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
           </button>
           <div className="flex-1 flex items-center gap-2 overflow-hidden">
             <h3 className="text-[1.1rem] font-bold truncate">{(currentTemplate.categoryId?.name || currentTemplate.category || 'Custom Poster')} 🌙</h3>
-            <span className="text-[0.95rem] opacity-80 font-black tracking-tighter">({currentTemplate._id?.slice(-4).toUpperCase()})</span>
+            <span className="text-[0.95rem] opacity-80 font-black tracking-tighter">({currentTemplate.categoryId?.templateCount || 0})</span>
           </div>
           <button className="bg-[#fde047] text-[#854d0e] px-4 py-1.5 rounded-[4px] text-[0.7rem] font-black active:scale-95 transition-transform shadow-sm border-none uppercase tracking-tighter cursor-pointer">
             UPGRADE

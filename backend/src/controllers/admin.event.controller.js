@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Event from '../models/event.model.js';
 import Template from '../models/template.model.js';
 
@@ -62,7 +63,7 @@ export const deleteEvent = async (req, res) => {
 // @route   GET /api/user/events
 export const getPublicEvents = async (req, res) => {
   try {
-    const events = await Event.find({ isActive: true }).sort({ date: 1 });
+    const events = await Event.find({ isActive: { $ne: false } }).sort({ date: 1 });
     res.status(200).json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -73,7 +74,10 @@ export const getPublicEvents = async (req, res) => {
 // @route   GET /api/user/events/:id/templates
 export const getEventTemplates = async (req, res) => {
   try {
-    const templates = await Template.find({ eventId: req.params.id, isActive: true });
+    const templates = await Template.find({ 
+      eventId: new mongoose.Types.ObjectId(req.params.id), 
+      isActive: { $ne: false } 
+    });
     res.status(200).json(templates);
   } catch (error) {
     res.status(500).json({ message: error.message });

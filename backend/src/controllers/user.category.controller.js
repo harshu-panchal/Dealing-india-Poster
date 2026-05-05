@@ -12,10 +12,14 @@ export const getPublicCategories = async (req, res) => {
     const categories = await Category.find({ isActive: true }).sort({ displayOrder: 1 });
     
     const categoryList = await Promise.all(categories.map(async (cat) => {
-      const subcategories = await Subcategory.find({ parentId: cat._id, isActive: true }).sort({ displayOrder: 1 });
+      const [subcategories, templateCount] = await Promise.all([
+        Subcategory.find({ parentId: cat._id, isActive: { $ne: false } }).sort({ displayOrder: 1 }),
+        Template.countDocuments({ categoryId: cat._id, isActive: { $ne: false } })
+      ]);
       
       const localizedCat = localizeObject(cat.toObject ? cat.toObject() : cat, lang);
       localizedCat.subcategories = subcategories.map(sub => localizeObject(sub.toObject ? sub.toObject() : sub, lang));
+      localizedCat.templateCount = templateCount;
       
       return localizedCat;
     }));
@@ -98,6 +102,25 @@ export const getPublicTemplates = async (req, res) => {
       .populate('categoryId', 'name image')
       .populate('subcategoryId', 'name image');
 
+    // Fetch template counts for all categories involved in the current page
+    const categoryIds = [...new Set(templates.map(t => {
+      const id = t.categoryId?._id || t.categoryId;
+      return id ? id.toString() : null;
+    }).filter(Boolean))];
+
+    const categoryCounts = await Promise.all(categoryIds.map(async (catId) => {
+      try {
+        const count = await Template.countDocuments({ 
+          categoryId: new mongoose.Types.ObjectId(catId), 
+          isActive: { $ne: false } 
+        });
+        return { catId, count };
+      } catch (err) {
+        return { catId, count: 0 };
+      }
+    }));
+    const countMap = categoryCounts.reduce((acc, curr) => ({ ...acc, [curr.catId]: curr.count }), {});
+
     const localizedTemplates = templates.map(tpl => {
       const t = tpl.toObject();
       const localized = localizeObject(t, lang);
@@ -109,6 +132,7 @@ export const getPublicTemplates = async (req, res) => {
         const localizedCat = localizeObject(t.categoryId, lang);
         // Ensure _id is a string for reliable === comparisons on frontend
         localizedCat._id = t.categoryId._id?.toString();
+        localizedCat.templateCount = countMap[localizedCat._id] || 0;
         localized.categoryId = localizedCat;
       }
       if (t.subcategoryId) {

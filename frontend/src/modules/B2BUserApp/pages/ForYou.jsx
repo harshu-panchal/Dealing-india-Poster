@@ -40,6 +40,44 @@ const ForYou = () => {
     return activeType === 'video' ? isVideo : !isVideo;
   }, [activeType]);
 
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+      setDebouncedQuery(transcript); // Execute search immediately after voice input
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   // Debounce logic
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 500);
@@ -246,56 +284,148 @@ const ForYou = () => {
     );
   }
 
+  // The main return handles the conditional UI
+  const renderSearchHome = () => (
+    <div className="p-4 space-y-8 bg-white min-h-[calc(100vh-64px)]">
+      {/* Trending Searches */}
+      <section>
+        <h3 className="text-slate-500 text-[0.8rem] font-bold mb-4 uppercase tracking-wider">Trending Searches</h3>
+        <div className="flex flex-wrap gap-2">
+          {["Today's Special", "Birthday Wishes", "Anniversary Wishes", "Invitation", "Religious Posters"].map(term => (
+            <button 
+              key={term}
+              onClick={() => setSearchQuery(term)}
+              className="px-4 py-2 rounded-lg border border-[#ef4444]/30 text-[#ef4444] text-xs font-bold bg-white shadow-sm hover:bg-red-50 transition-colors"
+            >
+              {term}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Suggested Categories */}
+      <section>
+        <h3 className="text-slate-500 text-[0.8rem] font-bold mb-4 uppercase tracking-wider">Suggested Categories</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {categories.slice(0, 6).map(cat => (
+            <div 
+              key={cat._id}
+              onClick={() => { 
+                setActiveCategory(cat._id); 
+                setIsSearchMode(false); 
+              }}
+              className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col cursor-pointer active:scale-95 transition-all hover:shadow-md"
+            >
+              <div className="aspect-[4/3] bg-slate-50 relative">
+                <img src={cat.image} className="w-full h-full object-cover" alt="" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2">
+                  <span className="text-[0.7rem] font-bold text-white drop-shadow-md">{cat.name}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+
   return (
     <div className="bg-[#f8fafc] min-h-screen pb-20">
       {/* Sticky Top Header */}
-      <div className="sticky top-0 z-[50] shadow-sm bg-white">
-        <div className="bg-white p-1 px-4 text-center border-b border-[#f1f5f9]">
-          <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">{t("supportRating")}</p>
-        </div>
-
-        <section className="p-3 px-2 bg-white flex justify-center">
-          <div className="w-full lg:max-w-4xl">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          </div>
-        </section>
-
-        <section className="bg-white pt-1 pb-4 relative border-b border-[#f1f5f9] flex justify-center">
-          <div className="flex px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth lg:max-w-6xl w-full gap-1.5 px-4 items-center">
+      {isSearchMode ? (
+        <div className="sticky top-0 z-[60] bg-[#ef4444] p-3 flex items-center gap-3 shadow-md">
+          <button 
+            onClick={() => {
+              if (searchQuery) {
+                setSearchQuery('');
+              } else {
+                setIsSearchMode(false);
+              }
+            }} 
+            className="text-white p-1"
+          >
+            <ChevronRight className="rotate-180" size={24} />
+          </button>
+          <div className="flex-1 bg-white rounded-md flex items-center px-3 py-1.5 gap-2">
+            <Search className="text-slate-400" size={18} />
+            <input 
+              autoFocus
+              type="text" 
+              placeholder="Search P..." 
+              className="flex-1 border-none outline-none text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
             <button 
-              onClick={() => setActiveType(prev => prev === 'video' ? 'image' : 'video')}
-              className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 shadow-sm ${activeType === 'video' ? 'bg-[#b91c1c] text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+              onClick={startListening} 
+              className={`p-1 transition-all duration-300 ${isListening ? 'text-blue-500 scale-125 animate-pulse' : 'text-[#ef4444]'}`}
             >
-              <Video size={18} fill={activeType === 'video' ? 'white' : 'none'} className={activeType === 'video' ? 'text-white' : 'text-slate-400'} /> {t("video")}
+              <Mic size={18} />
             </button>
-
-            <div className="w-[1px] h-8 bg-slate-200 mx-1.5 self-center shrink-0" />
-
-            <button
-               onClick={() => { setActiveCategory('All'); setActiveSubcategory(null); }}
-               className={`px-6 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap shrink-0 transition-colors ${activeCategory === 'All' ? 'bg-[#1e1e1e] text-white' : 'bg-slate-100 text-slate-500'}`}
-            >
-              {t("all")}
-            </button>
-
-            {categories.filter(cat => !cat.name.toLowerCase().includes('business card')).map(cat => (
-              <button
-                key={cat._id}
-                onClick={() => { 
-                   setActiveCategory(cat._id === activeCategory ? 'All' : cat._id);
-                   setActiveSubcategory(null);
-                }}
-                className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap shrink-0 transition-colors ${activeCategory === cat._id ? 'bg-[#1e1e1e] text-white' : 'bg-slate-100 text-slate-500'}`}
-              >
-                {cat.name}
-              </button>
-            ))}
           </div>
-        </section>
-      </div>
+          <button 
+            onClick={() => {
+              if (searchQuery.trim()) {
+                setDebouncedQuery(searchQuery);
+              }
+            }}
+            className="bg-white/20 text-white px-4 py-1.5 rounded-md text-sm font-bold border border-white/30 active:scale-95 transition-all"
+          >
+            Search
+          </button>
+        </div>
+      ) : (
+        <div className="sticky top-0 z-[50] shadow-sm bg-white">
+          <div className="bg-white p-1 px-4 text-center border-b border-[#f1f5f9]">
+            <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">{t("supportRating")}</p>
+          </div>
+
+          <section className="p-3 px-2 bg-white flex justify-center">
+            <div className="w-full lg:max-w-4xl" onClick={() => setIsSearchMode(true)}>
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+          </section>
+
+          <section className="bg-white pt-1 pb-4 relative border-b border-[#f1f5f9] flex justify-center">
+            <div className="flex px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth lg:max-w-6xl w-full gap-1.5 px-4 items-center">
+              <button 
+                onClick={() => setActiveType(prev => prev === 'video' ? 'image' : 'video')}
+                className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 shadow-sm ${activeType === 'video' ? 'bg-[#b91c1c] text-white' : 'bg-white text-slate-600 border border-slate-200'}`}
+              >
+                <Video size={18} fill={activeType === 'video' ? 'white' : 'none'} className={activeType === 'video' ? 'text-white' : 'text-slate-400'} /> {t("video")}
+              </button>
+
+              <div className="w-[1px] h-8 bg-slate-200 mx-1.5 self-center shrink-0" />
+
+              <button
+                 onClick={() => { setActiveCategory('All'); setActiveSubcategory(null); }}
+                 className={`px-6 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap shrink-0 transition-colors ${activeCategory === 'All' ? 'bg-[#1e1e1e] text-white' : 'bg-slate-100 text-slate-500'}`}
+              >
+                {t("all")}
+              </button>
+
+              {categories.filter(cat => !cat.name.toLowerCase().includes('business card')).map(cat => (
+                <button
+                  key={cat._id}
+                  onClick={() => { 
+                     setActiveCategory(cat._id === activeCategory ? 'All' : cat._id);
+                     setActiveSubcategory(null);
+                  }}
+                  className={`px-5 py-2.5 rounded-full text-[0.85rem] lg:text-base font-bold whitespace-nowrap shrink-0 transition-colors ${activeCategory === cat._id ? 'bg-[#1e1e1e] text-white' : 'bg-slate-100 text-slate-500'}`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       <div className="pt-2">
-        {searchQuery.trim() !== '' ? (
+        {isSearchMode && !searchQuery.trim() ? (
+          renderSearchHome()
+        ) : searchQuery.trim() !== '' ? (
           <div className="p-4">
             <div className="mb-6">
                <h2 className="text-xl font-bold text-slate-800 tracking-tight">{t("searchResults")}</h2>
