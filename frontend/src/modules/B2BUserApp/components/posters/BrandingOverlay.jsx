@@ -49,6 +49,14 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false })
                 {userData.business_name || ''}
               </span>
             )}
+            {userData.enabledFields?.designation && userData.designation && (
+              <span
+                className={`absolute ${detailSizeClass} text-[#ef4444] font-black uppercase tracking-tight whitespace-nowrap`}
+                style={{ left: userData.designationPos?.x || '2%', top: userData.designationPos?.y || '60%', textShadow: '0 1px 3px rgba(0,0,0,0.8)', zIndex: 95 }}
+              >
+                {userData.designation}
+              </span>
+            )}
             {userData.phone_number && (
               <span
                 className={`absolute ${detailSizeClass} text-white/80 font-semibold whitespace-nowrap`}
@@ -99,6 +107,11 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false })
           {userData.enabledFields?.business_name !== false && (
             <span className={`${nameSizeClass} font-black text-white/90 uppercase tracking-tight truncate leading-[1.1]`}>
               {userData.business_name || ''}
+            </span>
+          )}
+          {userData.enabledFields?.designation && userData.designation && (
+            <span className={`${detailSizeClass} text-red-500 font-black uppercase tracking-tight truncate leading-[1.1]`}>
+              {userData.designation}
             </span>
           )}
           {userData.phone_number && (

@@ -23,8 +23,7 @@ const Trending = () => {
       const { data: catData } = await axios.get(`${API_URL}/user/categories`);
       setCategories(catData);
 
-      const preferredLanguage = localStorage.getItem('preferred_language') || 'English';
-      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=200&language=${preferredLanguage}`);
+      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=200&language=English`);
       setAllTemplates(tplData.templates);
     } catch (error) {
       console.error('Fetch data error:', error);

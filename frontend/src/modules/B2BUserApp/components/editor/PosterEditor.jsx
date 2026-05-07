@@ -54,7 +54,7 @@ const PosterEditor = ({ template, onClose }) => {
   const getName = (nameObj) => {
     if (!nameObj) return '';
     if (typeof nameObj === 'string') return nameObj;
-    if (typeof nameObj === 'object') return nameObj.en || nameObj.hi || nameObj.gu || nameObj.mr || Object.values(nameObj)[0] || '';
+    if (typeof nameObj === 'object') return nameObj.en || Object.values(nameObj)[0] || '';
     return '';
   };
 
@@ -83,6 +83,7 @@ const PosterEditor = ({ template, onClose }) => {
       email: savedData.email || '',
       address: savedData.address || '',
       gst_number: savedData.gst_number || '',
+      designation: savedData.designation || '',
       extraTexts: savedData.extraTexts || [],
       extraPhotos: savedData.extraPhotos || [],
       stickers: savedData.stickers || [],
@@ -240,6 +241,7 @@ const PosterEditor = ({ template, onClose }) => {
   const emailDefaultY = framePos.email?.y || (hasFrameApplied ? '90%' : '91%');
   const addressDefaultY = framePos.address?.y || (hasFrameApplied ? '92%' : '94%');
   const gstDefaultY = framePos.gst?.y || (hasFrameApplied ? '94%' : '96%');
+  const designationDefaultY = framePos.designation?.y || (hasFrameApplied ? '96%' : '98%');
   const userPhotoDefault = { x: framePos.userPhoto?.x || '70%', y: framePos.userPhoto?.y || (hasFrameApplied ? '74%' : '70%') };
   const logoDefault = { x: framePos.logo?.x || '10%', y: framePos.logo?.y || (hasFrameApplied ? '80%' : '75%') };
 
@@ -261,6 +263,7 @@ const PosterEditor = ({ template, onClose }) => {
   const effectiveEmailPos = migratePos(localUserData.emailPos, { x: framePos.email?.x || '5%', y: emailDefaultY });
   const effectiveAddressPos = migratePos(localUserData.addressPos, { x: framePos.address?.x || '5%', y: addressDefaultY });
   const effectiveGstPos = migratePos(localUserData.gstPos, { x: framePos.gst?.x || '5%', y: gstDefaultY });
+  const effectiveDesignationPos = migratePos(localUserData.designationPos, { x: framePos.designation?.x || '5%', y: designationDefaultY });
 
   const toPx = (value, axis = 'x', customRef = null) => {
     if (value === undefined || value === null) return 0;
@@ -389,6 +392,7 @@ const PosterEditor = ({ template, onClose }) => {
             website: localUserData.website,
             email: localUserData.email,
             gstNumber: localUserData.gst_number,
+            designation: localUserData.designation,
             address: localUserData.address
           },
           { headers: { Authorization: `Bearer ${user.accessToken}` } }
@@ -469,7 +473,7 @@ const PosterEditor = ({ template, onClose }) => {
                   className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none"
                 >
                   <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
-                  <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealing India</span>
+                  <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
                 </div>
               </div>
 
@@ -613,6 +617,26 @@ const PosterEditor = ({ template, onClose }) => {
                       >
                         <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                           {localUserData.email}
+                        </div>
+                      </motion.div>
+                    )}
+                    {localUserData.enabledFields?.designation && localUserData.designation && (
+                      <motion.div
+                        drag
+                        dragMomentum={false}
+                        dragConstraints={previewBoundsRef}
+                        onDragStart={(e, info) => onDragStart('designation', e, info)}
+                        onDragEnd={(e, info) => updateLocalField('designationPos', getNextPosition('designation', e, info))}
+                        className="pointer-events-auto absolute cursor-move touch-none"
+                        style={{
+                          left: effectiveDesignationPos.x,
+                          top: effectiveDesignationPos.y,
+                          zIndex: 95
+                        }}
+                        animate={{ x: 0, y: 0 }}
+                      >
+                        <div className="whitespace-nowrap font-black" style={{ ...getStyle('detail'), color: '#ef4444' }}>
+                          {localUserData.designation}
                         </div>
                       </motion.div>
                     )}
@@ -853,6 +877,17 @@ const PosterEditor = ({ template, onClose }) => {
                         <div className="flex items-center gap-3">
                           <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.email || ''} onChange={e => updateLocalField('email', e.target.value)} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.email ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('email')}>{localUserData.enabledFields?.email && <Check size={16} className="text-white" />}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {subTab === 'Misc' && (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Designation / Role</label>
+                        <div className="flex items-center gap-3">
+                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" placeholder="e.g. Founder, CEO, Manager" value={localUserData.designation || ''} onChange={e => updateLocalField('designation', e.target.value)} />
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.designation ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('designation')}>{localUserData.enabledFields?.designation && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
                     </div>

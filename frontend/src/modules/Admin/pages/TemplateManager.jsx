@@ -17,7 +17,7 @@ import AdminModal from '../components/ui/AdminModal';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import BusinessCardFieldDesigner from '../components/BusinessCardFieldDesigner';
 
-const LANGUAGES = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Punjabi', 'Bengali'];
+const LANGUAGES = ['English'];
 
 const TemplateManager = () => {
   const { admin } = useAdminAuth();
@@ -167,12 +167,7 @@ const TemplateManager = () => {
     }
 
     const data = {
-      name: {
-        en: formData.get('name_en'),
-        hi: formData.get('name_hi') || '',
-        gu: formData.get('name_gu') || '',
-        mr: formData.get('name_mr') || '',
-      },
+      name: formData.get('name_en'),
       categoryId: formData.get('category'),
       subcategoryId: formData.get('subcategory') || undefined,
       eventId: formData.get('eventId') || undefined,
@@ -258,7 +253,7 @@ const TemplateManager = () => {
       const nameObj = t.name || {};
       const searchableName = typeof nameObj === 'string' 
         ? nameObj 
-        : `${nameObj.en || ''} ${nameObj.hi || ''} ${nameObj.gu || ''} ${nameObj.mr || ''}`;
+        : (nameObj.en || '');
         
       return (
         (activeType === 'all' || t.type === activeType) &&
@@ -407,13 +402,8 @@ const TemplateManager = () => {
       >
         <form onSubmit={handleCreateOrUpdate} className="space-y-6">
           <div className="space-y-4">
-             <div className="grid grid-cols-2 gap-4">
-                <Input name="name_en" defaultValue={editingTemplate?.name?.en || (typeof editingTemplate?.name === 'string' ? editingTemplate.name : '')} placeholder="Name (English)" required className="h-12 font-bold" />
-                <Input name="name_hi" defaultValue={editingTemplate?.name?.hi} placeholder="Name (Hindi)" className="h-12 font-bold" />
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-                <Input name="name_gu" defaultValue={editingTemplate?.name?.gu} placeholder="Name (Gujarati)" className="h-12 font-bold" />
-                <Input name="name_mr" defaultValue={editingTemplate?.name?.mr} placeholder="Name (Marathi)" className="h-12 font-bold" />
+             <div className="grid grid-cols-1 gap-4">
+                <Input name="name_en" defaultValue={editingTemplate?.name?.en || (typeof editingTemplate?.name === 'string' ? editingTemplate.name : '')} placeholder="Template Name" required className="h-12 font-bold" />
              </div>
           </div>
 
@@ -479,12 +469,9 @@ const TemplateManager = () => {
               name="language"
               defaultValue={editingTemplate?.language || 'English'}
               required
-              className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs"
+              className="h-12 rounded-xl bg-slate-50 border-none px-4 font-bold text-xs pointer-events-none"
             >
-              <option value="">Select Language</option>
-              {LANGUAGES.map(lang => (
-                <option key={lang} value={lang}>{lang}</option>
-              ))}
+              <option value="English">English</option>
             </select>
 
             <select

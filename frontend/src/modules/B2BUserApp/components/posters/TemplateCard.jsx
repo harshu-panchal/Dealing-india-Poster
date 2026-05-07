@@ -135,8 +135,8 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
 
     const message = isVideo
-      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`
-      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`;
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -152,7 +152,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
       try {
         await navigator.share({
           title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
-          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealing India Poster!`,
+          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealingindia Poster!`,
           url: posterLink,
         });
       } catch (err) {

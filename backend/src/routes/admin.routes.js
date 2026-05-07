@@ -21,6 +21,8 @@ import upload from '../middlewares/upload.middleware.js';
 import { protectAdmin } from '../middlewares/admin.middleware.js';
 import { createFrame, getFrames, deleteFrame, updateFrame } from '../controllers/frame.controller.js';
 import { createSticker, getAdminStickers, updateSticker, deleteSticker } from '../controllers/sticker.controller.js';
+import { createBackground, getAdminBackgrounds, updateBackground, deleteBackground } from '../controllers/background.controller.js';
+
 
 const router = express.Router();
 
@@ -91,5 +93,12 @@ router.get('/stickers', protectAdmin, getAdminStickers);
 router.post('/stickers', protectAdmin, createSticker);
 router.put('/stickers/:id', protectAdmin, updateSticker);
 router.delete('/stickers/:id', protectAdmin, deleteSticker);
+
+// Background Management Routes
+router.get('/backgrounds', protectAdmin, getAdminBackgrounds);
+router.post('/backgrounds', protectAdmin, createBackground);
+router.put('/backgrounds/:id', protectAdmin, updateBackground);
+router.delete('/backgrounds/:id', protectAdmin, deleteBackground);
+
 
 export default router;

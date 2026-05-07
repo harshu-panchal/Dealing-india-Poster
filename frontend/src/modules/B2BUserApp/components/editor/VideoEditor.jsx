@@ -238,7 +238,7 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false }) =>
         // Text (Black)
         ctx.fillStyle = '#000000';
         ctx.font = '900 24px sans-serif';
-        ctx.fillText('DEALING INDIA', badgeX + 75, badgeY + 45);
+        ctx.fillText('Dealingindia', badgeX + 75, badgeY + 45);
         ctx.restore();
       }
 
@@ -379,8 +379,8 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false }) =>
     const posterLink = `${platformLink}/?templateId=${template._id}`;
 
     const message = isVideo 
-      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`
-      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`;
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -394,7 +394,7 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false }) =>
       try {
         await navigator.share({
           title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
-          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealing India Poster!`,
+          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealingindia Poster!`,
           url: posterLink,
         });
       } catch (err) {

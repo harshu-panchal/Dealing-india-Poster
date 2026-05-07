@@ -25,7 +25,6 @@ const TermsAndConditions = lazy(() => import('./modules/B2BUserApp/pages/TermsAn
 const PrivacyPolicy = lazy(() => import('./modules/B2BUserApp/pages/PrivacyPolicy'));
 const LikedPosters = lazy(() => import('./modules/B2BUserApp/pages/LikedPosters'));
 const AboutUs = lazy(() => import('./modules/B2BUserApp/pages/AboutUs'));
-const LanguageSelector = lazy(() => import('./modules/B2BUserApp/pages/LanguageSelector'));
 const Business = lazy(() => import('./modules/B2BUserApp/pages/Business'));
 const ViewAll = lazy(() => import('./modules/B2BUserApp/pages/ViewAll'));
 
@@ -43,11 +42,15 @@ const UserDetail = lazy(() => import('./modules/Admin/pages/UserDetail'));
 const FrameManager = lazy(() => import('./modules/Admin/pages/FrameManager'));
 const SystemSettings = lazy(() => import('./modules/Admin/pages/SystemSettings'));
 const StickerManager = lazy(() => import('./modules/Admin/pages/StickerManager'));
+const BackgroundManager = lazy(() => import('./modules/Admin/pages/BackgroundManager'));
+
 
 import { AuthProvider, useAuth } from './modules/B2BUserApp/context/AuthContext';
 import { EditorProvider, useEditor } from './modules/B2BUserApp/context/EditorContext';
 import PosterEditor from './modules/B2BUserApp/components/editor/PosterEditor';
+import CustomPosterEditor from './modules/B2BUserApp/components/editor/CustomPosterEditor';
 import PosterDetail from './modules/B2BUserApp/components/posters/PosterDetail';
+
 import OnboardingModal from './modules/B2BUserApp/components/modals/OnboardingModal';
 import { AdminAuthProvider } from './modules/Admin/context/AdminAuthContext';
 
@@ -70,16 +73,15 @@ function AppContent() {
   const [showSidebar, setShowSidebar] = useState(false);
   const { user, loading } = useAuth();
 
-  React.useEffect(() => {
-    axios.defaults.headers.common['lang'] = i18n.language || 'en';
-  }, [i18n.language]);
   const isAuthenticated = !!user; 
   const isProfileIncomplete = isAuthenticated && (!user.user?.name || !user.user?.email || !user.user?.mobileNumber);
 
   const { 
     editingTemplate, closeEditor, 
-    viewingDetail, closeDetail, openEditor 
+    viewingDetail, closeDetail, openEditor,
+    customPosterEditorOpen, closeCustomPosterEditor
   } = useEditor();
+
   const location = useLocation();
 
   if (loading) return <ShimmerLayout />;
@@ -110,7 +112,9 @@ function AppContent() {
                <Route path="events" element={<EventManager />} />
                <Route path="frames" element={<FrameManager />} />
                <Route path="stickers" element={<StickerManager />} />
+               <Route path="backgrounds" element={<BackgroundManager />} />
                <Route path="settings" element={<SystemSettings />} />
+
             </Route>
           </Routes>
         </Suspense>
@@ -173,7 +177,6 @@ function AppContent() {
                 <Route path="/event/:id/templates" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><EventTemplates /></UserPrivateRoute>} />
                 <Route path="/business-card/editor/:id" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><BusinessCardEditor /></UserPrivateRoute>} />
                 <Route path="/about" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><AboutUs /></UserPrivateRoute>} />
-                <Route path="/language" element={<UserPrivateRoute isAuthenticated={isAuthenticated}><LanguageSelector /></UserPrivateRoute>} />
                 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -205,7 +208,14 @@ function AppContent() {
             onClose={closeEditor} 
           />
         )}
+
+        {customPosterEditorOpen && (
+          <CustomPosterEditor 
+            onClose={closeCustomPosterEditor} 
+          />
+        )}
       </div>
+
     </div>
   );
 }

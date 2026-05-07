@@ -1,11 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, User, HelpCircle, Search, Mic, CalendarCheck } from 'lucide-react';
+import { Bell, User, HelpCircle, Search, Mic, CalendarCheck, Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useEditor } from '../../context/EditorContext';
+
 
 const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenSidebar }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { openCustomPosterEditor } = useEditor();
+
 
   return (
     <nav 
@@ -50,6 +54,13 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
         )}
 
         <div className="flex items-center gap-2.5 md:gap-4">
+          <button 
+            onClick={openCustomPosterEditor}
+            className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-[0.7rem] font-black uppercase tracking-widest transition-all border border-white/20 hidden sm:flex items-center gap-2 cursor-pointer"
+          >
+            <Plus size={14} /> Create Custom
+          </button>
+
           <div 
             className="relative text-white flex items-center cursor-pointer"
             onClick={() => navigate('/whats-new')}

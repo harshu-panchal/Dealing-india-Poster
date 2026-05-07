@@ -77,7 +77,7 @@ const POTDCard = ({ poster, onEdit }) => {
       try {
         await navigator.share({
           title: 'Poster of the Day',
-          text: 'Check out this design from Dealing India Poster',
+          text: 'Check out this design from Dealingindia Poster',
           url: window.location.href,
         });
       } catch (err) { }

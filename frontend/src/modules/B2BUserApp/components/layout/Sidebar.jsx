@@ -4,31 +4,26 @@ import {
   Globe, LayoutGrid, FolderPlus, Heart, 
   CalendarDays, Settings, Share2, HelpCircle, 
   ThumbsUp, Info, User, X, LogOut, AlertCircle, Award, Briefcase, 
-  MessageSquare, Instagram, Facebook, Youtube, ChevronDown, ShieldCheck, FileText
+  MessageSquare, Instagram, Facebook, Youtube, ChevronDown, ShieldCheck, FileText, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useEditor } from '../../context/EditorContext';
 import { useTranslation } from 'react-i18next';
+
 
 const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { openCustomPosterEditor } = useEditor();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const [appSettings, setAppSettings] = useState(null);
   const [expandedGroupId, setExpandedGroupId] = useState(null);
-  const [contentLanguage, setContentLanguage] = useState(localStorage.getItem('preferred_language') || 'English');
-  const LANGUAGES_APP = [
-    { id: 'en', name: 'English' },
-    { id: 'hi', name: 'Hindi' },
-    { id: 'gu', name: 'Gujarati' },
-    { id: 'mr', name: 'Marathi' }
-  ];
-
-  const LANGUAGES_CONTENT = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Punjabi', 'Bengali'];
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
@@ -57,20 +52,14 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   const menuItems = [
     { icon: <LayoutGrid size={20} />, label: t("home"), path: "/" },
     { icon: <User size={20} />, label: t("profile"), path: "/profile" },
-    { icon: <Globe size={20} />, label: t("makeYourWebsite"), color: "text-blue-600", path: "/dashboard" },
+    { icon: <Sparkles size={20} />, label: "Create Your Poster", color: "text-blue-600", onClick: openCustomPosterEditor },
     { icon: <Briefcase size={20} />, label: t("categories"), path: "/categories" },
+
+
     { icon: <Heart size={20} />, label: t("likedPosters"), path: "/liked-posters" },
     { icon: <FolderPlus size={20} />, label: t("myPosters"), path: "/my-posters" },
     { icon: <Heart size={20} />, label: t("trending"), path: "/trending" },
     { icon: <CalendarDays size={20} />, label: t("calendar"), path: "/calendar" },
-    { 
-        id: 'language-group',
-        icon: <Globe size={20} />, 
-        label: t("selectLanguage"), 
-        isGroup: true,
-        isLanguage: true,
-        subItems: []
-    },
     { icon: <Award size={20} />, label: t("referAndEarn"), path: "/referral" },
     { icon: <Settings size={20} />, label: t("settings"), path: "/dashboard" },
 
@@ -146,75 +135,6 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
       <div className="flex-1 overflow-y-auto py-2">
         <div className="flex flex-col">
           {menuItems.map((item, index) => {
-                if (item.isLanguage) {
-                   return (
-                      <div key={index} className="flex flex-col">
-                         <button 
-                           onClick={() => setExpandedGroupId(expandedGroupId === item.id ? null : item.id)}
-                           className={`flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-none bg-transparent group`}
-                         >
-                            <div className="flex items-center gap-4 text-[#334155]">
-                               <div className="text-[#64748b] group-hover:text-[#ef4444] transition-colors">
-                                 {item.icon}
-                               </div>
-                               <span className="text-[0.92rem] font-bold group-hover:text-[#ef4444] transition-colors">
-                                 {item.label}
-                               </span>
-                            </div>
-                            <ChevronDown size={16} className={`text-[#64748b] transition-transform duration-300 ${expandedGroupId === item.id ? 'rotate-180' : ''}`} />
-                         </button>
-                         
-                         <AnimatePresence>
-                            {expandedGroupId === item.id && (
-                               <motion.div 
-                                 initial={{ height: 0, opacity: 0 }}
-                                 animate={{ height: 'auto', opacity: 1 }}
-                                 exit={{ height: 0, opacity: 0 }}
-                                 className="overflow-hidden bg-slate-50/50 px-6 py-4 space-y-4"
-                               >
-                                  {/* App Language Dropdown */}
-                                  <div className="space-y-1.5">
-                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("appLanguage")}</label>
-                                     <div className="relative">
-                                        <select 
-                                          value={i18n.language}
-                                          onChange={(e) => {
-                                             const val = e.target.value;
-                                             i18n.changeLanguage(val);
-                                          }}
-                                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none focus:border-red-500 transition-colors"
-                                        >
-                                           {LANGUAGES_APP.map(lang => <option key={lang.id} value={lang.id}>{lang.name}</option>)}
-                                        </select>
-                                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                     </div>
-                                  </div>
-
-                                  {/* Content Language Dropdown */}
-                                  <div className="space-y-1.5">
-                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("contentLanguage")}</label>
-                                     <div className="relative">
-                                        <select 
-                                          value={contentLanguage}
-                                          onChange={(e) => {
-                                             const val = e.target.value;
-                                             setContentLanguage(val);
-                                             localStorage.setItem('preferred_language', val);
-                                             window.location.reload();
-                                          }}
-                                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none appearance-none focus:border-red-500 transition-colors"
-                                        >
-                                           {LANGUAGES_CONTENT.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-                                        </select>
-                                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                     </div>
-                                  </div>
-                               </motion.div>
-                            )}
-                         </AnimatePresence>
-                      </div>
-                   );
-                }
 
                 if (item.isGroup) {
                return (

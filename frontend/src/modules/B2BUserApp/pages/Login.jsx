@@ -428,8 +428,8 @@ const Login = () => {
 
       {/* Footer Disclaimer */}
       <p className="mt-8 text-[0.6rem] text-slate-400 font-bold uppercase tracking-widest leading-loose text-center max-w-[300px]">
-        Official B2B Portal for Dealing India<br/>
-        <span className="text-slate-300">© 2026 Dealing India</span>
+        Official B2B Portal for Dealingindia<br/>
+        <span className="text-slate-300">© 2026 Dealingindia</span>
       </p>
 
       {/* Policy Modal */}

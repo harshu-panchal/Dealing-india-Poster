@@ -2,10 +2,9 @@ import mongoose from 'mongoose';
 
 const subcategorySchema = new mongoose.Schema({
   name: {
-    en: { type: String, required: [true, 'English name is required'], trim: true },
-    hi: { type: String, trim: true },
-    gu: { type: String, trim: true },
-    mr: { type: String, trim: true },
+    type: String,
+    required: [true, 'Subcategory name is required'],
+    trim: true,
   },
   slug: {
     type: String,

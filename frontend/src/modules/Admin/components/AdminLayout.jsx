@@ -61,7 +61,9 @@ const AdminLayout = () => {
         { title: 'User Management', path: '/admin/users', icon: Users },
         { title: 'Music Library', path: '/admin/music', icon: Music },
         { title: 'Template Manager', path: '/admin/templates', icon: ImageIcon },
+        { title: 'Poster Backgrounds', path: '/admin/backgrounds', icon: ImageIcon },
         { title: 'Layout Frames', path: '/admin/frames', icon: Sparkles },
+
         { title: 'Sticker Registry', path: '/admin/stickers', icon: Sparkles },
       ]
     },
@@ -114,7 +116,7 @@ const AdminLayout = () => {
             <Layers size={18} strokeWidth={2.5} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 leading-none mb-1">DEALING INDIA</span>
+            <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 leading-none mb-1">Dealingindia</span>
             <span className="text-[0.7rem] font-black text-[var(--admin-text-main)] tracking-normal uppercase">POSTER ADMIN</span>
           </div>
         </div>

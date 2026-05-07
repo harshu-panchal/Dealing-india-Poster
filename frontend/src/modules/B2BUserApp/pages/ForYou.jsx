@@ -109,12 +109,11 @@ const ForYou = () => {
 
       try {
         setIsSearching(true);
-        const preferredLanguage = localStorage.getItem('preferred_language') || 'English';
         const params = { 
           search: debouncedQuery, 
           limit: 50, 
           type: activeType,
-          language: preferredLanguage
+          language: 'English'
         };
         if (activeCategory !== 'All') {
           params.category = activeCategory;
@@ -155,8 +154,7 @@ const ForYou = () => {
       setSpecialItems(mixedSubcategories.sort(() => 0.5 - Math.random()));
 
       // Fetch Templates
-      const preferredLanguage = localStorage.getItem('preferred_language') || 'English';
-      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400&language=${preferredLanguage}`);
+      const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400&language=English`);
       const templates = (tplData.templates || []).filter(t => !isBusinessCardTemplate(t));
       setAllTemplates(templates);
       
@@ -505,18 +503,49 @@ const ForYou = () => {
               <div>
                  <h2 className="text-xl font-bold text-[#0f172a]">
                     {categories.find(c => c._id === activeCategory)?.name || activeCategory}
-                    {activeSubcategory && ` > ${specialItems.find(s => s._id === activeSubcategory)?.name}`}
+                    {activeSubcategory && ` > ${categories.find(c => c._id === activeCategory)?.subcategories?.find(s => s._id === activeSubcategory)?.name}`}
                     {activeType === 'video' && ' (Videos)'}
                  </h2>
                  <p className="text-sm text-[#64748b]">Showing {activeType}s for your selection</p>
               </div>
               <button 
-                 onClick={() => { setActiveCategory('All'); setActiveSubcategory(null); }}
-                 className="text-[0.7rem] font-bold text-orange-500 bg-orange-50 px-3 py-1.5 rounded-lg"
+                 onClick={() => { 
+                   if (activeSubcategory) {
+                     setActiveSubcategory(null);
+                   } else {
+                     setActiveCategory('All');
+                   }
+                 }}
+                 className="text-[0.7rem] font-bold text-orange-500 bg-orange-50 px-3 py-1.5 rounded-lg border-none"
               >
                  Reset
               </button>
             </div>
+
+            {/* Subcategories List for Active Category */}
+            {!activeSubcategory && categories.find(c => c._id === activeCategory)?.subcategories?.length > 0 && (
+              <div className="mb-8 px-2">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em]">Subcategories</h3>
+                </div>
+                <div className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1">
+                  {categories.find(c => c._id === activeCategory).subcategories.map(sub => (
+                    <div 
+                      key={sub._id} 
+                      onClick={() => setActiveSubcategory(sub._id)}
+                      className="min-w-[120px] w-[120px] group cursor-pointer"
+                    >
+                      <div className="aspect-square bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-2 relative">
+                        <img src={sub.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={sub.name} />
+                        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+                      </div>
+                      <span className="text-[0.7rem] font-black text-slate-700 text-center block truncate uppercase tracking-tighter">{sub.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allTemplates
                 .filter(t => {
@@ -529,6 +558,19 @@ const ForYou = () => {
                 <TemplateCard key={tpl._id} template={tpl} variant="regular" onClick={() => openDetail(tpl)} />
               ))}
             </div>
+            
+            {allTemplates.filter(t => {
+                const matchesCat = t.categoryId === activeCategory || t.categoryId?._id === activeCategory;
+                const matchesSub = !activeSubcategory || t.subcategoryId === activeSubcategory || t.subcategoryId?._id === activeSubcategory;
+                const matchesType = filterByType(t);
+                return matchesCat && matchesSub && matchesType;
+            }).length === 0 && (
+              <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-50 mt-4">
+                <Layers size={48} className="text-slate-100 mx-auto mb-4" />
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">No Posters Found</h3>
+                <p className="text-[0.65rem] font-bold text-slate-400 mt-2">Check back later for new designs in this section.</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-0.5">

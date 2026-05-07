@@ -6,6 +6,8 @@ import { protect } from '../middlewares/auth.middleware.js';
 import { getFrames } from '../controllers/frame.controller.js';
 import { toggleLikeTemplate, getLikedTemplates, checkLikedStatus } from '../controllers/like.controller.js';
 import { getPublicStickers } from '../controllers/sticker.controller.js';
+import { getUserBackgrounds } from '../controllers/background.controller.js';
+
 
 const router = express.Router();
 
@@ -33,5 +35,7 @@ router.get('/events', getPublicEvents);
 router.get('/events/:id/templates', getEventTemplates);
 router.get('/frames', getFrames);
 router.get('/stickers', getPublicStickers);
+router.get('/backgrounds', getUserBackgrounds);
+
 
 export default router;

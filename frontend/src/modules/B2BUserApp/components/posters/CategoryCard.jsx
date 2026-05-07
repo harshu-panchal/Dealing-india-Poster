@@ -10,7 +10,7 @@ const CategoryCard = ({ category, variant = 'default' }) => {
   };
 
   const displayTitle = typeof category.title === 'object' 
-    ? (category.title.en || category.title.hi || category.title.gu || category.title.mr || Object.values(category.title)[0] || 'Category') 
+    ? (category.title.en || Object.values(category.title)[0] || 'Category') 
     : (category.title || 'Category');
 
   return (

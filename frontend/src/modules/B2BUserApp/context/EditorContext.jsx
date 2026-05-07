@@ -11,7 +11,9 @@ export const EditorProvider = ({ children }) => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [initialEditorTab, setInitialEditorTab] = useState('branding');
   const [viewingDetail, setViewingDetail] = useState(null);
+  const [customPosterEditorOpen, setCustomPosterEditorOpen] = useState(false);
   const [likedTemplates, setLikedTemplates] = useState(new Set());
+
   const [userData, setUserData] = useState({
     name: 'Your Name',
     business_name: 'Your Business',
@@ -19,6 +21,7 @@ export const EditorProvider = ({ children }) => {
     website: 'www.yourwebsite.com',
     email: 'user@example.com',
     gst_number: '',
+    designation: 'Your Designation',
     address: 'Your Business Address',
     extraTexts: [],
     extraPhotos: [],
@@ -34,7 +37,8 @@ export const EditorProvider = ({ children }) => {
       address: true,
       gst: false,
       userPhoto: true,
-      logo: true
+      logo: true,
+      designation: true
     }
   });
 
@@ -57,7 +61,8 @@ export const EditorProvider = ({ children }) => {
         address: u.address || prev.address,
         gst_number: u.gstNumber || prev.gst_number,
         logo: cleanLogo || prev.logo,
-        userPhoto: u.profilePhoto || prev.userPhoto
+        userPhoto: u.profilePhoto || prev.userPhoto,
+        designation: u.designation || prev.designation
       }));
 
       // Fetch Likes
@@ -162,6 +167,10 @@ export const EditorProvider = ({ children }) => {
   const closeEditor = () => { setEditingTemplate(null); setSelectedFrame(null); };
   const closeDetail = () => { setViewingDetail(null); setSelectedFrame(null); };
 
+  const openCustomPosterEditor = () => setCustomPosterEditorOpen(true);
+  const closeCustomPosterEditor = () => setCustomPosterEditorOpen(false);
+
+
   const getTemplateId = (template) => {
     if (!template) return null;
     if (template.templateId && typeof template.templateId === 'object') return template.templateId._id;
@@ -225,8 +234,10 @@ export const EditorProvider = ({ children }) => {
       userData, setUserData,
       frames, selectedFrame, setSelectedFrame,
       initialEditorTab,
-      likedTemplates, toggleLike
+      likedTemplates, toggleLike,
+      customPosterEditorOpen, openCustomPosterEditor, closeCustomPosterEditor
     }}>
+
       {children}
     </EditorContext.Provider>
   );

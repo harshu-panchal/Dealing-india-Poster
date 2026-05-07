@@ -17,7 +17,7 @@ const AboutUs = () => {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-3xl font-black tracking-tighter">About Us</h1>
-        <p className="text-white/80 font-bold mt-1 uppercase tracking-[0.2em] text-[10px]">Learn more about Dealing India</p>
+        <p className="text-white/80 font-bold mt-1 uppercase tracking-[0.2em] text-[10px]">Learn more about Dealingindia</p>
       </div>
 
       <div className="px-6 -mt-6 relative z-10">
@@ -26,13 +26,13 @@ const AboutUs = () => {
             <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center text-[#ef4444] mb-4">
               <Info size={40} />
             </div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Dealing India</h2>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Dealingindia</h2>
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Your Branding Partner</p>
           </div>
 
           <div className="space-y-6 text-slate-600">
             <p className="text-[0.95rem] leading-relaxed font-medium">
-              Dealing India is a premier digital branding platform designed to empower businesses and individuals with professional-grade visual content. Our mission is to make high-quality design accessible to everyone.
+              Dealingindia is a premier digital branding platform designed to empower businesses and individuals with professional-grade visual content. Our mission is to make high-quality design accessible to everyone.
             </p>
             
             <div className="grid grid-cols-2 gap-4">
