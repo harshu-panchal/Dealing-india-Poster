@@ -32,8 +32,11 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
              )}
           </div>
           <span className="text-white text-[1rem] md:text-[1.15rem] font-bold whitespace-nowrap">Posters</span>
-          <button className="bg-[#fde047] text-[#854d0e] px-1.5 md:px-2.5 py-1 rounded-sm text-[0.6rem] md:text-[0.7rem] font-extrabold flex items-center gap-1 ml-0.5 md:ml-1 flex-shrink-0">
-             UPGRADE <span className="text-[0.8rem] md:text-[1rem] leading-none">›</span>
+          <button 
+            onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}
+            className="bg-[#fde047] text-[#854d0e] px-1.5 md:px-2.5 py-1 rounded-sm text-[0.6rem] md:text-[0.7rem] font-extrabold flex items-center gap-1 ml-0.5 md:ml-1 flex-shrink-0 cursor-pointer border-none outline-none shadow-sm hover:bg-[#facc15] transition-colors"
+          >
+             Dealingindia <span className="text-[0.8rem] md:text-[1rem] leading-none">›</span>
           </button>
         </div>
 

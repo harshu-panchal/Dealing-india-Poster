@@ -340,7 +340,7 @@ const BusinessCardEditor = () => {
           </div>
         </div>
         <div className="bg-[#fef3c7] px-4 py-2 flex items-center justify-center gap-2 border-b border-amber-100">
-           <span className="text-[11px] font-medium text-amber-900">This category has premium posters. <span className="font-bold underline">Upgrade</span></span>
+           <span className="text-[11px] font-medium text-amber-900">This category has premium posters. <span className="font-bold underline cursor-pointer" onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}>Dealingindia</span></span>
         </div>
       </div>
 

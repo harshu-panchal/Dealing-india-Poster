@@ -324,7 +324,8 @@ const CustomPosterEditor = ({ onClose }) => {
                         fontFamily: 'inherit', 
                         fontSize: 'inherit', 
                         textAlign: 'inherit',
-                        wordBreak: 'break-word'
+                        wordBreak: 'break-word',
+                        textShadow: 'inherit'
                       }}
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -341,26 +342,7 @@ const CustomPosterEditor = ({ onClose }) => {
               </motion.div>
             ))}
 
-            {/* Branding Overlay */}
-            <div 
-              className="absolute top-1 right-3 z-[90] flex items-center gap-1.5 px-2.5 py-1 rounded-full pointer-events-none"
-              style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                backdropFilter: 'blur(4px)',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
 
-              <img 
-                src="/dealing-india-logo.png" 
-                className="w-5 h-5 object-contain" 
-                alt="DI" 
-                crossOrigin="anonymous"
-              />
-              <span className="text-black font-black text-[10px] uppercase tracking-tight" style={{ color: '#000000' }}>Dealingindia</span>
-            </div>
 
           </div>
         </div>

@@ -71,9 +71,28 @@ const Profile = () => {
           Authorization: `Bearer ${user.accessToken}` 
         }
       };
+      
+      // Step 1: Upload the file
       const { data } = await axios.post(`${API_URL}/upload`, uploadData, config);
-      setFormData(prev => ({ ...prev, [type === 'profile' ? 'profilePhoto' : 'logo']: data.url }));
-      alert(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully!`);
+      const newUrl = data.url;
+      const fieldName = type === 'profile' ? 'profilePhoto' : 'logo';
+
+      // Step 2: Update local form state
+      setFormData(prev => ({ ...prev, [fieldName]: newUrl }));
+
+      // Step 3: Persist to profile immediately and update global state
+      const updateConfig = {
+        headers: { Authorization: `Bearer ${user.accessToken}` }
+      };
+      
+      const updatedFormData = { ...formData, [fieldName]: newUrl };
+      const { data: updateData } = await axios.put(`${API_URL}/user/profile`, updatedFormData, updateConfig);
+      
+      const updatedUser = { ...user, user: updateData.user };
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      alert(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`);
     } catch (error) {
       console.error('Upload error:', error);
       alert(error.response?.data?.message || 'Upload failed');

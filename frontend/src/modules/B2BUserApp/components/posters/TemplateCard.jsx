@@ -213,7 +213,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#f1f5f9] overflow-hidden group transition-all hover:shadow-md hover:-translate-y-1 mb-4" ref={cardRef}>
+    <div className="bg-white rounded-xl shadow-md border border-[#f1f5f9] overflow-hidden group transition-all hover:shadow-lg hover:-translate-y-1 mb-4" ref={cardRef}>
       {/* Poster Heading with Like Button */}
       <div className="flex items-center justify-between px-3 py-2 bg-white">
         <h3 className="text-[0.75rem] font-black text-slate-800 uppercase tracking-wider truncate max-w-[70%]">

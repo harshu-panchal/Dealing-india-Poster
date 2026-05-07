@@ -380,13 +380,16 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
             <h3 className="text-[1.1rem] font-bold truncate">{renderSafeTitle(currentTemplate.categoryId?.name || currentTemplate.category, 'Custom Poster')} 🌙</h3>
             <span className="text-[0.95rem] opacity-80 font-black tracking-tighter">({currentTemplate.categoryId?.templateCount || 0})</span>
           </div>
-          <button className="bg-[#fde047] text-[#854d0e] px-4 py-1.5 rounded-[4px] text-[0.7rem] font-black active:scale-95 transition-transform shadow-sm border-none uppercase tracking-tighter cursor-pointer">
-            UPGRADE
+          <button 
+            onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}
+            className="bg-[#fde047] text-[#854d0e] px-4 py-1.5 rounded-[4px] text-[0.7rem] font-black active:scale-95 transition-transform shadow-sm border-none uppercase tracking-tighter cursor-pointer"
+          >
+            Dealingindia
           </button>
         </div>
 
         <div className="bg-[#fff7ed] text-[#c2410c] p-2.5 px-4 text-center text-[0.8rem] font-bold border-b border-[#ffedd5] shrink-0">
-           Premium Category Access. <strong className="cursor-pointer underline ml-1">Upgrade Now</strong>
+           Premium Category Access. <strong className="cursor-pointer underline ml-1" onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}>Dealingindia</strong>
         </div>
 
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-slate-50">
