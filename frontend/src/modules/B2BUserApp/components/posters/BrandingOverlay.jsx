@@ -6,12 +6,12 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false })
   const hasFrame = !!userData.selectedFrame;
 
   // Sizing scales
-  const heightClass    = isCompact ? 'h-[40px]' : 'h-[85px] lg:h-[110px]';
-  const photoSizeClass = isCompact ? 'w-[28px] h-[28px]' : 'w-[52px] h-[52px] lg:w-[72px] lg:h-[72px]';
-  const nameSizeClass  = isCompact ? 'text-[0.5rem]'  : 'text-[0.62rem] lg:text-[0.78rem]';
-  const detailSizeClass = isCompact ? 'text-[0.42rem]' : 'text-[0.52rem] lg:text-[0.65rem]';
+  const heightClass    = isCompact ? 'h-[40px]' : 'h-[105px] lg:h-[130px]';
+  const photoSizeClass = isCompact ? 'w-[28px] h-[28px]' : 'w-[60px] h-[60px] lg:w-[80px] lg:h-[80px]';
+  const nameSizeClass  = isCompact ? 'text-[0.5rem]'  : 'text-[0.6rem] lg:text-[0.75rem]';
+  const detailSizeClass = isCompact ? 'text-[0.42rem]' : 'text-[0.45rem] lg:text-[0.55rem]';
   const paddingClass   = isCompact ? 'px-2'  : 'px-3 lg:px-5';
-  const gapClass       = isCompact ? 'gap-1.5' : 'gap-2 lg:gap-3';
+  const gapClass       = isCompact ? 'gap-1.5' : 'gap-3 lg:gap-4';
 
   // ── Custom frame applied: use absolute-position coords from editor ──────
   if (hasFrame) {
@@ -57,6 +57,14 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false })
                 {userData.phone_number}
               </span>
             )}
+            {(userData.enabledFields?.gst || (userData.gst_number || '').trim()) && userData.gst_number && (
+              <span
+                className={`absolute ${detailSizeClass} text-white/80 font-semibold whitespace-nowrap`}
+                style={{ left: userData.gstPos?.x || '2%', top: userData.gstPos?.y || '85%', textShadow: '0 1px 2px rgba(0,0,0,0.8)', zIndex: 95 }}
+              >
+                GST: {userData.gst_number}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -82,20 +90,25 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false })
         </div>
 
         {/* Right: name, business, phone — stacked vertically, left-aligned */}
-        <div className="flex-1 flex flex-col justify-center min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col justify-center min-w-0 overflow-hidden py-1">
           {userData.enabledFields?.name !== false && (
-            <span className={`${nameSizeClass} font-black text-white uppercase tracking-tight truncate leading-tight`}>
+            <span className={`${nameSizeClass} font-black text-white uppercase tracking-tight truncate leading-[1.1]`}>
               {userData.name || ''}
             </span>
           )}
           {userData.enabledFields?.business_name !== false && (
-            <span className={`${nameSizeClass} font-black text-white/90 uppercase tracking-tight truncate leading-tight`}>
+            <span className={`${nameSizeClass} font-black text-white/90 uppercase tracking-tight truncate leading-[1.1]`}>
               {userData.business_name || ''}
             </span>
           )}
           {userData.phone_number && (
             <span className={`${detailSizeClass} text-white/70 font-semibold truncate leading-tight mt-0.5`}>
               {userData.phone_number}
+            </span>
+          )}
+          {(userData.enabledFields?.gst || (userData.gst_number || '').trim()) && userData.gst_number && (
+            <span className={`${detailSizeClass} text-white/60 font-semibold truncate leading-tight`}>
+              GST: {userData.gst_number}
             </span>
           )}
           {userData.enabledFields?.website && userData.website && (

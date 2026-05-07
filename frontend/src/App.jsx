@@ -42,6 +42,7 @@ const EventManager = lazy(() => import('./modules/Admin/pages/EventManager'));
 const UserDetail = lazy(() => import('./modules/Admin/pages/UserDetail'));
 const FrameManager = lazy(() => import('./modules/Admin/pages/FrameManager'));
 const SystemSettings = lazy(() => import('./modules/Admin/pages/SystemSettings'));
+const StickerManager = lazy(() => import('./modules/Admin/pages/StickerManager'));
 
 import { AuthProvider, useAuth } from './modules/B2BUserApp/context/AuthContext';
 import { EditorProvider, useEditor } from './modules/B2BUserApp/context/EditorContext';
@@ -108,6 +109,7 @@ function AppContent() {
                <Route path="referrals" element={<ReferralManager />} />
                <Route path="events" element={<EventManager />} />
                <Route path="frames" element={<FrameManager />} />
+               <Route path="stickers" element={<StickerManager />} />
                <Route path="settings" element={<SystemSettings />} />
             </Route>
           </Routes>

@@ -9,6 +9,10 @@ const CategoryCard = ({ category, variant = 'default' }) => {
     e.target.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=400';
   };
 
+  const displayTitle = typeof category.title === 'object' 
+    ? (category.title.en || category.title.hi || category.title.gu || category.title.mr || Object.values(category.title)[0] || 'Category') 
+    : (category.title || 'Category');
+
   return (
     <div 
       className={`bg-card rounded-md overflow-hidden cursor-pointer transition-all duration-300 border border-border hover:-translate-y-1 hover:shadow-lg hover:border-primary ${isCompact ? 'min-w-[140px]' : 'min-w-[160px]'} group`}
@@ -17,7 +21,7 @@ const CategoryCard = ({ category, variant = 'default' }) => {
       <div className="relative aspect-square overflow-hidden">
         <img 
           src={category.image} 
-          alt={category.title} 
+          alt={displayTitle} 
           loading="lazy" 
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
           onError={handleImageError}
@@ -27,8 +31,8 @@ const CategoryCard = ({ category, variant = 'default' }) => {
         </div>
       </div>
       <div className="p-sm text-center">
-        <h3 className="text-[0.95rem] font-semibold">{category.title}</h3>
-        {variant === 'default' && <p className="text-[0.75rem] text-text-secondary mt-1">Browse latest {category.title} designs</p>}
+        <h3 className="text-[0.95rem] font-semibold">{displayTitle}</h3>
+        {variant === 'default' && <p className="text-[0.75rem] text-text-secondary mt-1">Browse latest {displayTitle} designs</p>}
       </div>
     </div>
   );

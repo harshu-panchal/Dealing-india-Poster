@@ -62,6 +62,7 @@ const AdminLayout = () => {
         { title: 'Music Library', path: '/admin/music', icon: Music },
         { title: 'Template Manager', path: '/admin/templates', icon: ImageIcon },
         { title: 'Layout Frames', path: '/admin/frames', icon: Sparkles },
+        { title: 'Sticker Registry', path: '/admin/stickers', icon: Sparkles },
       ]
     },
     {

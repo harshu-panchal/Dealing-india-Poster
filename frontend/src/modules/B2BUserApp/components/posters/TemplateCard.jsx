@@ -201,12 +201,22 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     setIsPlaying(!isPlaying);
   };
 
+  const renderTitle = (title, name) => {
+    const val = title || name;
+    if (!val) return 'New Design';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+      return val.en || val.hi || val.gu || val.mr || Object.values(val)[0] || 'New Design';
+    }
+    return 'New Design';
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-[#f1f5f9] overflow-hidden group transition-all hover:shadow-md hover:-translate-y-1 mb-4" ref={cardRef}>
       {/* Poster Heading with Like Button */}
       <div className="flex items-center justify-between px-3 py-2 bg-white">
         <h3 className="text-[0.75rem] font-black text-slate-800 uppercase tracking-wider truncate max-w-[70%]">
-          {currentTemplate.title || currentTemplate.name || 'New Design'}
+          {renderTitle(currentTemplate.title, currentTemplate.name)}
         </h3>
         <button
           onClick={onLikeClick}
@@ -264,10 +274,11 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
           />
         )}
 
-        {/* Support for Image + Music (Video Type without Video URL) */}
         {!currentTemplate.videoUrl && currentTemplate.audioUrl && isPlaying && (
           <audio src={currentTemplate.audioUrl} autoPlay loop />
         )}
+
+        {/* Dealing India Branding Badge removed from here as per request */}
 
         {activeFrame && (
           <>
@@ -406,6 +417,74 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
                     {effectiveUserData.businessAddress}
                   </span>
                 )}
+
+                {/* GST */}
+                {(effectiveUserData.enabledFields?.gst || (effectiveUserData.gst_number || '').trim()) && (
+                  <span
+                    className="absolute font-black text-white/90 uppercase tracking-tight whitespace-nowrap"
+                    style={{
+                      left: effectiveUserData.gstPos?.x || framePos.gst?.x || '5%',
+                      top: effectiveUserData.gstPos?.y || framePos.gst?.y || '93%',
+                      fontSize: '3cqw',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                      lineHeight: 1
+                    }}
+                  >
+                    {effectiveUserData.gst_number}
+                  </span>
+                )}
+                {/* Extra Texts */}
+                {effectiveUserData.extraTexts?.map(t => (
+                  <div 
+                    key={t.id} 
+                    className="absolute font-black pointer-events-none" 
+                    style={{ 
+                      left: t.x ?? '40%', 
+                      top: t.y ?? '40%', 
+                      color: t.color, 
+                      fontSize: `calc(${t.size}px * 0.25)`, // Scale for card size
+                      textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
+                      zIndex: 90, 
+                      whiteSpace: 'nowrap' 
+                    }}
+                  >
+                    {t.text}
+                  </div>
+                ))}
+
+                {/* Extra Photos */}
+                {effectiveUserData.extraPhotos?.map(p => (
+                  <div 
+                    key={p.id} 
+                    className="absolute pointer-events-none" 
+                    style={{ 
+                      left: p.x ?? '50%', 
+                      top: p.y ?? '30%', 
+                      width: `${p.size || 20}cqw`, 
+                      height: `${p.size || 20}cqw`, 
+                      zIndex: 82 
+                    }}
+                  >
+                    <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
+                  </div>
+                ))}
+
+                {/* Stickers */}
+                {effectiveUserData.stickers?.map(s => (
+                  <div 
+                    key={s.id} 
+                    className="absolute pointer-events-none" 
+                    style={{ 
+                      left: s.x ?? '20%', 
+                      top: s.y ?? '20%', 
+                      width: `${s.size || 15}cqw`, 
+                      height: `${s.size || 15}cqw`, 
+                      zIndex: 80 
+                    }}
+                  >
+                    <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />
+                  </div>
+                ))}
               </div>
             )}
           </>

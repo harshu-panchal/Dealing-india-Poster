@@ -344,6 +344,15 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     }
   };
 
+  const renderSafeTitle = (val, fallback = 'Design') => {
+    if (!val) return fallback;
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+      return val.en || val.hi || val.gu || val.mr || Object.values(val)[0] || fallback;
+    }
+    return fallback;
+  };
+
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 md:p-4 lg:p-8 overflow-hidden">
       <motion.div 
@@ -366,7 +375,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
             <ArrowLeft size={24} />
           </button>
           <div className="flex-1 flex items-center gap-2 overflow-hidden">
-            <h3 className="text-[1.1rem] font-bold truncate">{(currentTemplate.categoryId?.name || currentTemplate.category || 'Custom Poster')} 🌙</h3>
+            <h3 className="text-[1.1rem] font-bold truncate">{renderSafeTitle(currentTemplate.categoryId?.name || currentTemplate.category, 'Custom Poster')} 🌙</h3>
             <span className="text-[0.95rem] opacity-80 font-black tracking-tighter">({currentTemplate.categoryId?.templateCount || 0})</span>
           </div>
           <button className="bg-[#fde047] text-[#854d0e] px-4 py-1.5 rounded-[4px] text-[0.7rem] font-black active:scale-95 transition-transform shadow-sm border-none uppercase tracking-tighter cursor-pointer">
@@ -388,6 +397,13 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
             >
               {/* Inner square image area */}
               <div className="relative w-full aspect-square overflow-hidden">
+                {/* Dealing India Branding Badge */}
+                <div 
+                  className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-black/10 shadow-lg pointer-events-none"
+                >
+                  <img src="/dealing-india-logo.png" className="w-8 h-8 object-contain" alt="DI" crossOrigin="anonymous" />
+                  <span className="text-black font-black tracking-tighter text-sm uppercase whitespace-nowrap">Dealing India</span>
+                </div>
                {/* Poster Background */}
                {(currentTemplate.type === 'video' || currentTemplate.isVideo || isVideoUrl(currentTemplate.image)) ? (
                  <div className="w-full h-full relative z-[1]">
@@ -609,12 +625,12 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
 
                  {/* Extra Photos (non-draggable here) */}
                  {userData.extraPhotos?.map(p => (
-                   <div key={p.id} className="absolute pointer-events-none" style={{ left: p.x || '50%', top: p.y || '30%', width: p.size, height: p.size, zIndex: 82 }}>
+                   <div key={p.id} className="absolute pointer-events-none" style={{ left: p.x ?? '50%', top: p.y ?? '30%', width: `${p.size || 20}%`, height: 'auto', aspectRatio: '1/1', zIndex: 82 }}>
                      <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
                    </div>
                  ))}
                  {userData.stickers?.map(s => (
-                   <div key={s.id} className="absolute pointer-events-none" style={{ left: s.x || '20%', top: s.y || '20%', width: s.size, height: s.size, zIndex: 80 }}>
+                   <div key={s.id} className="absolute pointer-events-none" style={{ left: s.x ?? '20%', top: s.y ?? '20%', width: `${s.size || 15}%`, height: 'auto', aspectRatio: '1/1', zIndex: 80 }}>
                      <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />
                    </div>
                  ))}

@@ -53,6 +53,9 @@ export const EditorProvider = ({ children }) => {
         business_name: u.businessName || prev.business_name,
         phone_number: u.mobileNumber || prev.phone_number,
         email: u.email || prev.email,
+        website: u.website || prev.website,
+        address: u.address || prev.address,
+        gst_number: u.gstNumber || prev.gst_number,
         logo: cleanLogo || prev.logo,
         userPhoto: u.profilePhoto || prev.userPhoto
       }));
@@ -127,8 +130,8 @@ export const EditorProvider = ({ children }) => {
     const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setEditingTemplate(injectUserData(template));
     setInitialEditorTab(initialTab);
-    // Load frame from this template's customData, or CLEAR it if there's no saved frame
-    setSelectedFrame(normalizedFrame || null);
+    // Load frame from this template's customData, or PRESERVE if already selected in detail view
+    setSelectedFrame(prev => normalizedFrame || prev || null);
     // Keep viewingDetail open
   };
 

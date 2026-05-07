@@ -164,6 +164,7 @@ export const verifyOTP = async (req, res) => {
         contentLanguage: user.contentLanguage,
         website: user.website,
         businessName: user.businessName,
+        gstNumber: user.gstNumber,
         isVerified: user.isVerified,
         referralCode: user.referralCode,
         points: Number(user.points) || 0,
@@ -228,6 +229,7 @@ export const getProfile = async (req, res) => {
         contentLanguage: user.contentLanguage,
         website: user.website,
         businessName: user.businessName,
+        gstNumber: user.gstNumber,
         isVerified: user.isVerified,
         referralCode: user.referralCode,
         points: user.points || 0,
@@ -257,7 +259,7 @@ export const logoutUser = async (req, res) => {
 // @desc    Update User Profile
 // @route   PUT /api/user/profile
 export const updateProfile = async (req, res) => {
-  const { name, mobileNumber, email, profilePhoto, logo, contentLanguage, website, businessName } = req.body;
+  const { name, mobileNumber, email, profilePhoto, logo, contentLanguage, website, businessName, gstNumber } = req.body;
 
   try {
     const user = await User.findById(req.user._id);
@@ -283,6 +285,7 @@ export const updateProfile = async (req, res) => {
     user.contentLanguage = contentLanguage || user.contentLanguage;
     user.website = website || user.website;
     user.businessName = businessName || user.businessName;
+    user.gstNumber = gstNumber || user.gstNumber;
 
     // Ensure referral code exists
     if (!user.referralCode) {
@@ -304,6 +307,7 @@ export const updateProfile = async (req, res) => {
         contentLanguage: updatedUser.contentLanguage,
         website: updatedUser.website,
         businessName: updatedUser.businessName,
+        gstNumber: updatedUser.gstNumber,
         isVerified: updatedUser.isVerified,
         referralCode: updatedUser.referralCode,
         points: updatedUser.points,

@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema(
     businessName: {
       type: String,
     },
+    gstNumber: {
+      type: String,
+    },
     isVerified: {
       type: Boolean,
       default: false,

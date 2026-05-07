@@ -119,6 +119,10 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false }) =>
     userImg.crossOrigin = "anonymous";
     userImg.src = userData.userPhoto || userData.logo || '';
 
+    const diLogoImg = new Image();
+    diLogoImg.crossOrigin = "anonymous";
+    diLogoImg.src = "/dealing-india-logo.png";
+
     let animationId;
     let startTime = Date.now();
 
@@ -203,6 +207,38 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false }) =>
         ctx.font = `bold 24px sans-serif`;
         ctx.fillText(userData.phone_number || '', 40, barY + 90);
         ctx.fillText(userData.website || '', 40, barY + 125);
+        ctx.restore();
+      }
+
+      // Draw Dealing India Badge (Top-Right)
+      if (diLogoImg.complete) {
+        const badgeW = 260;
+        const badgeH = 70;
+        const badgeX = w - badgeW - 40;
+        const badgeY = 40;
+        
+        ctx.save();
+        // White Background Capsule
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 35);
+        } else {
+          ctx.rect(badgeX, badgeY, badgeW, badgeH); // Fallback
+        }
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Logo
+        const diSize = 50;
+        ctx.drawImage(diLogoImg, badgeX + 15, badgeY + (badgeH - diSize)/2, diSize, diSize);
+        
+        // Text (Black)
+        ctx.fillStyle = '#000000';
+        ctx.font = '900 24px sans-serif';
+        ctx.fillText('DEALING INDIA', badgeX + 75, badgeY + 45);
         ctx.restore();
       }
 

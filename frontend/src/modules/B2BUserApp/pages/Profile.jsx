@@ -24,7 +24,8 @@ const Profile = () => {
     website: '',
     profilePhoto: '',
     logo: '',
-    address: '123 Tech Park, Silicon Valley, IND'
+    address: '123 Tech Park, Silicon Valley, IND',
+    gstNumber: ''
   });
 
   const profileInputRef = useRef(null);
@@ -43,7 +44,8 @@ const Profile = () => {
         website: user.user.website || '',
         profilePhoto: user.user.profilePhoto || '',
         logo: user.user.logo || '',
-        address: user.user.address || '123 Tech Park, Silicon Valley, IND'
+        address: user.user.address || '123 Tech Park, Silicon Valley, IND',
+        gstNumber: user.user.gstNumber || ''
       });
     }
   }, [user]);
@@ -272,6 +274,13 @@ const Profile = () => {
                 icon={<Building2 size={18} />} 
                 isEditing={isEditing}
                 onChange={(val) => setFormData({...formData, businessName: val})}
+              />
+              <InputField 
+                label="GST NUMBER" 
+                value={formData.gstNumber} 
+                icon={<CreditCard size={18} />} 
+                isEditing={isEditing}
+                onChange={(val) => setFormData({...formData, gstNumber: val})}
               />
               <InputField 
                 label="PHONE NUMBER" 
