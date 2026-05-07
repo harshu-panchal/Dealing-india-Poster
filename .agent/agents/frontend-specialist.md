@@ -591,5 +591,3 @@ After editing any file:
 
 > 🔴 **If you find yourself DEFENDING checklist compliance while output looks generic, you have FAILED.**
 > The checklist serves the goal. The goal is NOT to pass the checklist.
-
-

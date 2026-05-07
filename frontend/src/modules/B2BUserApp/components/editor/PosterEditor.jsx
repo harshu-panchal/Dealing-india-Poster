@@ -101,8 +101,13 @@ const PosterEditor = ({ template, onClose }) => {
     const fromTemplate = normalizeFrameValue(template?.customData?.selectedFrame);
     if (fromTemplate) {
       setSelectedFrame(fromTemplate);
+    } else {
+      setSelectedFrame(null);
+      setLocalUserData(prev => ({ ...prev, selectedFrame: null }));
     }
   }, [template, setSelectedFrame]);
+
+
 
   const [showStickerModal, setShowStickerModal] = useState(false);
   const previewBoundsRef = useRef(null);
@@ -136,20 +141,17 @@ const PosterEditor = ({ template, onClose }) => {
 
   const dragOffsetsRef = useRef({});
 
-  const onDragStart = (id, e, info) => {
-    const target = e.currentTarget || e.target;
-    if (!target || !target.getBoundingClientRect) return;
-
-    const rect = target.getBoundingClientRect();
+  const onDragStart = (id, info, startX, startY) => {
     dragOffsetsRef.current[id] = {
-      x: info.point.x - rect.left,
-      y: info.point.y - rect.top
+      startX: parseFloat(startX || 0),
+      startY: parseFloat(startY || 0)
     };
   };
 
+
   const coordinateAreaRef = useRef(null);
 
-  const getNextPosition = (id, event, info) => {
+  const getNextPosition = (id, info) => {
     const parentRef = coordinateAreaRef.current;
     if (!parentRef) return null;
 
@@ -157,30 +159,22 @@ const PosterEditor = ({ template, onClose }) => {
     const height = parentRef.clientHeight;
     if (!width || !height) return null;
 
-    // Find the original item to get its starting percentage
-    const allItems = [...(localUserData.stickers || []), ...(localUserData.extraPhotos || [])];
-    const item = allItems.find(i => i.id === id);
-    if (!item) return null;
-
-    const startXPct = parseFloat(item.x || '20');
-    const startYPct = parseFloat(item.y || '20');
-
-    // Calculate how much the move represents in percentage terms
+    const start = dragOffsetsRef.current[id] || { startX: 0, startY: 0 };
+    
     const deltaXPct = (info.offset.x / width) * 100;
     const deltaYPct = (info.offset.y / height) * 100;
 
-    let xPct = startXPct + deltaXPct;
-    let yPct = startYPct + deltaYPct;
-
-    // Constrain within reasonable bounds
-    xPct = Math.max(-10, Math.min(100, xPct));
-    yPct = Math.max(-10, Math.min(100, yPct));
+    let xPct = start.startX + deltaXPct;
+    let yPct = start.startY + deltaYPct;
 
     return {
       x: `${xPct.toFixed(2)}%`,
       y: `${yPct.toFixed(2)}%`
     };
   };
+
+
+
 
   const addSticker = (url) => {
     const newSticker = {
@@ -478,7 +472,9 @@ const PosterEditor = ({ template, onClose }) => {
               </div>
 
               {/* Dedicated Content Layer */}
-              <div className="absolute inset-0 z-[75]">
+              <div className="absolute inset-0 z-[110] pointer-events-none">
+
+
                 {/* Business Card Fields (if applicable) */}
                 {isBusinessCard && currentTemplate.fields?.map((field, idx) => {
                   const userValue = localUserData[field.key] || field.label;
@@ -510,9 +506,9 @@ const PosterEditor = ({ template, onClose }) => {
                   <motion.div
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart('name', e, info)}
-                    onDragEnd={(e, info) => updateLocalField('namePos', getNextPosition('name', e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart('name', info, effectiveNamePos.x, effectiveNamePos.y)}
+                    onDragEnd={(e, info) => updateLocalField('namePos', getNextPosition('name', info))}
                     className="inline-block pointer-events-auto absolute cursor-move touch-none"
                     style={{
                       left: effectiveNamePos.x,
@@ -520,6 +516,8 @@ const PosterEditor = ({ template, onClose }) => {
                       zIndex: 95
                     }}
                     animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0 }}
+
                   >
                     <div
                       className="whitespace-nowrap leading-tight"
@@ -536,9 +534,9 @@ const PosterEditor = ({ template, onClose }) => {
                   <motion.div
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart('business', e, info)}
-                    onDragEnd={(e, info) => updateLocalField('businessNamePos', getNextPosition('business', e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart('business', info, effectiveBusinessNamePos.x, effectiveBusinessNamePos.y)}
+                    onDragEnd={(e, info) => updateLocalField('businessNamePos', getNextPosition('business', info))}
                     className="inline-block pointer-events-auto absolute cursor-move touch-none"
                     style={{
                       left: effectiveBusinessNamePos.x,
@@ -546,6 +544,8 @@ const PosterEditor = ({ template, onClose }) => {
                       zIndex: 95
                     }}
                     animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0 }}
+
                   >
                     <div
                       className="whitespace-nowrap leading-tight"
@@ -560,13 +560,14 @@ const PosterEditor = ({ template, onClose }) => {
 
                 {!isBusinessCard && hasFrameApplied && (
                   <div className="flex flex-col relative h-full pointer-events-none">
+
                     {localUserData.enabledFields?.phone && (
                       <motion.div
                         drag
                         dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragStart={(e, info) => onDragStart('phone', e, info)}
-                        onDragEnd={(e, info) => updateLocalField('phonePos', getNextPosition('phone', e, info))}
+                        dragConstraints={coordinateAreaRef}
+                        onDragStart={(e, info) => onDragStart('phone', info, effectivePhonePos.x, effectivePhonePos.y)}
+                        onDragEnd={(e, info) => updateLocalField('phonePos', getNextPosition('phone', info))}
                         className="pointer-events-auto absolute cursor-move touch-none"
                         style={{
                           left: effectivePhonePos.x,
@@ -574,6 +575,8 @@ const PosterEditor = ({ template, onClose }) => {
                           zIndex: 95
                         }}
                         animate={{ x: 0, y: 0 }}
+                        transition={{ duration: 0 }}
+
                       >
                         <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                           {localUserData.phone_number || '9876543210'}
@@ -584,9 +587,9 @@ const PosterEditor = ({ template, onClose }) => {
                       <motion.div
                         drag
                         dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragStart={(e, info) => onDragStart('website', e, info)}
-                        onDragEnd={(e, info) => updateLocalField('websitePos', getNextPosition('website', e, info))}
+                        dragConstraints={coordinateAreaRef}
+                        onDragStart={(e, info) => onDragStart('website', info, effectiveWebsitePos.x, effectiveWebsitePos.y)}
+                        onDragEnd={(e, info) => updateLocalField('websitePos', getNextPosition('website', info))}
                         className="pointer-events-auto absolute cursor-move touch-none"
                         style={{
                           left: effectiveWebsitePos.x,
@@ -594,6 +597,8 @@ const PosterEditor = ({ template, onClose }) => {
                           zIndex: 95
                         }}
                         animate={{ x: 0, y: 0 }}
+                        transition={{ duration: 0 }}
+
                       >
                         <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                           {localUserData.website}
@@ -604,9 +609,9 @@ const PosterEditor = ({ template, onClose }) => {
                       <motion.div
                         drag
                         dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragStart={(e, info) => onDragStart('email', e, info)}
-                        onDragEnd={(e, info) => updateLocalField('emailPos', getNextPosition('email', e, info))}
+                        dragConstraints={coordinateAreaRef}
+                        onDragStart={(e, info) => onDragStart('email', info, effectiveEmailPos.x, effectiveEmailPos.y)}
+                        onDragEnd={(e, info) => updateLocalField('emailPos', getNextPosition('email', info))}
                         className="pointer-events-auto absolute cursor-move touch-none"
                         style={{
                           left: effectiveEmailPos.x,
@@ -614,6 +619,8 @@ const PosterEditor = ({ template, onClose }) => {
                           zIndex: 95
                         }}
                         animate={{ x: 0, y: 0 }}
+                        transition={{ duration: 0 }}
+
                       >
                         <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                           {localUserData.email}
@@ -624,9 +631,9 @@ const PosterEditor = ({ template, onClose }) => {
                       <motion.div
                         drag
                         dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragStart={(e, info) => onDragStart('designation', e, info)}
-                        onDragEnd={(e, info) => updateLocalField('designationPos', getNextPosition('designation', e, info))}
+                        dragConstraints={coordinateAreaRef}
+                        onDragStart={(e, info) => onDragStart('designation', info, effectiveDesignationPos.x, effectiveDesignationPos.y)}
+                        onDragEnd={(e, info) => updateLocalField('designationPos', getNextPosition('designation', info))}
                         className="pointer-events-auto absolute cursor-move touch-none"
                         style={{
                           left: effectiveDesignationPos.x,
@@ -634,6 +641,8 @@ const PosterEditor = ({ template, onClose }) => {
                           zIndex: 95
                         }}
                         animate={{ x: 0, y: 0 }}
+                        transition={{ duration: 0 }}
+
                       >
                         <div className="whitespace-nowrap font-black" style={{ ...getStyle('detail'), color: '#ef4444' }}>
                           {localUserData.designation}
@@ -644,9 +653,9 @@ const PosterEditor = ({ template, onClose }) => {
                       <motion.div
                         drag
                         dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragStart={(e, info) => onDragStart('address', e, info)}
-                        onDragEnd={(e, info) => updateLocalField('addressPos', getNextPosition('address', e, info))}
+                        dragConstraints={coordinateAreaRef}
+                        onDragStart={(e, info) => onDragStart('address', info, effectiveAddressPos.x, effectiveAddressPos.y)}
+                        onDragEnd={(e, info) => updateLocalField('addressPos', getNextPosition('address', info))}
                         className="pointer-events-auto absolute cursor-move touch-none"
                         style={{
                           left: effectiveAddressPos.x,
@@ -654,6 +663,8 @@ const PosterEditor = ({ template, onClose }) => {
                           zIndex: 95
                         }}
                         animate={{ x: 0, y: 0 }}
+                        transition={{ duration: 0 }}
+
                       >
                         <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                           {localUserData.address}
@@ -664,9 +675,9 @@ const PosterEditor = ({ template, onClose }) => {
                       <motion.div
                         drag
                         dragMomentum={false}
-                        dragConstraints={previewBoundsRef}
-                        onDragStart={(e, info) => onDragStart('gst', e, info)}
-                        onDragEnd={(e, info) => updateLocalField('gstPos', getNextPosition('gst', e, info))}
+                        dragConstraints={coordinateAreaRef}
+                        onDragStart={(e, info) => onDragStart('gst', info, effectiveGstPos.x, effectiveGstPos.y)}
+                        onDragEnd={(e, info) => updateLocalField('gstPos', getNextPosition('gst', info))}
                         className="pointer-events-auto absolute cursor-move touch-none"
                         style={{
                           left: effectiveGstPos.x,
@@ -674,6 +685,8 @@ const PosterEditor = ({ template, onClose }) => {
                           zIndex: 95
                         }}
                         animate={{ x: 0, y: 0 }}
+                        transition={{ duration: 0 }}
+
                       >
                         <div className="whitespace-nowrap" style={{ ...getStyle('detail') }}>
                           {localUserData.gst_number}
@@ -689,9 +702,12 @@ const PosterEditor = ({ template, onClose }) => {
                     key={t.id}
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart(t.id, e, info)}
-                    onDragEnd={(e, info) => updateExtraText(t.id, getNextPosition(t.id, e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart(t.id, info, t.x || '40%', t.y || '40%')}
+                    onDragEnd={(e, info) => updateExtraText(t.id, getNextPosition(t.id, info))}
+
+
+
                     className="absolute cursor-move select-none p-1 pointer-events-auto touch-none"
                     style={{ left: t.x ?? '40%', top: t.y ?? '40%', color: t.color, fontSize: `${t.size}px`, fontWeight: 'black', textShadow: '0 2px 6px rgba(0,0,0,0.8)', zIndex: 90 }}
                     animate={{ x: 0, y: 0 }}
@@ -702,46 +718,52 @@ const PosterEditor = ({ template, onClose }) => {
               </div>
 
               {/* Non-Text Interactive Overlays (Stickers, Photos) */}
-              <div className="absolute inset-0 z-[80] pointer-events-none">
+              <div className="absolute inset-0 z-[115] pointer-events-none">
+
                 {localUserData.enabledFields?.userPhoto && (
                   <motion.div
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart('userPhoto', e, info)}
-                    onDragEnd={(e, info) => updateLocalField('userPhotoPos', getNextPosition('userPhoto', e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart('userPhoto', info, localUserData.userPhotoPos?.x ?? userPhotoDefault.x, localUserData.userPhotoPos?.y ?? userPhotoDefault.y)}
+                    onDragEnd={(e, info) => updateLocalField('userPhotoPos', getNextPosition('userPhoto', info))}
                     className="absolute cursor-move pointer-events-auto touch-none"
                     style={{ left: localUserData.userPhotoPos?.x ?? userPhotoDefault.x, top: localUserData.userPhotoPos?.y ?? userPhotoDefault.y, width: hasFrameApplied ? 62 : 80, height: hasFrameApplied ? 62 : 80, zIndex: 85 }}
                     animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0 }}
                   >
                     <div className="w-full h-full p-1 bg-white rounded-full shadow-2xl border-2 border-white overflow-hidden relative"><img src={localUserData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'} className="w-full h-full object-cover rounded-full" crossOrigin="anonymous" /></div>
                   </motion.div>
                 )}
+
                 {localUserData.enabledFields?.logo && localUserData.logo && (
                   <motion.div
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart('logo', e, info)}
-                    onDragEnd={(e, info) => updateLocalField('logoPos', getNextPosition('logo', e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart('logo', info, localUserData.logoPos?.x ?? logoDefault.x, localUserData.logoPos?.y ?? logoDefault.y)}
+                    onDragEnd={(e, info) => updateLocalField('logoPos', getNextPosition('logo', info))}
                     className="absolute cursor-move pointer-events-auto touch-none"
                     style={{ left: localUserData.logoPos?.x ?? logoDefault.x, top: localUserData.logoPos?.y ?? logoDefault.y, width: hasFrameApplied ? 44 : 60, height: hasFrameApplied ? 44 : 60, zIndex: 85 }}
                     animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0 }}
                   >
                     <div className="w-full h-full p-2 bg-white rounded-xl shadow-xl border border-white overflow-hidden"><img src={localUserData.logo} className="w-full h-full object-contain" crossOrigin="anonymous" /></div>
                   </motion.div>
                 )}
+
                 {localUserData.extraPhotos?.map(p => (
                   <motion.div
                     key={p.id}
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart(p.id, e, info)}
-                    onDragEnd={(e, info) => updateDraggable('extraPhotos', p.id, getNextPosition(p.id, e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart(p.id, info, p.x ?? '50%', p.y ?? '30%')}
+                    onDragEnd={(e, info) => updateDraggable('extraPhotos', p.id, getNextPosition(p.id, info))}
                     className="absolute cursor-move group pointer-events-auto touch-none"
                     style={{ left: p.x ?? '50%', top: p.y ?? '30%', width: `${p.size || 20}%`, aspectRatio: '1/1', zIndex: 82 }}
                     animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0 }}
                     whileDrag={{ scale: 1.05, zIndex: 100 }}
                   >
                     <div className="relative w-full h-full">
@@ -755,16 +777,19 @@ const PosterEditor = ({ template, onClose }) => {
                     </div>
                   </motion.div>
                 ))}
+
                 {localUserData.stickers?.map(s => (
                   <motion.div
                     key={s.id}
                     drag
                     dragMomentum={false}
-                    dragConstraints={previewBoundsRef}
-                    onDragStart={(e, info) => onDragStart(s.id, e, info)}
-                    onDragEnd={(e, info) => updateDraggable('stickers', s.id, getNextPosition(s.id, e, info))}
+                    dragConstraints={coordinateAreaRef}
+                    onDragStart={(e, info) => onDragStart(s.id, info, s.x ?? '20%', s.y ?? '20%')}
+                    onDragEnd={(e, info) => updateDraggable('stickers', s.id, getNextPosition(s.id, info))}
                     className="absolute cursor-move pointer-events-auto touch-none"
                     style={{ left: s.x ?? '20%', top: s.y ?? '20%', width: `${s.size || 15}%`, aspectRatio: '1/1', zIndex: 80 }}
+                    animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0 }}
                     whileDrag={{ scale: 1.1, zIndex: 100 }}
                   >
                     <div className="relative w-full h-full">
@@ -778,6 +803,7 @@ const PosterEditor = ({ template, onClose }) => {
                     </div>
                   </motion.div>
                 ))}
+
               </div>
 
               {/* Branding Bar Visuals (Footer) */}
@@ -1001,7 +1027,11 @@ const PosterEditor = ({ template, onClose }) => {
                   <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2 mb-1"><Layers size={20} className="text-blue-500" /> Frame Overlays</h3>
                   {effectiveSelectedFrame && (
                     <button
-                      onClick={() => setSelectedFrame(null)}
+                      onClick={() => {
+                        setSelectedFrame(null);
+                        setLocalUserData(prev => ({ ...prev, selectedFrame: null }));
+                      }}
+
                       className="text-[0.65rem] font-black text-red-500 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-lg border-none hover:bg-red-100 transition-colors"
                     >
                       Reset Frame
@@ -1019,7 +1049,12 @@ const PosterEditor = ({ template, onClose }) => {
                   ) : frames.map(f => (
                     <div
                       key={f._id}
-                      onClick={() => setSelectedFrame(f.image)}
+                      onClick={() => {
+                        const frameUrl = normalizeFrameValue(f.image);
+                        setSelectedFrame(frameUrl);
+                        setLocalUserData(prev => ({ ...prev, selectedFrame: frameUrl }));
+                      }}
+
                       className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${effectiveSelectedFrame === f.image ? 'border-red-500 shadow-xl scale-[1.02]' : 'border-gray-100 hover:border-gray-200'}`}
                     >
                       <img src={f.image} className="w-full h-full object-fill" alt={f.name} />

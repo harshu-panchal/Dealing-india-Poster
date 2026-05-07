@@ -154,7 +154,26 @@ const CustomPosterEditor = ({ onClose }) => {
     };
   };
 
+  const getNextPosition = (t, info) => {
+    if (!posterRef.current) return { x: t.x, y: t.y };
+    const rect = posterRef.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    if (!width || !height) return { x: t.x, y: t.y };
+
+    const startX = parseFloat(t.x || 50);
+    const startY = parseFloat(t.y || 50);
+    const deltaX = (info.offset.x / width) * 100;
+    const deltaY = (info.offset.y / height) * 100;
+
+    return {
+      x: (startX + deltaX).toFixed(2),
+      y: (startY + deltaY).toFixed(2)
+    };
+  };
+
   const handleExport = async () => {
+
     if (!posterRef.current || !window.html2canvas) return;
     setSelectedTextId(null); // Deselect text before export
     setIsExporting(true);
@@ -226,15 +245,29 @@ const CustomPosterEditor = ({ onClose }) => {
             {selectedBackground && (
               <img src={selectedBackground} className="absolute inset-0 w-full h-full object-cover pointer-events-none" alt="BG" crossOrigin="anonymous" />
             )}
+
+            {/* Dealing India Branding Badge */}
+            <div className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none">
+              <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
+              <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+            </div>
+
             
             {texts.map(t => (
               <motion.div
                 key={t.id}
                 drag
                 dragMomentum={false}
+                dragConstraints={posterRef}
+
                 onDragEnd={(e, info) => {
-                  // Handle drag position update if needed
+                  const nextPos = getNextPosition(t, info);
+                  setTexts(prev => prev.map(item => item.id === t.id ? { ...item, ...nextPos } : item));
                 }}
+                animate={{ x: 0, y: 0 }}
+                transition={{ duration: 0 }}
+
+
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedTextId(t.id);
@@ -251,10 +284,13 @@ const CustomPosterEditor = ({ onClose }) => {
                   textShadow: `${t.shadow.x}px ${t.shadow.y}px ${t.shadow.blur}px ${t.shadow.color}`,
                   transform: 'translate(-50%, -50%)',
                   whiteSpace: 'pre-wrap',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
                   zIndex: selectedTextId === t.id ? 100 : 10,
                   width: 'fit-content',
-                  maxWidth: '90%',
+                  maxWidth: '85%',
                   padding: '12px 24px',
+
                   overflow: 'visible',
                   border: selectedTextId === t.id ? '2px solid rgba(99, 102, 241, 0.5)' : '2px solid rgba(0,0,0,0)'
                 }}
@@ -268,7 +304,10 @@ const CustomPosterEditor = ({ onClose }) => {
                         fontFamily: 'inherit', 
                         fontSize: 'inherit', 
                         lineHeight: 'tight',
-                        padding: '0'
+                        padding: '0',
+                        maxWidth: '100%',
+                        overflowWrap: 'anywhere'
+
                       }}
                     >
                       {t.text || ' '}
@@ -285,6 +324,7 @@ const CustomPosterEditor = ({ onClose }) => {
                         fontFamily: 'inherit', 
                         fontSize: 'inherit', 
                         textAlign: 'inherit',
+                        wordBreak: 'break-word'
                       }}
                       onClick={(e) => e.stopPropagation()}
                     />
