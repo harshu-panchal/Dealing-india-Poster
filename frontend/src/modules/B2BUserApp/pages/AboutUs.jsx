@@ -78,7 +78,8 @@ const AboutUs = () => {
 
         <div className="mt-8 text-center">
            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Version 1.0.0 (Stable)</p>
-           <p className="text-[10px] font-bold text-slate-300 mt-1">© 2026 Dealing India. All rights reserved.</p>
+           <p className="text-[10px] font-bold text-slate-300 mt-1">© 2026 Dealingindia. All rights reserved.</p>
+
         </div>
       </div>
     </div>

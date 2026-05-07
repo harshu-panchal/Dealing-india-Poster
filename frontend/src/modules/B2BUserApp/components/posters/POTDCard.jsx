@@ -66,22 +66,29 @@ const POTDCard = ({ poster, onEdit }) => {
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     recordActivity();
-    const text = encodeURIComponent(`Check out this Poster of the Day: ${poster.image}`);
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    const platformLink = window.location.origin;
+    const posterLink = `${platformLink}/?templateId=${poster._id}`;
+    const message = `Check out this Poster of the Day! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
+
+
 
   const handleShare = async (e) => {
     e.stopPropagation();
     recordActivity();
     if (navigator.share) {
+      const platformLink = window.location.origin;
+      const posterLink = `${platformLink}/?templateId=${poster._id}`;
       try {
         await navigator.share({
           title: 'Poster of the Day',
           text: 'Check out this design from Dealingindia Poster',
-          url: window.location.href,
+          url: posterLink,
         });
       } catch (err) { }
     } else {
+
       handleWhatsApp(e);
     }
   };

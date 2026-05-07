@@ -141,6 +141,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+
   const handleShare = async (e) => {
     e.stopPropagation();
     recordActivity();

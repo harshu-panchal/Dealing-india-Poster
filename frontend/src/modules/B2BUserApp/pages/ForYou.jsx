@@ -14,7 +14,8 @@ import { useTranslation } from 'react-i18next';
 
 const ForYou = () => {
   const { t } = useTranslation();
-  const { openDetail } = useEditor();
+  const { openDetail, openCustomPosterEditor } = useEditor();
+
   const { user } = useAuth();
   const [categories, setCategories] = useState([]);
   const [sections, setSections] = useState([]);
@@ -379,11 +380,22 @@ const ForYou = () => {
             <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">{t("supportRating")}</p>
           </div>
 
-          <section className="p-3 px-2 bg-white flex justify-center">
-            <div className="w-full lg:max-w-4xl" onClick={() => setIsSearchMode(true)}>
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          <section className="p-3 px-4 bg-white flex justify-center overflow-hidden">
+            <div className="w-full lg:max-w-4xl flex items-center gap-2">
+              <div className="flex-1 min-w-0" onClick={() => setIsSearchMode(true)}>
+                <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              </div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); openCustomPosterEditor(); }}
+                className="shrink-0 bg-emerald-500 text-white px-3.5 py-2.5 rounded-full flex items-center gap-1.5 shadow-lg active:scale-95 transition-all border-none cursor-pointer"
+              >
+                <Layers size={18} />
+                <span className="text-[0.7rem] font-black uppercase tracking-widest whitespace-nowrap">Create</span>
+              </button>
             </div>
           </section>
+
+
 
           <section className="bg-white pt-1 pb-4 relative border-b border-[#f1f5f9] flex justify-center">
             <div className="flex px-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth lg:max-w-6xl w-full gap-1.5 px-4 items-center">

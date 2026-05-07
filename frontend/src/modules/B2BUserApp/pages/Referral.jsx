@@ -38,14 +38,16 @@ const Referral = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareText = `Hey! Join Dealing India Poster and get free credits to create amazing professional posters and videos. Use my referral code: ${user?.user?.referralCode || ''}`;
+  const shareText = `Hey! Join Dealingindia Poster and get free credits to create amazing professional posters and videos. Use my referral code: ${user?.user?.referralCode || ''}`;
+
   const shareURL = `${window.location.origin}/login?ref=${user?.user?.referralCode || ''}`;
 
   const sharePlatform = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Dealing India Poster',
+          title: 'Dealingindia Poster',
+
           text: shareText,
           url: shareURL,
         });

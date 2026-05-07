@@ -318,11 +318,12 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
 
     const message = isVideo 
-      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`
-      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealing India Poster!`;
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
+
 
   const handleShare = async () => {
     const platformLink = window.location.origin;
@@ -333,7 +334,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
       try {
         await navigator.share({
           title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
-          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealing India Poster!`,
+          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealingindia Poster!`,
           url: posterLink,
         });
       } catch (err) {
@@ -343,6 +344,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
       handleWhatsApp();
     }
   };
+
 
   const renderSafeTitle = (val, fallback = 'Design') => {
     if (!val) return fallback;
@@ -402,7 +404,8 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                   className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-black/10 shadow-lg pointer-events-none"
                 >
                   <img src="/dealing-india-logo.png" className="w-8 h-8 object-contain" alt="DI" crossOrigin="anonymous" />
-                  <span className="text-black font-black tracking-tighter text-sm uppercase whitespace-nowrap">Dealing India</span>
+                  <span className="text-black font-black tracking-tighter text-sm uppercase whitespace-nowrap">Dealingindia</span>
+
                 </div>
                {/* Poster Background */}
                {(currentTemplate.type === 'video' || currentTemplate.isVideo || isVideoUrl(currentTemplate.image)) ? (
@@ -636,10 +639,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                  ))}
                </div>
 
-               <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 z-[20] bg-black/30 backdrop-blur-md text-white px-3 py-1 rounded-full flex items-center gap-2 text-[0.75rem] font-black shadow-lg border border-white/10 tracking-widest">
-                 <Heart size={14} className="text-white" fill="currentColor" />
-                 <span>{formatCount(currentTemplate.likeCount)}</span>
-               </div>
+
              </div>
 
              {/* Branding Info - Appended below inside the capturable posterRef container */}

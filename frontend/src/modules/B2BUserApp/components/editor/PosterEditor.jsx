@@ -160,7 +160,7 @@ const PosterEditor = ({ template, onClose }) => {
     if (!width || !height) return null;
 
     const start = dragOffsetsRef.current[id] || { startX: 0, startY: 0 };
-    
+
     const deltaXPct = (info.offset.x / width) * 100;
     const deltaYPct = (info.offset.y / height) * 100;
 

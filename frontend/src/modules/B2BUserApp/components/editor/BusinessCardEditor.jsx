@@ -135,16 +135,32 @@ const BusinessCardEditor = () => {
     } catch (err) { console.error('Capture for video failed:', err); }
   };
 
+  const handleWhatsApp = () => {
+    const platformLink = window.location.origin;
+    const shareUrl = `${platformLink}/business-card/editor/${activeTemplate?._id}`;
+    const message = `Check out this professional digital business card! 📱✨\n\nEdit yours here: ${shareUrl}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/business-card/editor/${activeTemplate?._id}`;
+    const platformLink = window.location.origin;
+    const shareUrl = `${platformLink}/business-card/editor/${activeTemplate?._id}`;
+    
     if (navigator.share) {
-      try { await navigator.share({ title: 'Business Card', text: 'Professional Business Card', url: shareUrl }); }
-      catch (err) { console.log('Share failed'); }
+      try {
+        await navigator.share({
+          title: 'Professional Business Card',
+          text: 'Check out this professional business card from Dealingindia Poster!',
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.log('Share failed');
+      }
     } else {
-      try { await navigator.clipboard.writeText(shareUrl); alert('Link copied!'); }
-      catch (err) { console.error('Copy failed'); }
+      handleWhatsApp();
     }
   };
+
 
   const updateField = (key, value) => {
     const newData = { ...localData, [key]: value };
@@ -355,11 +371,7 @@ const BusinessCardEditor = () => {
                     </div>
                   </div>
                   
-                  {/* ❤️ HEART COUNTER (DYNAMIC) */}
-                  <div className="mt-4 w-fit bg-black/30 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-2 text-white border border-white/20">
-                    <Heart size={18} fill="white" />
-                    <span className="text-[12px] font-bold">{formatCount(tpl.likeCount)}</span>
-                  </div>
+
                 </SwiperSlide>
               ))}
             </Swiper>
@@ -375,7 +387,8 @@ const BusinessCardEditor = () => {
           <div className="flex flex-1 justify-around items-center">
             <ActionIcon icon={Video} label="Video" color="text-[#b91c1c]" onClick={openVideoEditor} />
             <ActionIcon icon={Download} label="Save" color="text-[#b91c1c]" onClick={handleDownload} />
-            <ActionIcon icon={MessageCircle} label="WhatsApp" color="text-[#22c55e]" onClick={handleShare} />
+            <ActionIcon icon={MessageCircle} label="WhatsApp" color="text-[#22c55e]" onClick={handleWhatsApp} />
+
             <ActionIcon icon={Share2} label="Share" color="text-[#b91c1c]" onClick={handleShare} />
           </div>
         </div>
