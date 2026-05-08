@@ -1,23 +1,51 @@
+// Refresh
 import React, { useMemo, useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Music, Layers, 
   Image as ImageIcon, Share2, LogOut, Bell, 
-  Search, Settings, ChevronRight, Calendar, Menu, X,
-  Moon, Sun, Command, ChevronDown, UserCircle, Sparkles
+  Settings, ChevronRight, Calendar, Menu, X,
+  Moon, Sun, ChevronDown, UserCircle, Sparkles, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/Button';
 import '../admin.css';
 
+import axios from 'axios';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logoutAdmin } = useAdminAuth();
+  const { logoutAdmin, admin: adminInfo } = useAdminAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [alerts, setAlerts] = useState({ feedback: 0, users: 0 });
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const fetchAlerts = async () => {
+    if (!adminInfo?.accessToken) return;
+    try {
+      const config = {
+        headers: { Authorization: `Bearer ${adminInfo?.accessToken}` }
+      };
+      const { data } = await axios.get(`${API_URL}/admin/dashboard/sidebar-alerts`, config);
+      if (data.success) {
+        setAlerts(data.alerts);
+      }
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (adminInfo?.accessToken) {
+      fetchAlerts();
+      const interval = setInterval(fetchAlerts, 60000); // Poll every minute
+      return () => clearInterval(interval);
+    }
+  }, [adminInfo]);
 
   // Sync Dark Mode with DOM
   useEffect(() => {
@@ -58,13 +86,14 @@ const AdminLayout = () => {
     {
       label: "USERS & CONTENT",
       items: [
-        { title: 'User Management', path: '/admin/users', icon: Users },
+        { title: 'User Management', path: '/admin/users', icon: Users, badge: alerts.users },
         { title: 'Music Library', path: '/admin/music', icon: Music },
         { title: 'Template Manager', path: '/admin/templates', icon: ImageIcon },
         { title: 'Poster Backgrounds', path: '/admin/backgrounds', icon: ImageIcon },
         { title: 'Layout Frames', path: '/admin/frames', icon: Sparkles },
 
         { title: 'Sticker Registry', path: '/admin/stickers', icon: Sparkles },
+        { title: 'User Feedback', path: '/admin/feedback', icon: MessageSquare, badge: alerts.feedback },
       ]
     },
     {
@@ -76,7 +105,7 @@ const AdminLayout = () => {
         { title: 'System Configuration', path: '/admin/settings', icon: Settings }
       ]
     }
-  ], []);
+  ], [alerts]);
 
   const breadcrumbs = useMemo(() => {
     const parts = location.pathname.split('/').filter(Boolean);
@@ -132,10 +161,17 @@ const AdminLayout = () => {
                   <NavLink 
                     key={item.path} 
                     to={item.path} 
-                    className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+                    className={({ isActive }) => `admin-nav-item flex items-center justify-between ${isActive ? 'active' : ''}`}
                   >
-                    <item.icon size={18} />
-                    <span>{item.title}</span>
+                    <div className="flex items-center gap-3">
+                      <item.icon size={18} />
+                      <span>{item.title}</span>
+                    </div>
+                    {item.badge > 0 && (
+                      <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-lg shadow-red-500/20 animate-pulse">
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </span>
+                    )}
                   </NavLink>
                 ))}
               </div>
@@ -186,18 +222,6 @@ const AdminLayout = () => {
            </div>
 
            <div className="flex items-center gap-2 lg:gap-6">
-              <div className="hidden md:flex items-center bg-white border border-slate-200 px-4 py-2 rounded-xl w-[320px] transition-all focus-within:ring-2 focus-within:ring-red-100">
-                <Search size={16} className="text-slate-400 shrink-0" />
-                <input 
-                  type="text" 
-                  placeholder="Search Command..." 
-                  className="bg-transparent border-none outline-none ml-2 text-xs w-full font-semibold placeholder:text-slate-400"
-                />
-                <div className="flex items-center gap-1 ml-2 text-[10px] text-slate-300 font-black border border-slate-100 px-1 rounded">
-                   <Command size={10} /> K
-                </div>
-              </div>
-
               <div className="flex items-center gap-1.5 lg:gap-3">
                  <button 
                    onClick={toggleDarkMode}

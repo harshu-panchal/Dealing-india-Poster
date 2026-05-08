@@ -7,6 +7,7 @@ import { getFrames } from '../controllers/frame.controller.js';
 import { toggleLikeTemplate, getLikedTemplates, checkLikedStatus } from '../controllers/like.controller.js';
 import { getPublicStickers } from '../controllers/sticker.controller.js';
 import { getUserBackgrounds } from '../controllers/background.controller.js';
+import { submitFeedback } from '../controllers/feedback.controller.js';
 
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.put('/profile', protect, updateProfile);
 router.post('/save-template', protect, saveTemplate);
 router.get('/my-posters', protect, getSavedTemplates);
 router.get('/settings', getPublicSettings);
+router.post('/feedback', protect, submitFeedback);
 
 // Like Routes
 router.post('/templates/:id/like', protect, toggleLikeTemplate);

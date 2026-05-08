@@ -43,6 +43,7 @@ const FrameManager = lazy(() => import('./modules/Admin/pages/FrameManager'));
 const SystemSettings = lazy(() => import('./modules/Admin/pages/SystemSettings'));
 const StickerManager = lazy(() => import('./modules/Admin/pages/StickerManager'));
 const BackgroundManager = lazy(() => import('./modules/Admin/pages/BackgroundManager'));
+const FeedbackManager = lazy(() => import('./modules/Admin/pages/FeedbackManager'));
 
 
 import { AuthProvider, useAuth } from './modules/B2BUserApp/context/AuthContext';
@@ -113,6 +114,7 @@ function AppContent() {
                <Route path="frames" element={<FrameManager />} />
                <Route path="stickers" element={<StickerManager />} />
                <Route path="backgrounds" element={<BackgroundManager />} />
+               <Route path="feedback" element={<FeedbackManager />} />
                <Route path="settings" element={<SystemSettings />} />
 
             </Route>

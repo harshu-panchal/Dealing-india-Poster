@@ -8,7 +8,7 @@ import {
 import { 
   getAdminTemplates, createTemplate, updateTemplate, deleteTemplate 
 } from '../controllers/admin.template.controller.js';
-import { getDashboardStats } from '../controllers/admin.dashboard.controller.js';
+import { getDashboardStats, getSidebarAlerts } from '../controllers/admin.dashboard.controller.js';
 import { 
   getReferralPoints, updateReferralPoints, getReferralLeaderboard,
   getSystemSettings, updateSystemSettings 
@@ -22,6 +22,7 @@ import { protectAdmin } from '../middlewares/admin.middleware.js';
 import { createFrame, getFrames, deleteFrame, updateFrame } from '../controllers/frame.controller.js';
 import { createSticker, getAdminStickers, updateSticker, deleteSticker } from '../controllers/sticker.controller.js';
 import { createBackground, getAdminBackgrounds, updateBackground, deleteBackground } from '../controllers/background.controller.js';
+import { getAllFeedbacks, deleteFeedback, updateFeedbackStatus } from '../controllers/feedback.controller.js';
 
 
 const router = express.Router();
@@ -39,6 +40,7 @@ router.post('/settings', protectAdmin, updateSystemSettings);
 // Protected Admin Routes
 router.get('/users', protectAdmin, getUsers);
 router.get('/dashboard-stats', protectAdmin, getDashboardStats);
+router.get('/dashboard/sidebar-alerts', protectAdmin, getSidebarAlerts);
 router.get('/users/:id', protectAdmin, getUserDetail);
 router.delete('/users/:id', protectAdmin, deleteUser);
 
@@ -100,5 +102,10 @@ router.post('/backgrounds', protectAdmin, createBackground);
 router.put('/backgrounds/:id', protectAdmin, updateBackground);
 router.delete('/backgrounds/:id', protectAdmin, deleteBackground);
 
+
+// Feedback Routes
+router.get('/feedbacks', protectAdmin, getAllFeedbacks);
+router.delete('/feedbacks/:id', protectAdmin, deleteFeedback);
+router.put('/feedbacks/:id/status', protectAdmin, updateFeedbackStatus);
 
 export default router;

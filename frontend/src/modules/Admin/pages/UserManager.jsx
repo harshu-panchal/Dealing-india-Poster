@@ -1,9 +1,10 @@
+// Refresh
+// Refresh
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  Search, Filter, Heart, Star, Download,
-  Edit2, Trash2, ChevronLeft, ChevronRight, User as UserIcon
+  Search, Trash2, ChevronLeft, ChevronRight, User as UserIcon
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -78,21 +79,6 @@ const UserManager = () => {
            <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">Access Control</h1>
            <p className="text-slate-400 text-xs font-semibold mt-1 max-w-[280px] sm:max-w-none">Audit and regulate community membership profiles</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-           <Button 
-             variant="outline" 
-             onClick={() => alert('Exporting user registry archive...')}
-             className="w-full sm:w-auto rounded-xl border-slate-200 h-11 md:h-12 text-[10px] md:text-xs font-black uppercase tracking-widest"
-           >
-              Export Archive
-           </Button>
-           <Button 
-             onClick={() => alert('Opening new UID provision form...')}
-             className="w-full sm:w-auto rounded-xl shadow-lg shadow-red-500/20 h-11 md:h-12 border-none bg-[#ef4444] text-white text-[10px] md:text-xs font-black uppercase tracking-widest"
-           >
-              Provision New UID
-           </Button>
-        </div>
       </div>
 
       <Card className="border-none overflow-hidden pb-2 bg-white">
@@ -109,14 +95,6 @@ const UserManager = () => {
                  }}
               />
            </div>
-           <Button 
-             variant="outline" 
-             onClick={() => alert('Opening advanced attribute filtering...')}
-             className="h-12 px-6 rounded-2xl border-slate-200 group"
-           >
-              <Filter size={16} className="mr-2 text-slate-400 group-hover:text-[#ef4444]" /> 
-              Advanced Filters
-           </Button>
         </div>
 
         <div className="w-full overflow-x-auto scrollbar-hide" ref={tableRef}>
@@ -189,14 +167,6 @@ const UserManager = () => {
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/users/${user._id}/edit`); }}
-                            className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-[#ef4444] border border-slate-100 shadow-sm bg-white"
-                          >
-                            <Edit2 size={16} />
-                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 

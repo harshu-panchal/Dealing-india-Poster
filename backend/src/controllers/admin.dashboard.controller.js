@@ -1,13 +1,15 @@
 import User from '../models/user.model.js';
 import Template from '../models/template.model.js';
 import Category from '../models/category.model.js';
+import Feedback from '../models/feedback.model.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const [userCount, templateCount, categoryCount, latestUsers, popularCategories] = await Promise.all([
+    const [userCount, templateCount, categoryCount, feedbackCount, latestUsers, popularCategories] = await Promise.all([
       User.countDocuments(),
       Template.countDocuments(),
       Category.countDocuments(),
+      Feedback.countDocuments(),
       User.find({}).sort({ createdAt: -1 }).limit(5),
       Template.aggregate([
         { $group: { _id: "$categoryId", count: { $sum: 1 } } },
@@ -18,13 +20,15 @@ export const getDashboardStats = async (req, res) => {
       ])
     ]);
 
+    console.log('Dashboard Stats - Feedback Count:', feedbackCount);
+
     res.status(200).json({
       success: true,
       stats: {
         totalUsers: userCount,
         activeTemplates: templateCount,
         totalCategories: categoryCount,
-        growthTarget: 85
+        totalFeedbacks: feedbackCount
       },
       popularCategories: popularCategories.map(c => ({
         name: c.categoryInfo.name,
@@ -39,6 +43,27 @@ export const getDashboardStats = async (req, res) => {
         joined: u.createdAt,
         status: u.isVerified ? 'active' : 'inactive'
       }))
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSidebarAlerts = async (req, res) => {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const [pendingFeedback, newUsers] = await Promise.all([
+      Feedback.countDocuments({ status: 'pending' }),
+      User.countDocuments({ createdAt: { $gte: twentyFourHoursAgo } })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      alerts: {
+        feedback: pendingFeedback,
+        users: newUsers
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

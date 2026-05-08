@@ -1,3 +1,4 @@
+// Refresh
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -96,15 +97,6 @@ const UserDetail = () => {
             <p className="text-[var(--admin-text-subtle)] text-[11px] font-black uppercase tracking-[0.2em] mt-1 opacity-70">REGISTRY ID: {user._id}</p>
           </div>
         </div>
-
-        <div className="flex gap-3">
-           <Button variant="outline" className="rounded-xl border-slate-200 px-6 font-bold text-slate-600">
-             Deactivate Network
-           </Button>
-           <Button className="rounded-xl shadow-lg shadow-red-500/20 px-6 bg-[#ef4444] text-white border-none font-bold">
-             Update Profile
-           </Button>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
@@ -201,9 +193,6 @@ const UserDetail = () => {
                     </div>
                     <CardTitle className="text-lg font-black tracking-tight">Creative Log Summary</CardTitle>
                  </div>
-                 <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase tracking-widest h-9 bg-white border-slate-200">
-                    Download Full Audit
-                 </Button>
               </CardHeader>
               <CardContent className="p-8">
                  <div className="text-center py-12 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">

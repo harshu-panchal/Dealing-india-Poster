@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   TrendingUp, Users, ImageIcon, Layers, 
   Award, ArrowUpRight, ArrowDownRight, 
-  MoreHorizontal, Calendar, Zap, Target
+  MoreHorizontal, Calendar, Zap, Target, MessageSquare
 } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
@@ -20,7 +20,7 @@ const AdminDashboard = () => {
         totalUsers: 0,
         activeTemplates: 0,
         totalCategories: 0,
-        growthTarget: 85
+        totalFeedbacks: 0
     },
     latestUsers: [],
     popularCategories: []
@@ -40,9 +40,12 @@ const AdminDashboard = () => {
             return;
         }
 
-        const { data } = await axios.get(`${API_URL}/admin/dashboard-stats`, {
+        const { data } = await axios.get(`${API_URL}/admin/dashboard-stats?t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        console.log('Dashboard Data Received:', data);
+
         if (data.success) {
             setDashboardData(data);
         }
@@ -56,10 +59,10 @@ const AdminDashboard = () => {
   }, [API_URL]);
 
   const stats = useMemo(() => [
-    { label: 'Total Users', value: dashboardData.stats.totalUsers.toLocaleString(), icon: Users, color: '#ef4444', trend: '+12.5%', isUp: true, path: '/admin/users' },
-    { label: 'Active Templates', value: dashboardData.stats.activeTemplates.toLocaleString(), icon: Zap, color: '#10b981', trend: '+5.2%', isUp: true, path: '/admin/templates' },
-    { label: 'Categories', value: dashboardData.stats.totalCategories.toLocaleString(), icon: Layers, color: '#f59e0b', trend: '+8.1%', isUp: true, path: '/admin/categories' },
-    { label: 'Growth Target', value: `${dashboardData.stats.growthTarget}%`, icon: Target, color: '#6366f1', trend: '+18.7%', isUp: true }
+    { label: 'Total Users', value: (dashboardData?.stats?.totalUsers || 0).toLocaleString(), icon: Users, color: '#ef4444', trend: '+12.5%', isUp: true, path: '/admin/users' },
+    { label: 'Active Templates', value: (dashboardData?.stats?.activeTemplates || 0).toLocaleString(), icon: Zap, color: '#10b981', trend: '+5.2%', isUp: true, path: '/admin/templates' },
+    { label: 'Categories', value: (dashboardData?.stats?.totalCategories || 0).toLocaleString(), icon: Layers, color: '#f59e0b', trend: '+8.1%', isUp: true, path: '/admin/categories' },
+    { label: 'User Feedback', value: (dashboardData?.stats?.totalFeedbacks || 0).toLocaleString(), icon: MessageSquare, color: '#6366f1', trend: 'Live', isUp: true, path: '/admin/feedback' }
   ], [dashboardData]);
 
   const recentUsers = dashboardData.latestUsers;
@@ -98,21 +101,6 @@ const AdminDashboard = () => {
         <div>
            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none">Operations Control</p>
            <h1 className="text-2xl md:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">System Insights</h1>
-        </div>
-         <div className="flex gap-3 w-full sm:w-auto">
-           <Button 
-             variant="outline" 
-             onClick={() => alert('Filter applied')}
-             className="flex-1 sm:flex-none rounded-xl border-slate-200 h-11 md:h-12 text-[10px] md:text-xs"
-           >
-              <Calendar size={16} className="mr-2" /> Last 30 Days
-           </Button>
-           <Button 
-             onClick={() => alert('Generating system audit report...')}
-             className="flex-1 sm:flex-none rounded-xl shadow-lg shadow-red-500/20 h-11 md:h-12 text-[10px] md:text-xs"
-           >
-              Generate Audit
-           </Button>
         </div>
       </div>
 

@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Camera, User, Phone, MapPin, Globe, CreditCard, 
   Share2, LogOut, ShieldCheck, Mail, Building2, 
-  Copy, Check, Loader2, Save, X, Upload, ArrowLeft
+  Copy, Check, Loader2, Save, X, Upload, ArrowLeft, MessageSquare, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FeedbackModal from '../components/modals/FeedbackModal';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState({ profile: false, logo: false });
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     businessName: '',
@@ -396,6 +398,31 @@ const Profile = () => {
           </div>
         </motion.section>
 
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-white rounded-[32px] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm shrink-0">
+              <MessageSquare size={20} />
+            </div>
+            <h2 className="text-lg font-black text-slate-800 tracking-tight">Support & Feedback</h2>
+          </div>
+
+          <div className="bg-slate-50/50 rounded-[24px] p-5 sm:p-6 text-center border border-slate-100">
+            <h3 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Help Us Improve</h3>
+            <p className="text-xs text-slate-600 font-bold mb-6 leading-relaxed">Your feedback is vital to our growth. Please share your thoughts or report any issues.</p>
+            <button 
+              onClick={() => setIsFeedbackOpen(true)}
+              className="w-full bg-slate-950 text-white py-4 rounded-2xl text-[0.7rem] font-black tracking-[0.2em] hover:bg-slate-800 transition-all shadow-lg active:scale-95 border-none cursor-pointer flex items-center justify-center gap-2 group"
+            >
+              <Star size={16} className="text-amber-400 fill-amber-400 group-hover:scale-125 transition-transform" /> GIVE FEEDBACK
+            </button>
+          </div>
+        </motion.section>
+
         {/* Logout Section */}
         <div className="pt-10 pb-6 text-center">
           <button 
@@ -410,6 +437,12 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      <FeedbackModal 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+        user={user}
+      />
     </div>
   );
 };
