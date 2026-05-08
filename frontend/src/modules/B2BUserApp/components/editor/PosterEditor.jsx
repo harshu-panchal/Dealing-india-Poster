@@ -101,6 +101,7 @@ const PosterEditor = ({ template, onClose }) => {
     const fromTemplate = normalizeFrameValue(template?.customData?.selectedFrame);
     if (fromTemplate) {
       setSelectedFrame(fromTemplate);
+      setLocalUserData(prev => ({ ...prev, selectedFrame: fromTemplate }));
     } else {
       setSelectedFrame(null);
       setLocalUserData(prev => ({ ...prev, selectedFrame: null }));

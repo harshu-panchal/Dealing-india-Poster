@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Volume2, Heart, X } from 'lucide-react';
+import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Play, Pause, Volume2, Heart, X } from 'lucide-react';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
 import BrandingOverlay from './BrandingOverlay';
@@ -102,8 +102,20 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
 
   const handleDownload = async (e) => {
     e.stopPropagation();
+    const isVideoTemplate = currentTemplate.isVideo || currentTemplate.type === 'video';
+    
+    // If it's a video template, open the detail view so the user can generate it with branding
+    if (isVideoTemplate && currentTemplate.videoUrl) {
+      onClick();
+      return;
+    }
+
     if (!cardRef.current || !window.html2canvas) {
-      window.open(currentTemplate.image, '_blank');
+      let downloadUrl = currentTemplate.image;
+      if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+      window.open(downloadUrl, '_blank');
       return;
     }
     recordActivity();
@@ -123,7 +135,11 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
       document.body.removeChild(link);
     } catch (err) {
       console.error('Card download failed:', err);
-      window.open(currentTemplate.image, '_blank');
+      let downloadUrl = currentTemplate.image;
+      if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+      window.open(downloadUrl, '_blank');
     }
   };
 
@@ -132,11 +148,12 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     recordActivity();
     const platformLink = window.location.origin;
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
 
     const message = isVideo
-      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
-      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -145,16 +162,16 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   const handleShare = async (e) => {
     e.stopPropagation();
     recordActivity();
-    const platformLink = window.location.origin;
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
           text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealingindia Poster!`,
-          url: posterLink,
+          url: shareLink,
         });
       } catch (err) {
         console.log('Share failed');
@@ -497,7 +514,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
               onClick={handlePlayClick}
               className="p-3 bg-white/20 backdrop-blur-md rounded-full hover:scale-110 active:scale-95 transition-all"
             >
-              <PlayCircle size={48} className="text-white fill-white/20" />
+              <Play size={32} fill="white" className="ml-1 text-white" />
             </button>
             <div className="absolute bottom-3 right-3 p-1.5 rounded-full bg-black/40 backdrop-blur-sm">
               <Volume2 size={16} className="text-white" />

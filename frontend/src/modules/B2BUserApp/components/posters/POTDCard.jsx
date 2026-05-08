@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { Edit2, Download, MessageCircle, Share2, Flame, Heart, Video, PlayCircle, X } from 'lucide-react';
+import { Edit2, Download, MessageCircle, Share2, Flame, Heart, Video, PlayCircle, Play, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEditor } from '../../context/EditorContext';
 import BrandingOverlay from './BrandingOverlay';
@@ -58,17 +58,34 @@ const POTDCard = ({ poster, onEdit }) => {
 
   const handleDownload = async (e) => {
     e.stopPropagation();
+    
+    const isVideo = poster.type === 'video' || poster.isVideo;
+    
+    // Redirect video templates to the detail/edit view so branding can be applied
+    if (isVideo && poster.videoUrl) {
+      onEdit(poster);
+      return;
+    }
+
     recordActivity();
-    // Fallback if html2canvas not available, or just open image
-    window.open(poster.image, '_blank');
+    let downloadUrl = poster.image;
+
+    // Use Cloudinary attachment flag to force download
+    if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+      downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+    }
+    
+    window.open(downloadUrl, '_blank');
   };
 
   const handleWhatsApp = (e) => {
     e.stopPropagation();
     recordActivity();
     const platformLink = window.location.origin;
-    const posterLink = `${platformLink}/?templateId=${poster._id}`;
-    const message = `Check out this Poster of the Day! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${poster._id}`;
+    
+    const message = `Check out this Poster of the Day! 🎨✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -78,17 +95,16 @@ const POTDCard = ({ poster, onEdit }) => {
     e.stopPropagation();
     recordActivity();
     if (navigator.share) {
-      const platformLink = window.location.origin;
-      const posterLink = `${platformLink}/?templateId=${poster._id}`;
+      // Use backend share URL for better social media previews
+      const shareLink = `${API_URL}/share/poster/${poster._id}`;
       try {
         await navigator.share({
           title: 'Poster of the Day',
           text: 'Check out this design from Dealingindia Poster',
-          url: posterLink,
+          url: shareLink,
         });
       } catch (err) { }
     } else {
-
       handleWhatsApp(e);
     }
   };
@@ -168,7 +184,7 @@ const POTDCard = ({ poster, onEdit }) => {
                 onClick={(e) => { e.stopPropagation(); setIsPlaying(true); }}
                 className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white shadow-xl hover:scale-110 transition-transform"
               >
-                 <PlayCircle size={40} className="fill-white/20" />
+                  <Play size={32} fill="white" className="ml-1" />
               </button>
            </div>
         )}

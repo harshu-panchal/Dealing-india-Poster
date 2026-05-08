@@ -137,21 +137,22 @@ const BusinessCardEditor = () => {
 
   const handleWhatsApp = () => {
     const platformLink = window.location.origin;
-    const shareUrl = `${platformLink}/business-card/editor/${activeTemplate?._id}`;
-    const message = `Check out this professional digital business card! 📱✨\n\nEdit yours here: ${shareUrl}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${activeTemplate?._id}`;
+    const message = `Check out this professional digital business card! 📱✨\n\nEdit yours here: ${shareLink}\n\nCreate your own with Dealingindia Poster!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleShare = async () => {
-    const platformLink = window.location.origin;
-    const shareUrl = `${platformLink}/business-card/editor/${activeTemplate?._id}`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${activeTemplate?._id}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'Professional Business Card',
           text: 'Check out this professional business card from Dealingindia Poster!',
-          url: shareUrl,
+          url: shareLink,
         });
       } catch (err) {
         console.log('Share failed');

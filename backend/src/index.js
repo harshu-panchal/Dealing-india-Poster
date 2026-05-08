@@ -10,6 +10,7 @@ import adminAuthRoutes from './routes/admin.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import musicRoutes from './routes/music.routes.js';
+import shareRoutes from './routes/share.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,6 +34,7 @@ app.use('/api/admin', adminAuthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/music', musicRoutes);
+app.use('/api/share', shareRoutes);
 
 // Static folders
 app.use('/uploads', express.static(path.join(path.dirname(__dirname), 'uploads'), {

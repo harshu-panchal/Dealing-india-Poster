@@ -1,4 +1,4 @@
-import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star, Mail, MapPin, Hash, Palette, Move, Save, CheckCircle, Edit2, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Heart, Video, Download, MessageCircle, Share2, User, Phone, Globe, X, Star, Mail, MapPin, Hash, Palette, Move, Save, CheckCircle, Edit2, PlayCircle, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +23,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const { userData: globalUserData, frames, selectedFrame, setSelectedFrame, initialEditorTab, closeEditor } = useEditor();
   const { user } = useAuth();
   const [showVideoEditor, setShowVideoEditor] = useState(false);
+  const [autoVideoDownload, setAutoVideoDownload] = useState(false);
 
   useEffect(() => {
     if (initialEditorTab === 'video') {
@@ -89,6 +90,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     const existingCustom = template.customData || {};
     const merged = {
       ...existingCustom,
+      selectedFrame: normalizeFrameValue(selectedFrame) || normalizeFrameValue(existingCustom.selectedFrame) || null,
       ...(localPos.name    && { namePos:    localPos.name }),
       ...(localPos.business_name && { businessNamePos: localPos.business_name }),
       ...(localPos.phone   && { phonePos:   localPos.phone }),
@@ -282,8 +284,23 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   };
 
   const handleDownload = async () => {
+    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video' || isVideoUrl(currentTemplate.image);
+    
+    // If it's a video, redirect to the VideoEditor to ensure branding/frames are included
+    if (isVideo && currentTemplate.videoUrl) {
+       setAutoVideoDownload(true);
+       setShowVideoEditor(true);
+       return;
+    }
+    
     if (!posterRef.current || !window.html2canvas) {
-       alert('Rendering engine not ready. Please try again in a moment.');
+       let downloadUrl = currentTemplate.image;
+       
+       if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+         downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+       }
+       
+       window.open(downloadUrl, '_blank');
        return;
     }
     
@@ -306,7 +323,11 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
       document.body.removeChild(link);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Download failed due to a system error. Please try again.');
+      let downloadUrl = currentTemplate.image;
+      if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+      window.open(downloadUrl, '_blank');
     } finally {
       restoreStyles();
     }
@@ -315,27 +336,28 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const handleWhatsApp = () => {
     const platformLink = window.location.origin;
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
 
     const message = isVideo 
-      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
-      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${posterLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
+      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
 
   const handleShare = async () => {
-    const platformLink = window.location.origin;
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const posterLink = `${platformLink}/?templateId=${currentTemplate._id}`;
+    // Use backend share URL for better social media previews
+    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
     
     if (navigator.share) {
       try {
         await navigator.share({
           title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
           text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealingindia Poster!`,
-          url: posterLink,
+          url: shareLink,
         });
       } catch (err) {
         console.log('Share failed');
@@ -427,7 +449,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                           onClick={() => setIsPlaying(true)}
                           className="p-4 bg-white/20 backdrop-blur-md rounded-full text-white shadow-2xl scale-110 active:scale-95 transition-transform"
                         >
-                           <PlayCircle size={64} fill="white" className="opacity-80" />
+                           <Play size={48} fill="white" className="ml-2" />
                         </button>
                       </div>
                     )}
@@ -643,22 +665,34 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                </div>
 
 
+               </div>
+              {!hasFrameApplied && (
+                <BrandingOverlay 
+                  userData={userData} 
+                  size="regular" 
+                  isOverlay={false} 
+                />
+              )}
              </div>
-
-             {/* Branding Info - Appended below inside the capturable posterRef container */}
-             {!hasFrameApplied && (
-               <BrandingOverlay 
-                 userData={userData} 
-                 size="regular" 
-                 isOverlay={false} 
-               />
-             )}
             </div>
           </div>
 
           {/* Action Buttons - Repositioned just after image end */}
           <div className="flex justify-around items-center py-4 px-2 bg-white border-b border-slate-100 shadow-sm">
-            <ActionIcon icon={Edit2} label="Edit" color="#6366f1" onClick={() => onEdit(template)} />
+            <ActionIcon
+              icon={Edit2}
+              label="Edit"
+              color="#6366f1"
+              onClick={() =>
+                onEdit({
+                  ...template,
+                  customData: {
+                    ...(template.customData || {}),
+                    selectedFrame: activeFrame || null
+                  }
+                })
+              }
+            />
             <ActionIcon icon={Video} label="Video" color="#f43f5e" onClick={() => setShowVideoEditor(true)} />
             <ActionIcon icon={Download} label="Save" color="#475569" onClick={handleDownload} />
             <ActionIcon icon={MessageCircle} label="WhatsApp" color="#22c55e" onClick={handleWhatsApp} />
@@ -679,15 +713,29 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                 ))}
              </div>
           </div>
-        </div>
       </motion.div>
 
       <AnimatePresence>
         {showVideoEditor && (
           <VideoEditor 
             template={template} 
-            userData={userData} 
-            onClose={() => setShowVideoEditor(false)} 
+            userData={{
+              ...userData,
+              namePos: localPos.name || userData.namePos,
+              businessNamePos: localPos.business_name || userData.businessNamePos,
+              phonePos: localPos.phone || userData.phonePos,
+              websitePos: localPos.website || userData.websitePos,
+              emailPos: localPos.email || userData.emailPos,
+              addressPos: localPos.address || userData.addressPos,
+              gstPos: localPos.gst || userData.gstPos,
+              userPhotoPos: localPos.photo || userData.userPhotoPos,
+              logoPos: localPos.logo || userData.logoPos
+            }} 
+            autoStartDownload={autoVideoDownload}
+            onClose={() => {
+              setShowVideoEditor(false);
+              setAutoVideoDownload(false);
+            }} 
           />
         )}
       </AnimatePresence>

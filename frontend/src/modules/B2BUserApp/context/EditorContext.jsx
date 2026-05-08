@@ -135,8 +135,8 @@ export const EditorProvider = ({ children }) => {
     const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
     setEditingTemplate(injectUserData(template));
     setInitialEditorTab(initialTab);
-    // Load frame from this template's customData, or PRESERVE if already selected in detail view
-    setSelectedFrame(prev => normalizedFrame || prev || null);
+    // Load frame only from the template being edited to avoid cross-poster leakage.
+    setSelectedFrame(normalizedFrame || null);
     // Keep viewingDetail open
   };
 
