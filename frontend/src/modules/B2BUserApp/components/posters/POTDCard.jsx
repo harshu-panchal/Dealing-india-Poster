@@ -78,31 +78,93 @@ const POTDCard = ({ poster, onEdit }) => {
     window.open(downloadUrl, '_blank');
   };
 
-  const handleWhatsApp = (e) => {
-    e.stopPropagation();
-    recordActivity();
-    const platformLink = window.location.origin;
-    // Use backend share URL for better social media previews
-    const shareLink = `${window.location.origin}/?templateId=${poster._id}`;
-    
-    const message = `Check out this Poster of the Day! 🎨✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  const cardRef = React.useRef(null);
+
+  const getPosterFile = async () => {
+    if (!cardRef.current || !window.html2canvas) return null;
+    try {
+      const canvas = await window.html2canvas(cardRef.current, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], `poster-${Date.now()}.png`, { type: 'image/png' });
+          resolve(file);
+        }, 'image/png', 0.9);
+      });
+    } catch (error) {
+      console.error('Error generating share file:', error);
+      return null;
+    }
   };
 
+  const handleWhatsApp = async (e) => {
+    e.stopPropagation();
+    recordActivity();
+    const isVideo = poster.type === 'video' || poster.isVideo;
+    const shareLink = `${API_URL}/share/poster/${poster._id}`;
+    const userName = effectiveUserData.name || userData?.name || 'Dealingindia User';
+    
+    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
+    if (isVideo) {
+      onEdit(poster);
+      return;
+    }
+
+    if (navigator.share && navigator.canShare) {
+      const file = await getPosterFile();
+      if (file && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            text: message,
+          });
+          return;
+        } catch (err) { }
+      }
+    }
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   const handleShare = async (e) => {
     e.stopPropagation();
     recordActivity();
+    const isVideo = poster.type === 'video' || poster.isVideo;
+    const shareLink = `${API_URL}/share/poster/${poster._id}`;
+    const userName = effectiveUserData.name || userData?.name || 'Dealingindia User';
+    
+    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
+
     if (navigator.share) {
-      // Use backend share URL for better social media previews
-      const shareLink = `${window.location.origin}/?templateId=${poster._id}`;
       try {
-        await navigator.share({
+        const shareData = {
           title: 'Poster of the Day',
-          text: 'Check out this design from Dealingindia Poster',
-          url: shareLink,
-        });
+          text: message,
+        };
+
+        if (isVideo) {
+          shareData.url = shareLink;
+        } else if (navigator.canShare) {
+          const file = await getPosterFile();
+          if (file && navigator.canShare({ files: [file] })) {
+            shareData.files = [file];
+          } else {
+            shareData.url = shareLink;
+          }
+        } else {
+          shareData.url = shareLink;
+        }
+
+        await navigator.share(shareData);
       } catch (err) { }
     } else {
       handleWhatsApp(e);
@@ -125,7 +187,7 @@ const POTDCard = ({ poster, onEdit }) => {
   };
 
   return (
-    <div className="flex flex-col w-full bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100">
+    <div className="flex flex-col w-full bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100" ref={cardRef}>
       <div 
         className="relative aspect-square overflow-hidden cursor-pointer group bg-slate-50" 
         onClick={() => onEdit(poster)}

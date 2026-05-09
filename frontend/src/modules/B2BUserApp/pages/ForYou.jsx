@@ -205,21 +205,38 @@ const ForYou = () => {
 
   // Handle shared template link auto-open
   useEffect(() => {
-    if (allTemplates.length > 0) {
+    const handleAutoOpen = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const templateId = urlParams.get('templateId');
-      
-      if (templateId) {
-        const template = allTemplates.find(t => t._id === templateId);
-        if (template) {
-           openDetail(template);
-           // Clear param from URL
-           const newurl = window.location.origin + window.location.pathname;
-           window.history.replaceState({path: newurl}, '', newurl);
+      if (!templateId) return;
+
+      // 1. Try to find in already loaded templates
+      let template = allTemplates.find(t => t._id === templateId);
+
+      // 2. If not found (e.g. older template or different category), fetch it directly
+      if (!template) {
+        try {
+          const { data } = await axios.get(`${API_URL}/user/templates/${templateId}`);
+          if (data) {
+            template = data;
+          }
+        } catch (err) {
+          console.error('Failed to fetch shared template:', err);
         }
       }
+
+      if (template) {
+        openDetail(template);
+        // Clear param from URL to keep it clean
+        const newurl = window.location.origin + window.location.pathname;
+        window.history.replaceState({ path: newurl }, '', newurl);
+      }
+    };
+
+    if (allTemplates.length > 0 || window.location.search.includes('templateId')) {
+      handleAutoOpen();
     }
-  }, [allTemplates, openDetail]);
+  }, [allTemplates, openDetail, API_URL]);
 
   const handleLikePOTD = async (posterId) => {
     if (!user?.accessToken) return;

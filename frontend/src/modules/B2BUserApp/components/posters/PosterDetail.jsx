@@ -333,34 +333,92 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     }
   };
 
-  const handleWhatsApp = () => {
-    const platformLink = window.location.origin;
+  const getPosterFile = async () => {
+    if (!posterRef.current || !window.html2canvas) return null;
+    const restoreStyles = inlineSafeColorsForHtml2Canvas(posterRef.current);
+    try {
+      const canvas = await window.html2canvas(posterRef.current, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], `poster-${Date.now()}.png`, { type: 'image/png' });
+          resolve(file);
+        }, 'image/png', 0.9);
+      });
+    } catch (error) {
+      console.error('Error generating share file:', error);
+      return null;
+    } finally {
+      restoreStyles();
+    }
+  };
+
+  const handleWhatsApp = async () => {
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    // Use backend share URL for better social media previews
-    const shareLink = `${window.location.origin}/?templateId=${currentTemplate._id}`;
+    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
+    const userName = userData.name || globalUserData?.name || 'Dealingindia User';
+    
+    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
-    const message = isVideo
-      ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
-      : `Check out this professional poster I created! 🎨✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
+    // On mobile, try sharing the file if it's an image
+    if (!isVideo && navigator.share && navigator.canShare) {
+      const file = await getPosterFile();
+      if (file && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            text: message,
+          });
+          return;
+        } catch (err) {
+          console.log('File share failed, falling back to link');
+        }
+      }
+    }
 
+    // Fallback or Desktop: share text link
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
 
   const handleShare = async () => {
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    // Use backend share URL for better social media previews
-    const shareLink = `${window.location.origin}/?templateId=${currentTemplate._id}`;
+    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
+    const userName = userData.name || globalUserData?.name || 'Dealingindia User';
+    
+    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({
+        const shareData = {
           title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
-          text: `Check out this ${isVideo ? 'video poster' : 'poster'} from Dealingindia Poster!`,
-          url: shareLink,
-        });
+          text: message,
+        };
+
+        // Try sharing file if image
+        if (!isVideo && navigator.canShare) {
+          const file = await getPosterFile();
+          if (file && navigator.canShare({ files: [file] })) {
+            shareData.files = [file];
+            // When sharing files, some platforms ignore the 'url' field, so we include it in 'text'
+          } else {
+            shareData.url = shareLink;
+          }
+        } else {
+          shareData.url = shareLink;
+        }
+
+        await navigator.share(shareData);
       } catch (err) {
-        console.log('Share failed');
+        console.log('Share failed', err);
       }
     } else {
       handleWhatsApp();

@@ -309,15 +309,116 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     }
   };
 
-  const handleWhatsApp = () => {
-    const link = `${window.location.origin}/?templateId=${template._id}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent("Check this out! " + link)}`, '_blank');
+  const handleWhatsApp = async () => {
+    const shareLink = `${API_URL}/share/poster/${template._id}`;
+    const userName = userData.name || 'Dealingindia User';
+    const message = `${userName}\n\nI created this professional video greeting using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
+
+    // On mobile, if navigator.share is available, we try to generate and share the file
+    if (navigator.share && navigator.canShare) {
+       handleShare();
+       return;
+    }
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleShare = async () => {
-    const link = `${window.location.origin}/?templateId=${template._id}`;
-    if (navigator.share) await navigator.share({ title: 'Dealingindia', url: link }).catch(() => {});
-    else handleWhatsApp();
+    if (isProcessing) return;
+    
+    const shareLink = `${API_URL}/share/poster/${template._id}`;
+    const userName = userData.name || 'Dealingindia User';
+    const message = `${userName}\n\nI created this professional video greeting using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
+
+    // If we have navigator.share, we'll generate the video blob and share it
+    if (navigator.share) {
+      try {
+        setIsProcessing(true);
+        setDownloadProgress(0);
+        setIsPlaying(true);
+
+        // Reusing logic from handleDownloadVideo but for sharing
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+          mediaStreamDestRef.current = audioContextRef.current.createMediaStreamDestination();
+        }
+        const audioCtx = audioContextRef.current;
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+        const source = audioCtx.createMediaElementSource(posterAudioRef.current);
+        const gain = audioCtx.createGain(); gain.gain.value = 1.0;
+        source.connect(gain); gain.connect(audioCtx.destination); gain.connect(mediaStreamDestRef.current);
+
+        if (videoSourceRef.current) {
+          videoSourceRef.current.currentTime = 0;
+          await videoSourceRef.current.play().catch(e => console.log("Video play error:", e));
+        }
+
+        const stream = new MediaStream([
+          ...canvasRef.current.captureStream(30).getVideoTracks(), 
+          ...mediaStreamDestRef.current.stream.getAudioTracks()
+        ]);
+
+        const mime = ['video/webm;codecs=vp9,opus', 'video/webm', 'video/mp4'].find(t => MediaRecorder.isTypeSupported(t));
+        const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5000000 });
+        const chunks = [];
+        recorder.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+        
+        const dur = 8;
+        const int = setInterval(() => setDownloadProgress(p => p >= 100 ? 100 : p + (100/(dur*10))), 100);
+
+        recorder.onstop = async () => {
+          clearInterval(int);
+          const blob = new Blob(chunks, { type: mime.includes('mp4') ? 'video/mp4' : 'video/webm' });
+          const file = new File([blob], `dealingindia-video-${Date.now()}.mp4`, { type: 'video/mp4' });
+          
+          source.disconnect();
+          gain.disconnect();
+          setIsProcessing(false);
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'Professional Video Poster',
+                text: message,
+              });
+            } catch (err) {
+              console.log('Video share failed', err);
+            }
+          } else {
+            // Fallback to text share if file share not supported
+            await navigator.share({
+              title: 'Professional Video Poster',
+              text: message,
+              url: shareLink
+            });
+          }
+        };
+
+        posterAudioRef.current.currentTime = 0; 
+        await new Promise(r => setTimeout(r, 500));
+        await posterAudioRef.current.play(); 
+        recorder.start(100);
+
+        setTimeout(() => { 
+          if (recorder.state !== 'inactive') recorder.stop(); 
+          posterAudioRef.current.pause(); 
+        }, dur * 1000);
+
+      } catch (err) {
+        console.error("Video share generation error:", err);
+        setIsProcessing(false);
+        // Fallback to text share
+        navigator.share({
+          title: 'Dealingindia',
+          text: message,
+          url: shareLink
+        }).catch(() => {});
+      }
+    } else {
+      handleWhatsApp();
+    }
   };
 
   return (
