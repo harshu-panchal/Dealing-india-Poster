@@ -6,12 +6,12 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false })
   const hasFrame = !!userData.selectedFrame;
 
   // Sizing scales
-  const heightClass    = isCompact ? 'h-[40px]' : 'h-[105px] lg:h-[130px]';
+  const heightClass = isCompact ? 'h-[40px]' : 'h-[105px] lg:h-[130px]';
   const photoSizeClass = isCompact ? 'w-[28px] h-[28px]' : 'w-[60px] h-[60px] lg:w-[80px] lg:h-[80px]';
-  const nameSizeClass  = isCompact ? 'text-[0.5rem]'  : 'text-[0.6rem] lg:text-[0.75rem]';
+  const nameSizeClass = isCompact ? 'text-[0.5rem]' : 'text-[0.6rem] lg:text-[0.75rem]';
   const detailSizeClass = isCompact ? 'text-[0.42rem]' : 'text-[0.45rem] lg:text-[0.55rem]';
-  const paddingClass   = isCompact ? 'px-2'  : 'px-3 lg:px-5';
-  const gapClass       = isCompact ? 'gap-1.5' : 'gap-3 lg:gap-4';
+  const paddingClass = isCompact ? 'px-2' : 'px-3 lg:px-5';
+  const gapClass = isCompact ? 'gap-1.5' : 'gap-3 lg:gap-4';
 
   // ── Custom frame applied: use absolute-position coords from editor ──────
   if (hasFrame) {

@@ -138,14 +138,14 @@ const BusinessCardEditor = () => {
   const handleWhatsApp = () => {
     const platformLink = window.location.origin;
     // Use backend share URL for better social media previews
-    const shareLink = `${API_URL}/share/poster/${activeTemplate?._id}`;
+    const shareLink = `${window.location.origin}/business-card/editor/${activeTemplate?._id}`;
     const message = `Check out this professional digital business card! 📱✨\n\nEdit yours here: ${shareLink}\n\nCreate your own with Dealingindia Poster!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleShare = async () => {
     // Use backend share URL for better social media previews
-    const shareLink = `${API_URL}/share/poster/${activeTemplate?._id}`;
+    const shareLink = `${window.location.origin}/business-card/editor/${activeTemplate?._id}`;
     
     if (navigator.share) {
       try {

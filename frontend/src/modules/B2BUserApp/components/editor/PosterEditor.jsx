@@ -72,9 +72,9 @@ const PosterEditor = ({ template, onClose }) => {
     return null;
   };
 
-  // Local state for edits - initialized from saved customData if available
+  // Local state for edits - merged from global userData and template-specific customData
   const [localUserData, setLocalUserData] = useState(() => {
-    const savedData = template.customData || userData;
+    const savedData = { ...userData, ...(template.customData || {}) };
     return {
       name: savedData.name || '',
       business_name: savedData.business_name || '',

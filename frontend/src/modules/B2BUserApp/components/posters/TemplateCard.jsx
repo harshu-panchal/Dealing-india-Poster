@@ -103,7 +103,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   const handleDownload = async (e) => {
     e.stopPropagation();
     const isVideoTemplate = currentTemplate.isVideo || currentTemplate.type === 'video';
-    
+
     // If it's a video template, open the detail view so the user can generate it with branding
     if (isVideoTemplate && currentTemplate.videoUrl) {
       onClick();
@@ -148,8 +148,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     recordActivity();
     const platformLink = window.location.origin;
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    // Use backend share URL for better social media previews
-    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
+    const shareLink = `${window.location.origin}/?templateId=${currentTemplate._id}`;
 
     const message = isVideo
       ? `Check out this professional video poster I created! 🎬✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`
@@ -163,8 +162,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     e.stopPropagation();
     recordActivity();
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    // Use backend share URL for better social media previews
-    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
+    const shareLink = `${window.location.origin}/?templateId=${currentTemplate._id}`;
 
     if (navigator.share) {
       try {
@@ -453,17 +451,17 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
                 )}
                 {/* Extra Texts */}
                 {effectiveUserData.extraTexts?.map(t => (
-                  <div 
-                    key={t.id} 
-                    className="absolute font-black pointer-events-none" 
-                    style={{ 
-                      left: t.x ?? '40%', 
-                      top: t.y ?? '40%', 
-                      color: t.color, 
+                  <div
+                    key={t.id}
+                    className="absolute font-black pointer-events-none"
+                    style={{
+                      left: t.x ?? '40%',
+                      top: t.y ?? '40%',
+                      color: t.color,
                       fontSize: `calc(${t.size}px * 0.25)`, // Scale for card size
-                      textShadow: '0 2px 4px rgba(0,0,0,0.8)', 
-                      zIndex: 90, 
-                      whiteSpace: 'nowrap' 
+                      textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                      zIndex: 90,
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {t.text}
@@ -472,15 +470,15 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
 
                 {/* Extra Photos */}
                 {effectiveUserData.extraPhotos?.map(p => (
-                  <div 
-                    key={p.id} 
-                    className="absolute pointer-events-none" 
-                    style={{ 
-                      left: p.x ?? '50%', 
-                      top: p.y ?? '30%', 
-                      width: `${p.size || 20}cqw`, 
-                      height: `${p.size || 20}cqw`, 
-                      zIndex: 82 
+                  <div
+                    key={p.id}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: p.x ?? '50%',
+                      top: p.y ?? '30%',
+                      width: `${p.size || 20}cqw`,
+                      height: `${p.size || 20}cqw`,
+                      zIndex: 82
                     }}
                   >
                     <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
@@ -489,15 +487,15 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
 
                 {/* Stickers */}
                 {effectiveUserData.stickers?.map(s => (
-                  <div 
-                    key={s.id} 
-                    className="absolute pointer-events-none" 
-                    style={{ 
-                      left: s.x ?? '20%', 
-                      top: s.y ?? '20%', 
-                      width: `${s.size || 15}cqw`, 
-                      height: `${s.size || 15}cqw`, 
-                      zIndex: 80 
+                  <div
+                    key={s.id}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: s.x ?? '20%',
+                      top: s.y ?? '20%',
+                      width: `${s.size || 15}cqw`,
+                      height: `${s.size || 15}cqw`,
+                      zIndex: 80
                     }}
                   >
                     <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />

@@ -310,12 +310,12 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
   };
 
   const handleWhatsApp = () => {
-    const link = `${API_URL}/share/poster/${template._id}`;
+    const link = `${window.location.origin}/?templateId=${template._id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent("Check this out! " + link)}`, '_blank');
   };
 
   const handleShare = async () => {
-    const link = `${API_URL}/share/poster/${template._id}`;
+    const link = `${window.location.origin}/?templateId=${template._id}`;
     if (navigator.share) await navigator.share({ title: 'Dealingindia', url: link }).catch(() => {});
     else handleWhatsApp();
   };

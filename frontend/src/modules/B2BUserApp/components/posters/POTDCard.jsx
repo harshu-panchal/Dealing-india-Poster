@@ -83,7 +83,7 @@ const POTDCard = ({ poster, onEdit }) => {
     recordActivity();
     const platformLink = window.location.origin;
     // Use backend share URL for better social media previews
-    const shareLink = `${API_URL}/share/poster/${poster._id}`;
+    const shareLink = `${window.location.origin}/?templateId=${poster._id}`;
     
     const message = `Check out this Poster of the Day! 🎨✨\n\nPoster: ${shareLink}\nPlatform: ${platformLink}\n\nCreate your own with Dealingindia Poster!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
@@ -96,7 +96,7 @@ const POTDCard = ({ poster, onEdit }) => {
     recordActivity();
     if (navigator.share) {
       // Use backend share URL for better social media previews
-      const shareLink = `${API_URL}/share/poster/${poster._id}`;
+      const shareLink = `${window.location.origin}/?templateId=${poster._id}`;
       try {
         await navigator.share({
           title: 'Poster of the Day',
