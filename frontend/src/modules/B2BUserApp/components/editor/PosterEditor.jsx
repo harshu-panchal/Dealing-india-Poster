@@ -1161,7 +1161,10 @@ const PosterEditor = ({ template, onClose }) => {
         {showVideoEditor && (
           <VideoEditor
             template={template}
-            userData={userData}
+            userData={{
+              ...userData,
+              selectedFrame: selectedFrame
+            }}
             onClose={() => {
               setShowVideoEditor(false);
               if (activeTab === 'video') setActiveTab('text');

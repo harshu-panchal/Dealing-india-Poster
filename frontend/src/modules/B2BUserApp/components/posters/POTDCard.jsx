@@ -7,7 +7,7 @@ import BrandingOverlay from './BrandingOverlay';
 
 const POTDCard = ({ poster, onEdit }) => {
   const { user } = useAuth();
-  const { openEditor, userData } = useEditor();
+  const { openEditor, userData, frames } = useEditor();
   const [isLiked, setIsLiked] = React.useState(poster.isLiked || false);
   const [likeCount, setLikeCount] = React.useState(poster.likeCount || 0);
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -30,7 +30,10 @@ const POTDCard = ({ poster, onEdit }) => {
     logo: cleanUrl(rawUserData.logo),
     userPhoto: cleanUrl(rawUserData.userPhoto)
   };
-  const activeFrame = normalizeFrameValue(effectiveUserData.selectedFrame);
+  const defaultFrame = (frames && frames.length > 0) ? (frames[0].image || frames[0].url) : null;
+  const activeFrame = normalizeFrameValue(effectiveUserData.selectedFrame) || defaultFrame;
+  const activeFrameObj = (frames || []).find(f => normalizeFrameValue(f) === activeFrame);
+  const framePos = activeFrameObj?.textStyle?.positions || {};
 
   React.useEffect(() => {
      return () => setIsPlaying(false);
@@ -58,9 +61,9 @@ const POTDCard = ({ poster, onEdit }) => {
 
   const handleDownload = async (e) => {
     e.stopPropagation();
-    
+
     const isVideo = poster.type === 'video' || poster.isVideo;
-    
+
     // Redirect video templates to the detail/edit view so branding can be applied
     if (isVideo && poster.videoUrl) {
       onEdit(poster);
@@ -68,20 +71,126 @@ const POTDCard = ({ poster, onEdit }) => {
     }
 
     recordActivity();
-    let downloadUrl = poster.image;
 
-    // Use Cloudinary attachment flag to force download
-    if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
-      downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+    // If no html2canvas or card ref available, fallback to raw URL
+    if (!cardRef.current || !window.html2canvas) {
+      let downloadUrl = poster.image;
+      if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+      window.open(downloadUrl, '_blank');
+      return;
     }
-    
-    window.open(downloadUrl, '_blank');
+
+    // Use html2canvas to capture full rendered card with BrandingOverlay
+    await waitForImages(cardRef.current);
+    const restoreStyles = inlineSafeColorsForHtml2Canvas(cardRef.current);
+    try {
+      const canvas = await window.html2canvas(cardRef.current, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        imageTimeout: 15000
+      });
+      const link = document.createElement('a');
+      link.download = `my-design-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Card download failed:', err);
+      let downloadUrl = poster.image;
+      if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+      window.open(downloadUrl, '_blank');
+    } finally {
+      restoreStyles();
+    }
   };
 
   const cardRef = React.useRef(null);
 
+  const inlineSafeColorsForHtml2Canvas = (rootElement) => {
+    if (!rootElement) return () => { };
+    const elements = [rootElement, ...rootElement.querySelectorAll('*')];
+    const updated = [];
+    const colorProps = ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'fill', 'stroke'];
+    const shadowProps = ['box-shadow', 'text-shadow'];
+
+    elements.forEach((el) => {
+      const computed = window.getComputedStyle(el);
+      const previous = {};
+      colorProps.forEach((prop) => {
+        const value = computed.getPropertyValue(prop);
+        if (!value) return;
+        previous[prop] = el.style.getPropertyValue(prop);
+        if (value.includes('oklab') || value.includes('oklch')) {
+          const lMatch = value.match(/okl?ch\(([\d\.]+)/);
+          const L = lMatch ? parseFloat(lMatch[1]) : (prop === 'background-color' ? 0 : 1);
+          const fallback = (prop === 'background-color') ? (L < 0.4 ? '#000000' : '#ffffff') : (L > 0.6 ? '#ffffff' : '#000000');
+          el.style.setProperty(prop, fallback, 'important');
+        } else {
+          el.style.setProperty(prop, value, 'important');
+        }
+      });
+      // Fix shadows
+      shadowProps.forEach((prop) => {
+        const value = computed.getPropertyValue(prop);
+        if (!value) return;
+        previous[prop] = el.style.getPropertyValue(prop);
+        if (value.includes('oklab') || value.includes('oklch')) el.style.setProperty(prop, 'none', 'important');
+        else el.style.setProperty(prop, value, 'important');
+      });
+
+      // Fix cqw units for html2canvas
+      const containerWidth = rootElement.getBoundingClientRect().width;
+      if (el.style.fontSize && el.style.fontSize.includes('cqw')) {
+        previous.fontSize = el.style.fontSize;
+        const val = parseFloat(el.style.fontSize);
+        el.style.fontSize = `${(val * containerWidth) / 100}px`;
+      }
+      if (el.style.width && el.style.width.includes('cqw')) {
+        previous.width = el.style.width;
+        const val = parseFloat(el.style.width);
+        el.style.width = `${(val * containerWidth) / 100}px`;
+      }
+      if (el.style.height && el.style.height.includes('cqw')) {
+        previous.height = el.style.height;
+        const val = parseFloat(el.style.height);
+        el.style.height = `${(val * containerWidth) / 100}px`;
+      }
+
+      updated.push({ el, previous });
+    });
+    return () => {
+      updated.forEach(({ el, previous }) => {
+        Object.entries(previous).forEach(([prop, value]) => {
+          if (value) el.style.setProperty(prop, value);
+          else el.style.removeProperty(prop);
+        });
+      });
+    };
+  };
+
+  const waitForImages = async (el) => {
+    const imgs = Array.from(el.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+    await Promise.all(imgs.map(img => img.decode().catch(() => {})));
+  };
+
   const getPosterFile = async () => {
     if (!cardRef.current || !window.html2canvas) return null;
+    await waitForImages(cardRef.current);
+    const restoreStyles = inlineSafeColorsForHtml2Canvas(cardRef.current);
     try {
       const canvas = await window.html2canvas(cardRef.current, {
         useCORS: true,
@@ -102,6 +211,8 @@ const POTDCard = ({ poster, onEdit }) => {
     } catch (error) {
       console.error('Error generating share file:', error);
       return null;
+    } finally {
+      restoreStyles();
     }
   };
 
@@ -253,22 +364,34 @@ const POTDCard = ({ poster, onEdit }) => {
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
+        {/* Dealing India Branding Badge */}
+        <div
+          className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none"
+        >
+          <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
+          <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+        </div>
         {activeFrame && (
-          <img 
-            src={activeFrame} 
-            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]" 
-            alt="Frame Overlay"
-            crossOrigin="anonymous"
+          <BrandingOverlay
+            userData={effectiveUserData}
+            size="regular"
+            isOverlay={true}
+            activeFrame={activeFrame}
+            framePos={framePos}
           />
         )}
       </div>
 
-      {/* Branding Info - Appended below as requested */}
-      <BrandingOverlay 
-        userData={effectiveUserData} 
-        size="regular" 
-        isOverlay={false} 
-      />
+      {/* Branding Info - Appended below as footer when NO frame */}
+      {!activeFrame && (
+        <BrandingOverlay
+          userData={effectiveUserData}
+          size="regular"
+          isOverlay={false}
+          activeFrame={activeFrame}
+          framePos={framePos}
+        />
+      )}
       
       <div className="flex justify-around py-3 lg:py-4 border-t border-slate-50 bg-white">
         <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => { e.stopPropagation(); onEdit(poster); }}>

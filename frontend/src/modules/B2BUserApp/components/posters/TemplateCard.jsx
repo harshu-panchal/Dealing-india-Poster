@@ -53,7 +53,8 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   };
   // Only read selectedFrame from THIS template's own saved customData.
   // NEVER fall back to global userData.selectedFrame — that would pollute all cards.
-  const activeFrame = template.customData ? normalizeFrameValue(effectiveUserData.selectedFrame) : null;
+  const defaultFrame = (frames && frames.length > 0) ? (frames[0].image || frames[0].url) : null;
+  const activeFrame = (template.customData ? normalizeFrameValue(effectiveUserData.selectedFrame) : null) || defaultFrame;
 
   // Dynamic position fallbacks from the frame object itself (for Saved Posters)
   const activeFrameObj = (frames || []).find(f => normalizeFrameValue(f) === activeFrame);
@@ -88,16 +89,82 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
 
   const cardRef = React.useRef(null);
 
-  const fixUnsupportedColors = (rootElement) => {
-    if (!rootElement) return;
+  const inlineSafeColorsForHtml2Canvas = (rootElement) => {
+    if (!rootElement) return () => { };
     const elements = [rootElement, ...rootElement.querySelectorAll('*')];
+    const updated = [];
+    const colorProps = ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'fill', 'stroke'];
+    const shadowProps = ['box-shadow', 'text-shadow'];
+    const containerWidth = rootElement.getBoundingClientRect().width;
+
     elements.forEach((el) => {
-      const computedStyle = window.getComputedStyle(el);
-      const color = computedStyle.color;
-      const bgColor = computedStyle.backgroundColor;
-      if (color && (color.includes('oklab') || color.includes('oklch'))) el.style.color = '#000000';
-      if (bgColor && (bgColor.includes('oklab') || bgColor.includes('oklch'))) el.style.backgroundColor = '#ffffff';
+      const computed = window.getComputedStyle(el);
+      const previous = {};
+      
+      // Fix colors
+      colorProps.forEach((prop) => {
+        const value = computed.getPropertyValue(prop);
+        if (!value) return;
+        previous[prop] = el.style.getPropertyValue(prop);
+        if (value.includes('oklab') || value.includes('oklch')) {
+          const lMatch = value.match(/okl?ch\(([\d\.]+)/);
+          const L = lMatch ? parseFloat(lMatch[1]) : (prop === 'background-color' ? 0 : 1);
+          const fallback = (prop === 'background-color') ? (L < 0.4 ? '#000000' : '#ffffff') : (L > 0.6 ? '#ffffff' : '#000000');
+          el.style.setProperty(prop, fallback, 'important');
+        } else {
+          el.style.setProperty(prop, value, 'important');
+        }
+      });
+
+      // Fix shadows
+      shadowProps.forEach((prop) => {
+        const value = computed.getPropertyValue(prop);
+        if (!value) return;
+        previous[prop] = el.style.getPropertyValue(prop);
+        if (value.includes('oklab') || value.includes('oklch')) el.style.setProperty(prop, 'none', 'important');
+        else el.style.setProperty(prop, value, 'important');
+      });
+
+      // Fix cqw units for html2canvas
+      if (el.style.fontSize && el.style.fontSize.includes('cqw')) {
+        previous.fontSize = el.style.fontSize;
+        const val = parseFloat(el.style.fontSize);
+        el.style.fontSize = `${(val * containerWidth) / 100}px`;
+      }
+      if (el.style.width && el.style.width.includes('cqw')) {
+        previous.width = el.style.width;
+        const val = parseFloat(el.style.width);
+        el.style.width = `${(val * containerWidth) / 100}px`;
+      }
+      if (el.style.height && el.style.height.includes('cqw')) {
+        previous.height = el.style.height;
+        const val = parseFloat(el.style.height);
+        el.style.height = `${(val * containerWidth) / 100}px`;
+      }
+
+      updated.push({ el, previous });
     });
+    return () => {
+      updated.forEach(({ el, previous }) => {
+        Object.entries(previous).forEach(([prop, value]) => {
+          if (value) el.style.setProperty(prop, value);
+          else el.style.removeProperty(prop);
+        });
+      });
+    };
+  };
+
+  const waitForImages = async (el) => {
+    const imgs = Array.from(el.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+    // Also wait for decode to be safe
+    await Promise.all(imgs.map(img => img.decode().catch(() => {})));
   };
 
   const handleDownload = async (e) => {
@@ -110,6 +177,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
       return;
     }
 
+    // If no html2canvas or card ref available, fallback to raw URL
     if (!cardRef.current || !window.html2canvas) {
       let downloadUrl = currentTemplate.image;
       if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
@@ -119,17 +187,19 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
       return;
     }
     recordActivity();
+    await waitForImages(cardRef.current);
+    const restoreStyles = inlineSafeColorsForHtml2Canvas(cardRef.current);
     try {
-      fixUnsupportedColors(cardRef.current);
       const canvas = await window.html2canvas(cardRef.current, {
         useCORS: true,
-        scale: 3,
+        scale: 2,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: false,
+        imageTimeout: 15000,
       });
       const link = document.createElement('a');
       link.download = `my-design-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
+      link.href = canvas.toDataURL('image/png');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -140,13 +210,14 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
         downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
       }
       window.open(downloadUrl, '_blank');
+    } finally {
+      restoreStyles();
     }
   };
 
   const getPosterFile = async () => {
-    if (!cardRef.current || !window.html2canvas) return null;
+    const restoreStyles = inlineSafeColorsForHtml2Canvas(cardRef.current);
     try {
-      fixUnsupportedColors(cardRef.current);
       const canvas = await window.html2canvas(cardRef.current, {
         useCORS: true,
         scale: 2,
@@ -166,6 +237,8 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     } catch (error) {
       console.error('Error generating share file:', error);
       return null;
+    } finally {
+      restoreStyles();
     }
   };
 
@@ -251,24 +324,23 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   if (variant === 'compact') {
     return (
       <div
-        className="min-w-[130px] w-[130px] aspect-square rounded-md overflow-hidden bg-[#f1f5f9] relative cursor-pointer transition-transform active:scale-95 shadow-sm"
+        className="min-w-[130px] w-[130px] rounded-md overflow-hidden bg-white relative cursor-pointer transition-transform active:scale-95 shadow-sm flex flex-col"
         onClick={() => handleAction(new Event('click'), onClick)}
       >
-        <img
-          src={currentTemplate.image}
-          alt={currentTemplate.title}
-          className="w-full h-full object-cover relative z-[1]"
-          onError={handleImageError}
-        />
-        {activeFrame && (
+        <div className="w-full aspect-square relative overflow-hidden bg-[#f1f5f9]">
           <img
-            src={activeFrame}
-            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]"
-            alt="Frame Overlay"
-            crossOrigin="anonymous"
+            src={currentTemplate.image}
+            alt={currentTemplate.title}
+            className="w-full h-full object-cover relative z-[1]"
+            onError={handleImageError}
           />
+          {activeFrame && (
+            overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={true} framePos={framePos} />
+          )}
+        </div>
+        {!activeFrame && (
+          overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={false} framePos={framePos} />
         )}
-        {overlay || <BrandingOverlay userData={effectiveUserData} size="compact" />}
       </div>
     );
   }
@@ -291,7 +363,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-[#f1f5f9] overflow-hidden group transition-all hover:shadow-lg hover:-translate-y-1 mb-4" ref={cardRef}>
+    <div className="bg-white rounded-xl shadow-md border border-[#f1f5f9] overflow-hidden group transition-all hover:shadow-lg hover:-translate-y-1 mb-4">
       {/* Poster Heading with Like Button */}
       <div className="flex items-center justify-between px-3 py-2 bg-white">
         <h3 className="text-[0.75rem] font-black text-slate-800 uppercase tracking-wider truncate max-w-[70%]">
@@ -307,11 +379,12 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
           )}
         </button>
       </div>
-      <div
-        className="w-full aspect-square overflow-hidden relative cursor-pointer group"
-        style={{ backgroundColor: '#f8fafc', containerType: 'inline-size' }}
-        onClick={() => handleAction(new Event('click'), onClick)}
-      >
+      <div ref={cardRef} className="relative bg-white flex flex-col">
+        <div
+          className="w-full aspect-square overflow-hidden relative cursor-pointer group flex-shrink-0"
+          style={{ backgroundColor: '#f8fafc', containerType: 'inline-size' }}
+          onClick={() => handleAction(new Event('click'), onClick)}
+        >
         {(isVideoTemplate && (currentTemplate.videoUrl || isVideoUrl(currentTemplate.image))) ? (
           <div className="w-full h-full relative">
             <video
@@ -348,6 +421,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
             src={currentTemplate.image}
             alt={currentTemplate.title}
             loading="lazy"
+            crossOrigin="anonymous"
             className="w-full h-full object-cover relative z-[1]"
             onError={handleImageError}
           />
@@ -357,218 +431,71 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
           <audio src={currentTemplate.audioUrl} autoPlay loop />
         )}
 
-        {/* Dealing India Branding Badge removed from here as per request */}
+        {/* Dealing India Branding Badge */}
+        <div
+          className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none"
+        >
+          <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
+          <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+        </div>
 
-        {activeFrame && (
-          <>
-            <img
-              src={activeFrame}
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]"
-              alt="Frame Overlay"
-              crossOrigin="anonymous"
-            />
-            {/* ── DESIGN FRAME TEXT LAYER (Only for Saved/Edited Posters) ── */}
-            {template.customData && (
-              <div className="absolute inset-0 z-[70] pointer-events-none">
-                {effectiveUserData.enabledFields?.name !== false && (
-                  <span
-                    className="absolute font-black text-white uppercase tracking-tight whitespace-nowrap"
-                    style={{
-                      left: effectiveUserData.namePos?.x || framePos.name?.x || '5%',
-                      top: effectiveUserData.namePos?.y || framePos.name?.y || '80%',
-                      fontSize: '4.5cqw',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.name || ''}
-                  </span>
-                )}
+        {/* Frame Layer removed from here as per request - now used as footer bg */}
+        {/* ── Extra Content Layer (Stickers, Photos, Extra Texts) ── */}
+        <div className="absolute inset-0 z-[70] pointer-events-none">
+          {/* Extra Texts */}
+          {effectiveUserData.extraTexts?.map(t => (
+            <div
+              key={t.id}
+              className="absolute font-black"
+              style={{
+                left: t.x ?? '40%',
+                top: t.y ?? '40%',
+                color: t.color,
+                fontSize: `calc(${t.size}px * 0.25)`, // Scale for card size
+                textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                zIndex: 90,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {t.text}
+            </div>
+          ))}
 
-                {/* Logo */}
-                {effectiveUserData.enabledFields?.logo !== false && effectiveUserData.logo && (
-                  <div
-                    className="absolute overflow-hidden"
-                    style={{
-                      left: effectiveUserData.logoPos?.x || framePos.logo?.x || '75%',
-                      top: effectiveUserData.logoPos?.y || framePos.logo?.y || '10%',
-                      width: '12cqw',
-                      height: '12cqw',
-                      zIndex: 72
-                    }}
-                  >
-                    <img src={effectiveUserData.logo} className="w-full h-full object-contain" alt="" />
-                  </div>
-                )}
+          {/* Extra Photos */}
+          {effectiveUserData.extraPhotos?.map(p => (
+            <div
+              key={p.id}
+              className="absolute overflow-hidden"
+              style={{
+                left: p.x || '40%',
+                top: p.y || '40%',
+                width: `${p.size || 20}cqw`,
+                height: `${p.size || 20}cqw`,
+                zIndex: 82
+              }}
+            >
+              <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
+            </div>
+          ))}
 
-                {/* User Photo */}
-                {effectiveUserData.enabledFields?.userPhoto !== false && effectiveUserData.userPhoto && (
-                  <div
-                    className="absolute overflow-hidden rounded-full border border-white/20 shadow-sm"
-                    style={{
-                      left: effectiveUserData.userPhotoPos?.x || effectiveUserData.photoPos?.x || framePos.userPhoto?.x || '10%',
-                      top: effectiveUserData.userPhotoPos?.y || effectiveUserData.photoPos?.y || framePos.userPhoto?.y || '10%',
-                      width: '12cqw',
-                      height: '12cqw',
-                      zIndex: 72
-                    }}
-                  >
-                    <img src={effectiveUserData.userPhoto} className="w-full h-full object-cover" alt="" />
-                  </div>
-                )}
-
-                {effectiveUserData.enabledFields?.business_name !== false && (
-                  <span
-                    className="absolute font-black text-white/90 uppercase tracking-tight whitespace-nowrap"
-                    style={{
-                      left: effectiveUserData.businessNamePos?.x || framePos.business_name?.x || '5%',
-                      top: effectiveUserData.businessNamePos?.y || framePos.business_name?.y || '85%',
-                      fontSize: '3.8cqw',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.business_name || ''}
-                  </span>
-                )}
-                {effectiveUserData.phone_number && (
-                  <span
-                    className="absolute font-black text-white/90 whitespace-nowrap"
-                    style={{
-                      left: effectiveUserData.phonePos?.x || framePos.phone?.x || '5%',
-                      top: effectiveUserData.phonePos?.y || framePos.phone?.y || '90%',
-                      fontSize: '3.2cqw',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.phone_number}
-                  </span>
-                )}
-
-                {/* Website */}
-                {effectiveUserData.website && (
-                  <span
-                    className="absolute font-bold text-white/90 whitespace-nowrap text-right"
-                    style={{
-                      right: '5%',
-                      left: effectiveUserData.websitePos?.x || framePos.website?.x || 'auto',
-                      top: effectiveUserData.websitePos?.y || framePos.website?.y || '88%',
-                      fontSize: '2.8cqw',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.website}
-                  </span>
-                )}
-
-                {/* Email */}
-                {effectiveUserData.email && (
-                  <span
-                    className="absolute font-bold text-white/80 whitespace-nowrap text-right"
-                    style={{
-                      right: '5%',
-                      left: effectiveUserData.emailPos?.x || framePos.email?.x || 'auto',
-                      top: effectiveUserData.emailPos?.y || framePos.email?.y || '91.5%',
-                      fontSize: '2.5cqw',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.email}
-                  </span>
-                )}
-
-                {/* Address */}
-                {effectiveUserData.businessAddress && (
-                  <span
-                    className="absolute font-bold text-white/90 whitespace-nowrap text-right"
-                    style={{
-                      right: '5%',
-                      left: effectiveUserData.addressPos?.x || framePos.address?.x || 'auto',
-                      top: effectiveUserData.addressPos?.y || framePos.address?.y || '84%',
-                      fontSize: '2.8cqw',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.businessAddress}
-                  </span>
-                )}
-
-                {/* GST */}
-                {(effectiveUserData.enabledFields?.gst || (effectiveUserData.gst_number || '').trim()) && (
-                  <span
-                    className="absolute font-black text-white/90 uppercase tracking-tight whitespace-nowrap"
-                    style={{
-                      left: effectiveUserData.gstPos?.x || framePos.gst?.x || '5%',
-                      top: effectiveUserData.gstPos?.y || framePos.gst?.y || '93%',
-                      fontSize: '3cqw',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                      lineHeight: 1
-                    }}
-                  >
-                    {effectiveUserData.gst_number}
-                  </span>
-                )}
-                {/* Extra Texts */}
-                {effectiveUserData.extraTexts?.map(t => (
-                  <div
-                    key={t.id}
-                    className="absolute font-black pointer-events-none"
-                    style={{
-                      left: t.x ?? '40%',
-                      top: t.y ?? '40%',
-                      color: t.color,
-                      fontSize: `calc(${t.size}px * 0.25)`, // Scale for card size
-                      textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-                      zIndex: 90,
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {t.text}
-                  </div>
-                ))}
-
-                {/* Extra Photos */}
-                {effectiveUserData.extraPhotos?.map(p => (
-                  <div
-                    key={p.id}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: p.x ?? '50%',
-                      top: p.y ?? '30%',
-                      width: `${p.size || 20}cqw`,
-                      height: `${p.size || 20}cqw`,
-                      zIndex: 82
-                    }}
-                  >
-                    <img src={p.url} className="w-full h-full object-cover rounded shadow-xl border-2 border-white" crossOrigin="anonymous" />
-                  </div>
-                ))}
-
-                {/* Stickers */}
-                {effectiveUserData.stickers?.map(s => (
-                  <div
-                    key={s.id}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: s.x ?? '20%',
-                      top: s.y ?? '20%',
-                      width: `${s.size || 15}cqw`,
-                      height: `${s.size || 15}cqw`,
-                      zIndex: 80
-                    }}
-                  >
-                    <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
+          {/* Stickers */}
+          {effectiveUserData.stickers?.map(s => (
+            <div
+              key={s.id}
+              className="absolute"
+              style={{
+                left: s.x ?? '20%',
+                top: s.y ?? '20%',
+                width: `${s.size || 15}cqw`,
+                height: `${s.size || 15}cqw`,
+                zIndex: 80
+              }}
+            >
+              <img src={s.url} className="w-full h-full object-contain" crossOrigin="anonymous" />
+            </div>
+          ))}
+        </div>
+        
         {isVideoTemplate && !isPlaying && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-[65]">
             <button
@@ -593,10 +520,18 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
             </button>
           </div>
         )}
+        
+        {/* Branding Overlay (when frame applied) */}
+        {activeFrame && (
+           overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={true} activeFrame={activeFrame} framePos={framePos} />
+        )}
       </div>
 
-      {/* Branding Info - Restored Home Page logic */}
-      {(template.customData ? !activeFrame : true) && (overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={false} />)}
+        {/* Branding Info (footer mode when no frame) */}
+        {!activeFrame && (
+           overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={false} activeFrame={activeFrame} framePos={framePos} />
+        )}
+      </div>
 
       {(variant === 'regular' && showActions) && (
         <div className="flex justify-around py-3 lg:py-4 border-t border-[#f1f5f9] bg-white rounded-b-xl shadow-sm">

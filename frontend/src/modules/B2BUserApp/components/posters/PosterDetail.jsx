@@ -155,12 +155,14 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     if (typeof frame === 'object') return frame.image || frame.url || null;
     return null;
   };
-  const activeFrame = normalizeFrameValue(userData.selectedFrame) || normalizeFrameValue(selectedFrame);
+  const defaultFrame = (frames && frames.length > 0) ? (frames[0].image || frames[0].url) : null;
+  const activeFrame = normalizeFrameValue(userData.selectedFrame) || normalizeFrameValue(selectedFrame) || defaultFrame;
   const hasFrameApplied = !!activeFrame;
 
   // Find the full frame object to get text styles
   const activeFrameObj = frames.find(f => normalizeFrameValue(f) === activeFrame);
   const frameStyle = activeFrameObj?.textStyle || {};
+  const framePos = frameStyle.positions || {};
 
   const getStyle = (type) => {
     const isName = type === 'name';
@@ -182,7 +184,6 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const detailFontClass = ''; // Managed via inline style now
 
   // Frame-defined per-field positions (admin set via drag)
-  const framePos = frameStyle.positions || {};
 
   // Poster-relative defaults — frame positions take priority over hardcoded fallbacks
   const nameDefault = { x: framePos.name?.x || '5%', y: framePos.name?.y || (hasFrameApplied ? '80%' : '78%') };
@@ -247,25 +248,47 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
         previous[prop] = el.style.getPropertyValue(prop);
 
         if (value.includes('oklab') || value.includes('oklch')) {
-          const fallback = prop === 'background-color' ? '#ffffff' : '#000000';
+          const isBg = prop === 'background-color';
+          // Check for lightness (first value in oklch)
+          const lightnessMatch = value.match(/okl?ch\(([\d\.]+)/);
+          const L = lightnessMatch ? parseFloat(lightnessMatch[1]) : (isBg ? 0 : 1);
+          
+          let fallback = '#000000';
+          if (L > 0.6) fallback = '#ffffff';
+          if (isBg) fallback = (L < 0.4) ? '#000000' : '#ffffff';
+          
           el.style.setProperty(prop, fallback, 'important');
         } else {
           el.style.setProperty(prop, value, 'important');
         }
       });
 
+      // Fix shadows
       shadowProps.forEach((prop) => {
         const value = computed.getPropertyValue(prop);
         if (!value) return;
-
         previous[prop] = el.style.getPropertyValue(prop);
-
-        if (value.includes('oklab') || value.includes('oklch')) {
-          el.style.setProperty(prop, 'none', 'important');
-        } else {
-          el.style.setProperty(prop, value, 'important');
-        }
+        if (value.includes('oklab') || value.includes('oklch')) el.style.setProperty(prop, 'none', 'important');
+        else el.style.setProperty(prop, value, 'important');
       });
+
+      // Fix cqw units for html2canvas
+      const containerWidth = rootElement.getBoundingClientRect().width;
+      if (el.style.fontSize && el.style.fontSize.includes('cqw')) {
+        previous.fontSize = el.style.fontSize;
+        const val = parseFloat(el.style.fontSize);
+        el.style.fontSize = `${(val * containerWidth) / 100}px`;
+      }
+      if (el.style.width && el.style.width.includes('cqw')) {
+        previous.width = el.style.width;
+        const val = parseFloat(el.style.width);
+        el.style.width = `${(val * containerWidth) / 100}px`;
+      }
+      if (el.style.height && el.style.height.includes('cqw')) {
+        previous.height = el.style.height;
+        const val = parseFloat(el.style.height);
+        el.style.height = `${(val * containerWidth) / 100}px`;
+      }
 
       updated.push({ el, previous });
     });
@@ -283,6 +306,18 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     };
   };
 
+  const waitForImages = async (el) => {
+    const imgs = Array.from(el.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+    await Promise.all(imgs.map(img => img.decode().catch(() => {})));
+  };
+
   const handleDownload = async () => {
     const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video' || isVideoUrl(currentTemplate.image);
 
@@ -295,29 +330,42 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
 
     if (!posterRef.current || !window.html2canvas) {
       let downloadUrl = currentTemplate.image;
-
       if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/upload/')) {
         downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
       }
-
       window.open(downloadUrl, '_blank');
       return;
     }
 
+    const currentTemplateId = currentTemplate._id;
+    const recordDownload = async () => {
+      try {
+        if (user?.accessToken && currentTemplateId) {
+          await axios.post(`${API_URL}/user/save-template`, 
+            { templateId: currentTemplateId, customData: userData },
+            { headers: { Authorization: `Bearer ${user.accessToken}` } }
+          );
+        }
+      } catch (err) { console.error('Activity record failed'); }
+    };
+
+    recordDownload();
+    await waitForImages(posterRef.current);
     const restoreStyles = inlineSafeColorsForHtml2Canvas(posterRef.current);
 
     try {
       const canvas = await window.html2canvas(posterRef.current, {
         useCORS: true,
-        scale: 3,
+        scale: 2,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: false,
+        imageTimeout: 15000
       });
 
       const link = document.createElement('a');
       const stamp = new Date().getTime();
       link.download = `my-design-${stamp}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
+      link.href = canvas.toDataURL('image/png'); 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -473,7 +521,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-slate-50">
-          <div className="bg-[#f1f5f9] flex items-center justify-center p-4 min-h-[400px]">
+          <div className="bg-[#f1f5f9] flex items-center justify-center p-2 sm:p-3 lg:p-4 min-h-[400px]">
             {/* Captured Area — dual refs: posterRef for canvas export, posterContainerRef for drag math */}
             <div
               ref={(el) => { posterRef.current = el; posterContainerRef.current = el; }}
@@ -534,131 +582,11 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                   />
                 )}
 
-                {/* Frame Layer */}
-                {activeFrame && (
-                  <img
-                    src={activeFrame}
-                    className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]"
-                    alt="Frame Overlay"
-                    crossOrigin="anonymous"
-                  />
-                )}
+                {/* Frame Layer removed from here as per request - now used as footer bg */}
 
                 {/* ── Draggable Text Layer ── */}
                 <div className="text-layer absolute inset-0 z-[75]">
-
-                  {/* Name */}
-                  {hasFrameApplied && userData.enabledFields?.name !== false && (() => {
-                    const pos = localPos.name || effectiveNamePos;
-                    return (
-                      <div
-                        className="absolute leading-tight"
-                        style={{ ...getStyle('name'), left: pos.x, top: pos.y, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'name', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'name')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.name || 'Your Name'}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Business Name */}
-                  {hasFrameApplied && userData.enabledFields?.business_name !== false && (() => {
-                    const pos = localPos.business_name || effectiveBusinessNamePos;
-                    return (
-                      <div
-                        className="absolute leading-tight"
-                        style={{ ...getStyle('name'), left: pos.x, top: pos.y, cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'business_name', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'business_name')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.business_name || 'Your Business Name'}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Phone */}
-                  {hasFrameApplied && userData.enabledFields?.phone && (() => {
-                    const pos = localPos.phone || effectivePhonePos;
-                    return (
-                      <div
-                        className="absolute"
-                        style={{ ...getStyle('phone'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'phone', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'phone')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.phone_number || '9876543210'}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Website */}
-                  {hasFrameApplied && userData.enabledFields?.website && userData.website && (() => {
-                    const pos = localPos.website || effectiveWebsitePos;
-                    return (
-                      <div
-                        className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`}
-                        style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'website', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'website')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.website}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Email */}
-                  {hasFrameApplied && userData.enabledFields?.email && userData.email && (() => {
-                    const pos = localPos.email || effectiveEmailPos;
-                    return (
-                      <div
-                        className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`}
-                        style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'email', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'email')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.email}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Address */}
-                  {hasFrameApplied && userData.enabledFields?.address && userData.address && (() => {
-                    const pos = localPos.address || effectiveAddressPos;
-                    return (
-                      <div
-                        className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} absolute`}
-                        style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'address', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'address')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.address}
-                      </div>
-                    );
-                  })()}
-
-                  {/* GST */}
-                  {/* GST */}
-                  {(hasFrameApplied && (userData.enabledFields?.gst || (userData.gst_number || '').trim())) && (() => {
-                    const pos = localPos.gst || effectiveGstPos;
-                    return (
-                      <div
-                        className={`text-white font-bold ${hasFrameApplied ? 'tracking-wide' : 'tracking-widest'} uppercase absolute`}
-                        style={{ ...getStyle('detail'), left: pos.x, top: pos.y, textShadow: '0 2px 4px rgba(0,0,0,0.8)', whiteSpace: 'nowrap', cursor: 'grab', touchAction: 'none', userSelect: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'gst', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'gst')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        {userData.gst_number}
-                      </div>
-                    );
-                  })()}
+                  {/* Branding fields removed from image layer as they are now in the footer */}
 
                   {/* Extra Texts (non-draggable, managed via editor) */}
                   {userData.extraTexts?.map(t => (
@@ -671,43 +599,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                 {/* ── Draggable Photos Layer ── */}
                 <div className="absolute inset-0 z-[80]">
 
-                  {/* Profile Photo */}
-                  {hasFrameApplied && userData.enabledFields?.userPhoto && (() => {
-                    const pos = localPos.photo || { x: userData.userPhotoPos?.x || userPhotoDefault.x, y: userData.userPhotoPos?.y || userPhotoDefault.y };
-                    const dim = hasFrameApplied ? '14%' : '18%';
-                    return (
-                      <div
-                        className="absolute"
-                        style={{ left: pos.x, top: pos.y, width: dim, height: dim, zIndex: 85, cursor: 'grab', touchAction: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'photo', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'photo')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        <img
-                          src={userData.userPhoto || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}
-                          className="w-full h-full rounded-full border-2 border-white object-cover shadow-xl"
-                          crossOrigin="anonymous"
-                        />
-                      </div>
-                    );
-                  })()}
-
-                  {/* Logo */}
-                  {hasFrameApplied && userData.enabledFields?.logo && userData.logo && (() => {
-                    const pos = localPos.logo || { x: userData.logoPos?.x || logoDefault.x, y: userData.logoPos?.y || logoDefault.y };
-                    const dim = hasFrameApplied ? '9%' : '12%';
-                    return (
-                      <div
-                        className="absolute"
-                        style={{ left: pos.x, top: pos.y, width: dim, height: dim, zIndex: 85, cursor: 'grab', touchAction: 'none' }}
-                        onPointerDown={(e) => onPointerDown(e, 'logo', pos)}
-                        onPointerMove={(e) => onPointerMove(e, 'logo')}
-                        onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                      >
-                        <img src={userData.logo} className="w-full h-full object-contain bg-white rounded-lg p-1 shadow-lg" crossOrigin="anonymous" />
-                      </div>
-                    );
-                  })()}
+                  {/* Branding photos removed from image layer */}
 
                   {/* Extra Photos (non-draggable here) */}
                   {userData.extraPhotos?.map(p => (
@@ -723,12 +615,26 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                 </div>
 
 
+                {/* Branding Overlay (when frame applied) */}
+                {activeFrame && (
+                  <BrandingOverlay
+                    userData={userData}
+                    size="regular"
+                    isOverlay={true}
+                    activeFrame={activeFrame}
+                    framePos={framePos}
+                  />
+                )}
               </div>
-              {!hasFrameApplied && (
+              
+              {/* Branding Info (footer mode when no frame) */}
+              {!activeFrame && (
                 <BrandingOverlay
                   userData={userData}
                   size="regular"
                   isOverlay={false}
+                  activeFrame={activeFrame}
+                  framePos={framePos}
                 />
               )}
             </div>
@@ -779,6 +685,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
             template={template}
             userData={{
               ...userData,
+              selectedFrame: activeFrame,
               namePos: localPos.name || userData.namePos,
               businessNamePos: localPos.business_name || userData.businessNamePos,
               phonePos: localPos.phone || userData.phonePos,

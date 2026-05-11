@@ -24,6 +24,7 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
   const videoSourceRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [frameLoaded, setFrameLoaded] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
@@ -48,12 +49,14 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     return () => clearTimeout(timer);
   }, [API_URL]);
 
-  // Auto-start download if requested
+  // Auto-start download if requested — wait for frame to load first
   useEffect(() => {
     if (!isLoading && autoStartDownload && !isProcessing && selectedMusic) {
-       handleDownloadVideo();
+      if (frameLoaded) {
+        handleDownloadVideo();
+      }
     }
-  }, [isLoading, autoStartDownload, selectedMusic]);
+  }, [isLoading, autoStartDownload, selectedMusic, frameLoaded]);
 
   const categories = useMemo(() => ['All', 'My Music', 'Generic', 'General', 'Festival', 'Maa', 'Bhakti', 'Motivation'], []);
 
@@ -97,6 +100,10 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
 
   useEffect(() => {
     if (!canvasRef.current || isLoading) return;
+
+    // Reset frame state when template/frame changes
+    setFrameLoaded(false);
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
@@ -114,7 +121,8 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
 
     const frameImg = new Image();
     frameImg.crossOrigin = "anonymous";
-    frameImg.src = userData.selectedFrame?.image || userData.selectedFrame || '';
+    const frameSrc = userData.selectedFrame?.image || userData.selectedFrame || '';
+    frameImg.src = frameSrc;
 
     const videoSource = document.createElement('video');
     videoSource.crossOrigin = "anonymous";
@@ -127,7 +135,34 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     let animationId;
     let startTime = Date.now();
 
+    // Wait for all assets (poster, frame, user img) to load before starting render loop
+    const waitForAssets = () => Promise.all([
+      new Promise(resolve => {
+        if (posterImg.complete) resolve();
+        else { posterImg.onload = resolve; posterImg.onerror = resolve; }
+      }),
+      new Promise(resolve => {
+        if (!frameSrc) { resolve(); return; }
+        if (frameImg.complete && frameImg.naturalWidth > 0) { resolve(); return; }
+        frameImg.onload = () => { setFrameLoaded(true); resolve(); };
+        frameImg.onerror = () => resolve();
+        // Timeout fallback — proceed even if image hasn't fully loaded
+        setTimeout(resolve, 5000);
+      }),
+      new Promise(resolve => {
+        const src = userData.userPhoto || userData.logo || '';
+        if (!src || userImg.complete) resolve();
+        else { userImg.onload = resolve; userImg.onerror = resolve; }
+      }),
+      new Promise(resolve => {
+        if (diLogoImg.complete) resolve();
+        else { diLogoImg.onload = resolve; diLogoImg.onerror = resolve; }
+      }),
+    ]);
+
     const getPixelPos = (pos, w, h, defaultX = '5%', defaultY = '80%') => {
+      // If we have a custom position object {x, y}, use it. 
+      // If not, use the provided defaults for that specific field.
       const xPct = parseFloat(pos?.x || defaultX);
       const yPct = parseFloat(pos?.y || defaultY);
       return { x: (xPct / 100) * w, y: (yPct / 100) * h };
@@ -178,31 +213,55 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
         for(let i=0; i<100; i++) ctx.fillRect(Math.random()*w, Math.random()*h, 2, 2);
       }
 
-      const hasFrame = frameImg.complete && frameImg.naturalWidth > 0;
+      const activeFrame = userData.selectedFrame?.image || userData.selectedFrame || '';
+      const hasFrame = !!activeFrame && frameImg.complete && frameImg.naturalWidth > 0;
+      
       if (hasFrame && !isBusinessCard) {
         ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2;
-        ctx.fillStyle = 'white'; ctx.textBaseline = 'top';
+        // Frame-specific text styles
+        const frameStyle = template.categoryId?.frames?.find(f => (f.image === activeFrame || f.url === activeFrame))?.textStyle || {};
+        const framePos = frameStyle.positions || {};
 
-        const drawText = (text, pos, size = 28) => {
+        ctx.shadowColor = frameStyle.textShadow || 'rgba(0,0,0,0.8)'; 
+        ctx.shadowBlur = 4; 
+        ctx.shadowOffsetY = 2;
+        ctx.fillStyle = frameStyle.color || 'white'; 
+        ctx.textBaseline = 'top';
+
+        const drawText = (text, pos, size = 28, defaultX = '5%', defaultY = '80%') => {
           if (!text) return;
-          const { x, y } = getPixelPos(pos, 1080, 1080);
-          ctx.font = `900 ${size}px sans-serif`;
-          ctx.fillText(text.toUpperCase(), x, y);
+          const { x, y } = getPixelPos(pos, 1080, 1080, defaultX, defaultY);
+          const fontWeight = frameStyle.fontWeight || '900';
+          ctx.font = `${fontWeight} ${size}px sans-serif`;
+          ctx.fillText(text.toString().toUpperCase(), x, y);
         };
-        drawText(userData.name, userData.namePos, 34);
-        drawText(userData.business_name, userData.businessNamePos, 30);
-        drawText(userData.phone_number, userData.phonePos, 26);
-        drawText(userData.website, userData.websitePos, 24);
+
+        // Use frame-defined positions with unique fallbacks to prevent clumping
+        drawText(userData.name, userData.namePos || framePos.name, 36, '5%', '80%');
+        drawText(userData.business_name, userData.businessNamePos || framePos.businessName, 32, '5%', '84%');
+        drawText(userData.phone_number, userData.phonePos || framePos.phone, 28, '5%', '87%');
+        drawText(userData.website, userData.websitePos || framePos.website, 24, '5%', '90%');
+        drawText(userData.email, userData.emailPos || framePos.email, 24, '5%', '93%');
         
-        const drawImg = (img, pos, dim) => {
+        const drawImg = (img, pos, dim, defaultX = '70%', defaultY = '70%') => {
           if (!img.complete || img.naturalWidth === 0) return;
-          const { x, y } = getPixelPos(pos, 1080, 1080);
+          const { x, y } = getPixelPos(pos, 1080, 1080, defaultX, defaultY);
           const s = (dim/100)*1080;
-          ctx.drawImage(img, x, y, s, s);
+          
+          // Draw circular photo if it's the user photo
+          if (dim > 10) { // User photo is usually larger
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x + s/2, y + s/2, s/2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(img, x, y, s, s);
+            ctx.restore();
+          } else {
+            ctx.drawImage(img, x, y, s, s);
+          }
         };
-        drawImg(userImg, userData.userPhotoPos, 14);
-        drawImg(userImg, userData.logoPos, 9);
+        drawImg(userImg, userData.userPhotoPos || framePos.userPhoto, 15, '70%', '75%');
+        drawImg(userImg, userData.logoPos || framePos.logo, 10, '10%', '10%');
         ctx.restore();
       }
 
@@ -233,9 +292,12 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
       }
       animationId = requestAnimationFrame(render);
     };
-    render();
+
+    // Only start render loop after all assets are ready
+    waitForAssets().then(() => render());
+
     return () => cancelAnimationFrame(animationId);
-  }, [template, userData, selectedEffect, isLoading, isPlaying]);
+  }, [template, userData, selectedEffect, isLoading, isPlaying, frameLoaded]);
 
   const handleDownloadVideo = async () => {
     if (!canvasRef.current || !selectedMusic || isProcessing) return;
