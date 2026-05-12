@@ -36,7 +36,7 @@ const POTDCard = ({ poster, onEdit }) => {
   const framePos = activeFrameObj?.textStyle?.positions || {};
 
   React.useEffect(() => {
-     return () => setIsPlaying(false);
+    return () => setIsPlaying(false);
   }, []);
 
   const isVideoUrl = (url) => {
@@ -49,7 +49,7 @@ const POTDCard = ({ poster, onEdit }) => {
   const recordActivity = async () => {
     try {
       if (user?.accessToken && poster?._id) {
-        await axios.post(`${API_URL}/user/save-template`, 
+        await axios.post(`${API_URL}/user/save-template`,
           { templateId: poster._id },
           { headers: { Authorization: `Bearer ${user.accessToken}` } }
         );
@@ -64,7 +64,7 @@ const POTDCard = ({ poster, onEdit }) => {
 
     const isVideo = poster.type === 'video' || poster.isVideo;
 
-    // Redirect video templates to the detail/edit view so branding can be applied
+    // Redirect video templates to the asdkfjlksjsj detail/edit view so branding can be applied
     if (isVideo && poster.videoUrl) {
       onEdit(poster);
       return;
@@ -184,7 +184,7 @@ const POTDCard = ({ poster, onEdit }) => {
         img.onerror = resolve;
       });
     }));
-    await Promise.all(imgs.map(img => img.decode().catch(() => {})));
+    await Promise.all(imgs.map(img => img.decode().catch(() => { })));
   };
 
   const getPosterFile = async () => {
@@ -222,7 +222,7 @@ const POTDCard = ({ poster, onEdit }) => {
     const isVideo = poster.type === 'video' || poster.isVideo;
     const shareLink = `${API_URL}/share/poster/${poster._id}`;
     const userName = effectiveUserData.name || userData?.name || 'Dealingindia User';
-    
+
     const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
     if (isVideo) {
@@ -240,7 +240,7 @@ const POTDCard = ({ poster, onEdit }) => {
     const isVideo = poster.type === 'video' || poster.isVideo;
     const shareLink = `${API_URL}/share/poster/${poster._id}`;
     const userName = effectiveUserData.name || userData?.name || 'Dealingindia User';
-    
+
     const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
     if (navigator.share) {
@@ -287,51 +287,51 @@ const POTDCard = ({ poster, onEdit }) => {
 
   return (
     <div className="flex flex-col w-full bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100" ref={cardRef}>
-      <div 
-        className="relative aspect-square overflow-hidden cursor-pointer group bg-slate-50" 
+      <div
+        className="relative aspect-square overflow-hidden cursor-pointer group bg-slate-50"
         onClick={() => onEdit(poster)}
       >
         {(poster.type === 'video' || poster.isVideo) && (poster.videoUrl || isVideoUrl(poster.image)) ? (
-           <div className="w-full h-full relative">
-              <video 
-                src={poster.videoUrl || poster.image} 
-                className="w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-              />
-              {isPlaying && (
-                 <>
-                   <video 
-                     src={poster.videoUrl || poster.image} 
-                     className="absolute inset-0 w-full h-full object-cover z-[5]"
-                     autoPlay
-                     loop
-                     muted={false}
-                     playsInline
-                   />
-                   <div className="absolute inset-0 flex items-center justify-center z-[20]">
-                     <button 
-                       onClick={(e) => { e.stopPropagation(); setIsPlaying(false); }}
-                       className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                     >
-                        <X size={32} />
-                     </button>
-                   </div>
-                 </>
-              )}
-              <div className="absolute inset-0 bg-black/10 z-[2]" />
-           </div>
+          <div className="w-full h-full relative">
+            <video
+              src={poster.videoUrl || poster.image}
+              className="w-full h-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+            {isPlaying && (
+              <>
+                <video
+                  src={poster.videoUrl || poster.image}
+                  className="absolute inset-0 w-full h-full object-cover z-[5]"
+                  autoPlay
+                  loop
+                  muted={false}
+                  playsInline
+                />
+                <div className="absolute inset-0 flex items-center justify-center z-[20]">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setIsPlaying(false); }}
+                    className="p-3 bg-black/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={32} />
+                  </button>
+                </div>
+              </>
+            )}
+            <div className="absolute inset-0 bg-black/10 z-[2]" />
+          </div>
         ) : (
           <img src={poster.image} alt={poster.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
         )}
 
         {/* Audio support for image+music */}
         {!(poster.videoUrl) && poster.audioUrl && isPlaying && (
-           <audio src={poster.audioUrl} autoPlay loop />
+          <audio src={poster.audioUrl} autoPlay loop />
         )}
-        
+
         {/* Banner Overlays */}
         <div className="absolute top-4 left-4 z-10">
           <div className="bg-[#ef4444] text-white px-4 py-1.5 rounded-full text-[0.7rem] font-black flex items-center gap-2 shadow-lg backdrop-blur-md uppercase tracking-widest">
@@ -340,18 +340,18 @@ const POTDCard = ({ poster, onEdit }) => {
         </div>
 
         {(poster.type === 'video' || poster.isVideo) && !isPlaying && (
-           <div className="absolute inset-0 flex items-center justify-center z-[15]">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsPlaying(true); }}
-                className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white shadow-xl hover:scale-110 transition-transform"
-              >
-                  <Play size={32} fill="white" className="ml-1" />
-              </button>
-           </div>
+          <div className="absolute inset-0 flex items-center justify-center z-[15]">
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsPlaying(true); }}
+              className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white shadow-xl hover:scale-110 transition-transform"
+            >
+              <Play size={32} fill="white" className="ml-1" />
+            </button>
+          </div>
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
+
         {/* Dealing India Branding Badge */}
         <div
           className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none"
@@ -380,7 +380,7 @@ const POTDCard = ({ poster, onEdit }) => {
           framePos={framePos}
         />
       )}
-      
+
       <div className="flex justify-around py-3 lg:py-4 border-t border-slate-50 bg-white">
         <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={(e) => { e.stopPropagation(); onEdit(poster); }}>
           <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-primary"><Edit2 size={20} /></div>
@@ -396,12 +396,12 @@ const POTDCard = ({ poster, onEdit }) => {
           <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-primary"><Download size={20} /></div>
           <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-primary uppercase tracking-widest">Save</span>
         </div>
-        
+
         <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={handleWhatsApp}>
           <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-green-500"><MessageCircle size={20} /></div>
           <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-green-500 uppercase tracking-widest">WhatsApp</span>
         </div>
-        
+
         <div className="flex flex-col items-center gap-1.5 flex-1 cursor-pointer hover:scale-105 active:scale-90 transition-all group" onClick={handleShare}>
           <div className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-slate-400 group-hover:text-blue-500"><Share2 size={20} /></div>
           <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-blue-500 uppercase tracking-widest">Share</span>
