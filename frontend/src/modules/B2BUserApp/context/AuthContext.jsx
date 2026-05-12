@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { registerFCMToken, removeFCMToken } from '../../../services/pushNotificationService';
 
 const AuthContext = createContext();
 
@@ -75,6 +76,10 @@ export const AuthProvider = ({ children }) => {
 
       setUser(data);
       localStorage.setItem('userInfo', JSON.stringify(data));
+      
+      // Register FCM token after login
+      setTimeout(() => registerFCMToken(true), 1000);
+      
       return data;
     } catch (error) {
       throw error.response?.data?.message || 'Login failed';
@@ -103,6 +108,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Remove FCM token before clearing user data
+      await removeFCMToken();
       setUser(null);
       localStorage.removeItem('userInfo');
     }

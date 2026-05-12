@@ -376,12 +376,7 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     const userName = userData.name || 'Dealingindia User';
     const message = `${userName}\n\nI created this professional video greeting using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
-    // On mobile, if navigator.share is available, we try to generate and share the file
-    if (navigator.share && navigator.canShare) {
-       handleShare();
-       return;
-    }
-
+    // Directly open WhatsApp share
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 

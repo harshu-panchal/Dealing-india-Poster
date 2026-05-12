@@ -68,6 +68,8 @@ const UserPrivateRoute = ({ children, isAuthenticated }) => {
 
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
+import { useEffect } from 'react';
 
 function AppContent() {
   const { i18n } = useTranslation();
@@ -84,6 +86,17 @@ function AppContent() {
   } = useEditor();
 
   const location = useLocation();
+
+  useEffect(() => {
+    // Initialize push notifications
+    initializePushNotifications();
+    
+    // Setup foreground handler
+    setupForegroundNotificationHandler((payload) => {
+      console.log('Notification received in foreground:', payload);
+      // You could show a custom UI toast here if needed
+    });
+  }, []);
 
   if (loading) return <ShimmerLayout />;
 

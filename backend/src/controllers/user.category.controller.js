@@ -3,6 +3,7 @@ import Subcategory from '../models/subcategory.model.js';
 import Template from '../models/template.model.js';
 import Event from '../models/event.model.js';
 import { localizeObject } from '../utils/localization.js';
+import mongoose from 'mongoose';
 
 // @desc    Get all active categories with subcategories
 // @route   GET /api/user/categories

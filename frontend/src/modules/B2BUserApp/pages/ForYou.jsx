@@ -350,7 +350,7 @@ const ForYou = () => {
     <div className="bg-[#f8fafc] min-h-screen pb-20">
       {/* Sticky Top Header */}
       {isSearchMode ? (
-        <div className="sticky top-0 z-[60] bg-[#ef4444] p-3 flex items-center gap-3 shadow-md">
+        <div className="sticky top-0 z-[1000] bg-[#ef4444] p-3 flex items-center gap-3 shadow-md">
           <button 
             onClick={() => {
               if (searchQuery) {
@@ -392,7 +392,7 @@ const ForYou = () => {
           </button>
         </div>
       ) : (
-        <div className="sticky top-0 z-[50] shadow-sm bg-white">
+        <div className="sticky top-0 z-[1000] shadow-sm bg-white">
           <div className="bg-white p-1 px-4 text-center border-b border-[#f1f5f9]">
             <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">{t("supportRating")}</p>
           </div>
@@ -671,23 +671,7 @@ const ForYou = () => {
                 </div>
              </div>
 
-             {/* 3. Trending Posters Slider (Shifted after 5 posters) */}
-             <section className="bg-white py-6 mt-4 mb-2">
-                <div className="w-full lg:px-4">
-                  <SectionHeader title={`${t("trending")} ${activeType === 'video' ? t("video") : t("myPosters")}`} showViewAll={true} />
-                  <HorizontalScrollList className="pt-2">
-                    {allTemplates.filter(filterByType).length > 5 ? allTemplates.filter(filterByType).slice(5, 15).map(tpl => (
-                      <TemplateCard key={tpl._id} template={tpl} variant="compact" onClick={() => openDetail(tpl)} />
-                    )) : allTemplates.filter(filterByType).length > 0 ? allTemplates.filter(filterByType).map(tpl => (
-                      <TemplateCard key={tpl._id} template={tpl} variant="compact" onClick={() => openDetail(tpl)} />
-                    )) : (
-                       <div className="flex flex-col items-center justify-center w-full py-10 opacity-40">
-                          <p className="text-[0.6rem] font-black uppercase tracking-widest">More coming soon</p>
-                       </div>
-                    )}
-                  </HorizontalScrollList>
-                </div>
-             </section>
+
 
              {/* 4. Categorized Discovery Modules (No names on slides as requested) */}
              {sections.map((section, index) => {

@@ -230,19 +230,7 @@ const POTDCard = ({ poster, onEdit }) => {
       return;
     }
 
-    if (navigator.share && navigator.canShare) {
-      const file = await getPosterFile();
-      if (file && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            text: message,
-          });
-          return;
-        } catch (err) { }
-      }
-    }
-
+    // Directly open WhatsApp share
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 

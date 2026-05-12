@@ -417,22 +417,9 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
     // On mobile, try sharing the file if it's an image
-    if (!isVideo && navigator.share && navigator.canShare) {
-      const file = await getPosterFile();
-      if (file && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            text: message,
-          });
-          return;
-        } catch (err) {
-          console.log('File share failed, falling back to link');
-        }
-      }
-    }
+    // REMOVED navigator.share here to ensure WhatsApp button goes DIRECTLY to WhatsApp
+    // The 'Share' button handles the native share dialog with multiple options.
 
-    // Fallback or Desktop: share text link
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 

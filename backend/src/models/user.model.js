@@ -78,6 +78,14 @@ const userSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
     },
+    fcmTokens: {
+      type: [String],
+      default: []
+    },
+    fcmTokenMobile: {
+      type: [String],
+      default: []
+    },
   },
   {
     timestamps: true,

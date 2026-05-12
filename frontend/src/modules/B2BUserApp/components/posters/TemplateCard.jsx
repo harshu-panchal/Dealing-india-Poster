@@ -257,22 +257,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
       return;
     }
 
-    // On mobile, try sharing the file if it's an image
-    if (navigator.share && navigator.canShare) {
-      const file = await getPosterFile();
-      if (file && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            text: message,
-          });
-          return;
-        } catch (err) {
-          console.log('File share failed, falling back to link');
-        }
-      }
-    }
-
+    // Directly open WhatsApp share
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
