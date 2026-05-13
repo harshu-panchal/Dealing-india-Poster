@@ -400,6 +400,30 @@ const FrameManager = () => {
   return (
     <div className="space-y-10 pb-12 overflow-x-hidden">
 
+      {/* Size Guidelines Info Box */}
+      <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm">
+        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm flex-shrink-0">
+          <ImageIcon size={32} />
+        </div>
+        <div className="flex-1 text-center md:text-left">
+          <h4 className="font-black text-slate-800 uppercase tracking-wider mb-2">Ideal Image Proportions</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <div className="bg-white p-3 rounded-xl border border-slate-100">
+              <span className="text-rose-500 block mb-1">Standard Posters</span>
+              <span className="text-slate-800 text-xs">1080 x 1080 px (1:1)</span>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-slate-100">
+              <span className="text-rose-500 block mb-1">Business Cards</span>
+              <span className="text-slate-800 text-xs">1050 x 600 px (1.75:1)</span>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-slate-100">
+              <span className="text-rose-500 block mb-1">Frame Overlays</span>
+              <span className="text-slate-800 text-xs">Transparent PNG (1080x1080)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
@@ -505,6 +529,10 @@ const FrameManager = () => {
                   )}
                 </div>
                 <Input name="image_url" value={previewUrl} onChange={e => setPreviewUrl(e.target.value)} placeholder="Or paste image URL" className="h-9 text-xs" />
+                <div className="flex justify-between items-center px-1 mt-1">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Recommended: 1080x1080px</p>
+                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Must be PNG</p>
+                </div>
               </div>
             </div>
 

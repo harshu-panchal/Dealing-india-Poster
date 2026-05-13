@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, ChevronRight, Video, User, MessageCircle, Search, Mic, Layers } from 'lucide-react';
 import SectionHeader from '../components/common/SectionHeader';
 import HorizontalScrollList from '../components/common/HorizontalScrollList';
@@ -14,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 
 const ForYou = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { openDetail, openCustomPosterEditor } = useEditor();
 
   const { user } = useAuth();
@@ -143,12 +145,10 @@ const ForYou = () => {
       const { data: catData } = await axios.get(`${API_URL}/user/categories`);
       setCategories(catData);
 
-      // Flatten subcategories for Today's Special (Filter out business cards)
+      // Flatten subcategories for Today's Special
       const mixedSubcategories = [];
       catData.forEach(cat => {
-        if (cat.name.toLowerCase().includes('business card')) return;
         cat.subcategories?.forEach(sub => {
-          if (sub.name.toLowerCase().includes('business card')) return;
           mixedSubcategories.push({ ...sub, parentName: cat.name });
         });
       });
@@ -156,7 +156,7 @@ const ForYou = () => {
 
       // Fetch Templates
       const { data: tplData } = await axios.get(`${API_URL}/user/templates?limit=400&language=English`);
-      const templates = (tplData.templates || []).filter(t => !isBusinessCardTemplate(t));
+      const templates = tplData.templates || [];
       setAllTemplates(templates);
       
 
@@ -178,11 +178,10 @@ const ForYou = () => {
 
       // Organize Sections — use string comparison to handle ObjectId vs string mismatch
       const organizedSections = catData
-        .filter(cat => !cat.name.toLowerCase().includes('business card'))
         .map(cat => ({
           id: cat._id,
           title: cat.name,
-          subcategories: cat.subcategories?.filter(sub => !sub.name.toLowerCase().includes('business card')),
+          subcategories: cat.subcategories,
           templates: templates.filter(t => {
              const catIdStr = t.categoryId?._id?.toString() || t.categoryId?.toString() || '';
              const matchesCategory = catIdStr === cat._id?.toString();
@@ -432,7 +431,7 @@ const ForYou = () => {
                 {t("all")}
               </button>
 
-              {categories.filter(cat => !cat.name.toLowerCase().includes('business card')).map(cat => (
+              {categories.map(cat => (
                 <button
                   key={cat._id}
                   onClick={() => { 
@@ -617,8 +616,7 @@ const ForYou = () => {
                           <div 
                             key={`${sub._id}-${i}`} 
                             onClick={() => {
-                               setActiveCategory(sub.parentId);
-                               setActiveSubcategory(sub._id);
+                               navigate(`/view-all/subcategory/${sub._id}`);
                             }}
                             className="min-w-[140px] w-[140px] aspect-square rounded-2xl overflow-hidden bg-slate-100 relative cursor-pointer group shadow-sm active:scale-95 transition-all"
                           >
@@ -642,8 +640,7 @@ const ForYou = () => {
                         <div 
                            key={`grid-${sub._id}-${i}`}
                            onClick={() => {
-                              setActiveCategory(sub.parentId);
-                              setActiveSubcategory(sub._id);
+                              navigate(`/view-all/subcategory/${sub._id}`);
                            }}
                            className="flex flex-col gap-2 cursor-pointer group"
                         >
