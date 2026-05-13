@@ -1162,7 +1162,7 @@ const PosterEditor = ({ template, onClose }) => {
           <VideoEditor
             template={template}
             userData={{
-              ...userData,
+              ...localUserData,
               selectedFrame: selectedFrame
             }}
             onClose={() => {

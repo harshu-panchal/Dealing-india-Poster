@@ -320,11 +320,11 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
             onError={handleImageError}
           />
           {activeFrame && (
-            overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={true} framePos={framePos} />
+            overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={true} frameStyle={activeFrameObj?.textStyle} />
           )}
         </div>
         {!activeFrame && (
-          overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={false} framePos={framePos} />
+          overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={false} frameStyle={activeFrameObj?.textStyle} />
         )}
       </div>
     );
@@ -508,13 +508,13 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
         
         {/* Branding Overlay (when frame applied) */}
         {activeFrame && (
-           overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={true} activeFrame={activeFrame} framePos={framePos} />
+           overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={true} activeFrame={activeFrame} frameStyle={activeFrameObj?.textStyle} />
         )}
       </div>
 
         {/* Branding Info (footer mode when no frame) */}
         {!activeFrame && (
-           overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={false} activeFrame={activeFrame} framePos={framePos} />
+           overlay || <BrandingOverlay userData={effectiveUserData} size="regular" isOverlay={false} activeFrame={activeFrame} frameStyle={activeFrameObj?.textStyle} />
         )}
       </div>
 

@@ -17,6 +17,7 @@ import axios from 'axios';
 const DEFAULT_POSITIONS = {
   name:          { x: '5%',  y: '82%' },
   businessName:  { x: '5%',  y: '84%' },
+  designation:   { x: '5%',  y: '96%' },
   phone:         { x: '5%',  y: '86%' },
   website:       { x: '5%',  y: '88%' },
   email:         { x: '5%',  y: '90%' },
@@ -38,13 +39,14 @@ const DEFAULT_TEXT_STYLE = {
 };
 
 const FIELD_META = [
-  { key: 'name',         sample: 'Sheetal Sharma',   isName: true,  dot: '#ef4444', type: 'text' },
-  { key: 'businessName', sample: 'Appzeto Tech',     isName: true,  dot: '#f59e0b', type: 'text' },
-  { key: 'phone',        sample: '6261265704',        isName: false, dot: '#3b82f6', type: 'text' },
-  { key: 'website',      sample: 'www.example.com',   isName: false, dot: '#8b5cf6', type: 'text' },
-  { key: 'email',        sample: 'user@example.com',  isName: false, dot: '#10b981', type: 'text' },
-  { key: 'address',      sample: 'Business Address',  isName: false, dot: '#6366f1', type: 'text' },
-  { key: 'gst',          sample: 'GST: 12ABCDE1234', isName: false, dot: '#ec4899', type: 'text' },
+  { key: 'name',         sample: 'USER NAME',         isName: true,  dot: '#ef4444', type: 'text' },
+  { key: 'businessName', sample: 'BUSINESS NAME',     isName: true,  dot: '#f59e0b', type: 'text' },
+  { key: 'designation',  sample: 'USER DESIGNATION',  isName: false, dot: '#ef4444', type: 'text' },
+  { key: 'phone',        sample: 'MOBILE NUMBER',     isName: false, dot: '#3b82f6', type: 'text' },
+  { key: 'website',      sample: 'WEBSITE URL',       isName: false, dot: '#8b5cf6', type: 'text' },
+  { key: 'email',        sample: 'EMAIL ADDRESS',     isName: false, dot: '#10b981', type: 'text' },
+  { key: 'address',      sample: 'BUSINESS ADDRESS',  isName: false, dot: '#6366f1', type: 'text' },
+  { key: 'gst',          sample: 'GST NUMBER',        isName: false, dot: '#ec4899', type: 'text' },
   { key: 'userPhoto',    sample: null,                isName: false, dot: '#06b6d4', type: 'photo', size: '12%' },
   { key: 'logo',         sample: null,                isName: false, dot: '#84cc16', type: 'logo',  size: '10%' },
 ];
@@ -279,6 +281,7 @@ const FrameManager = () => {
     positions: {
       name:         savedStyle.positions?.name         || DEFAULT_POSITIONS.name,
       businessName: savedStyle.positions?.businessName || DEFAULT_POSITIONS.businessName,
+      designation:  savedStyle.positions?.designation  || DEFAULT_POSITIONS.designation,
       phone:        savedStyle.positions?.phone        || DEFAULT_POSITIONS.phone,
       website:      savedStyle.positions?.website      || DEFAULT_POSITIONS.website,
       email:        savedStyle.positions?.email        || DEFAULT_POSITIONS.email,

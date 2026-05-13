@@ -192,6 +192,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const websiteDefault = { x: framePos.website?.x || '5%', y: framePos.website?.y || (hasFrameApplied ? '88%' : '88%') };
   const emailDefault = { x: framePos.email?.x || '5%', y: framePos.email?.y || (hasFrameApplied ? '90%' : '91%') };
   const addressDefault = { x: framePos.address?.x || '5%', y: framePos.address?.y || (hasFrameApplied ? '92%' : '94%') };
+  const designationDefault = { x: framePos.designation?.x || '5%', y: framePos.designation?.y || (hasFrameApplied ? '96%' : '90%') };
   const gstDefault = { x: framePos.gst?.x || '5%', y: framePos.gst?.y || (hasFrameApplied ? '93%' : '96%') };
   const userPhotoDefault = { x: framePos.userPhoto?.x || '70%', y: framePos.userPhoto?.y || (hasFrameApplied ? '74%' : '70%') };
   const logoDefault = { x: framePos.logo?.x || '10%', y: framePos.logo?.y || (hasFrameApplied ? '80%' : '75%') };
@@ -609,7 +610,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                     size="regular"
                     isOverlay={true}
                     activeFrame={activeFrame}
-                    framePos={framePos}
+                    frameStyle={frameStyle}
                   />
                 )}
               </div>
@@ -621,7 +622,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                   size="regular"
                   isOverlay={false}
                   activeFrame={activeFrame}
-                  framePos={framePos}
+                  frameStyle={frameStyle}
                 />
               )}
             </div>

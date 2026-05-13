@@ -30,15 +30,15 @@ export const EditorProvider = ({ children }) => {
     userPhoto: null,
     enabledFields: {
       name: true,
-      business_name: true,
+      business_name: false,
       phone: true,
-      website: true,
+      website: false,
       email: true,
-      address: true,
+      address: false,
       gst: false,
       userPhoto: true,
-      logo: true,
-      designation: true
+      logo: false,
+      designation: false
     }
   });
 

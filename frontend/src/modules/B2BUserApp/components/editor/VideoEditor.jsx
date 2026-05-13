@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft, Video, Download, MessageCircle, Share2, Play, Pause, PlayCircle, PauseCircle, X, Sparkles, Layers, Sliders, Wand2, Zap, Music2, Search, Edit2, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { useEditor } from '../../context/EditorContext';
 
 const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, autoStartDownload = false }) => {
+  const { frames } = useEditor();
   const [isLoading, setIsLoading] = useState(true);
   const [showMusicModal, setShowMusicModal] = useState(false);
   const [selectedEffect, setSelectedEffect] = useState('none');
@@ -109,11 +111,16 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     
     const posterImg = new Image();
     posterImg.crossOrigin = "anonymous";
-    posterImg.src = template.image;
+    const posterSrc = template.image || (template.templateId && typeof template.templateId === 'object' ? template.templateId.image : null) || template.templateId;
+    posterImg.src = posterSrc;
     
-    const userImg = new Image();
-    userImg.crossOrigin = "anonymous";
-    userImg.src = userData.userPhoto || userData.logo || '';
+    const photoImg = new Image();
+    photoImg.crossOrigin = "anonymous";
+    photoImg.src = userData.userPhoto || '';
+
+    const logoImg = new Image();
+    logoImg.crossOrigin = "anonymous";
+    logoImg.src = userData.logo || '';
     
     const diLogoImg = new Image();
     diLogoImg.crossOrigin = "anonymous";
@@ -138,8 +145,17 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     // Wait for all assets (poster, frame, user img) to load before starting render loop
     const waitForAssets = () => Promise.all([
       new Promise(resolve => {
+        if (!posterSrc) { resolve(); return; }
         if (posterImg.complete) resolve();
         else { posterImg.onload = resolve; posterImg.onerror = resolve; }
+      }),
+      new Promise(resolve => {
+        if (!userData.userPhoto || photoImg.complete) resolve();
+        else { photoImg.onload = resolve; photoImg.onerror = resolve; }
+      }),
+      new Promise(resolve => {
+        if (!userData.logo || logoImg.complete) resolve();
+        else { logoImg.onload = resolve; logoImg.onerror = resolve; }
       }),
       new Promise(resolve => {
         if (!frameSrc) { resolve(); return; }
@@ -148,11 +164,6 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
         frameImg.onerror = () => resolve();
         // Timeout fallback — proceed even if image hasn't fully loaded
         setTimeout(resolve, 5000);
-      }),
-      new Promise(resolve => {
-        const src = userData.userPhoto || userData.logo || '';
-        if (!src || userImg.complete) resolve();
-        else { userImg.onload = resolve; userImg.onerror = resolve; }
       }),
       new Promise(resolve => {
         if (diLogoImg.complete) resolve();
@@ -171,7 +182,7 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
     const render = () => {
       const time = (Date.now() - startTime) / 1000;
       const w = 1080;
-      const h = isBusinessCard && posterImg.width ? Math.round(1080 / (posterImg.width / posterImg.height)) : 1250;
+      const h = isBusinessCard && posterImg.width ? Math.round(1080 / (posterImg.width / posterImg.height)) : 1080;
       canvas.width = w;
       canvas.height = h;
 
@@ -218,8 +229,9 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
       
       if (hasFrame && !isBusinessCard) {
         ctx.save();
-        // Frame-specific text styles
-        const frameStyle = template.categoryId?.frames?.find(f => (f.image === activeFrame || f.url === activeFrame))?.textStyle || {};
+        // Frame-specific text styles - Find frame in global frames list for consistency
+        const activeFrameObj = (frames || []).find(f => (f.image === activeFrame || f.url === activeFrame));
+        const frameStyle = activeFrameObj?.textStyle || {};
         const framePos = frameStyle.positions || {};
 
         ctx.shadowColor = frameStyle.textShadow || 'rgba(0,0,0,0.8)'; 
@@ -228,20 +240,50 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
         ctx.fillStyle = frameStyle.color || 'white'; 
         ctx.textBaseline = 'top';
 
-        const drawText = (text, pos, size = 28, defaultX = '5%', defaultY = '80%') => {
+        // Helper to parse rem/px to pixels
+        const parseSize = (sizeStr, defaultVal) => {
+          if (!sizeStr) return defaultVal;
+          if (typeof sizeStr === 'number') return sizeStr;
+          const val = parseFloat(sizeStr);
+          if (sizeStr.includes('rem')) return val * 16 * 2.5; // rem to px conversion for 1080p canvas
+          return val * 2; // Assume px if not rem, scaled for 1080p
+        };
+
+        const nameSize = parseSize(frameStyle.nameSize, 40);
+        const detailSize = parseSize(frameStyle.detailSize, 28);
+
+        const drawText = (text, pos, size, defaultX = '5%', defaultY = '80%') => {
           if (!text) return;
           const { x, y } = getPixelPos(pos, 1080, 1080, defaultX, defaultY);
-          const fontWeight = frameStyle.fontWeight || '900';
+          const fontWeight = frameStyle.fontWeight === 'black' ? '900' : (frameStyle.fontWeight === 'bold' ? '700' : '400');
           ctx.font = `${fontWeight} ${size}px sans-serif`;
           ctx.fillText(text.toString().toUpperCase(), x, y);
         };
 
         // Use frame-defined positions with unique fallbacks to prevent clumping
-        drawText(userData.name, userData.namePos || framePos.name, 36, '5%', '80%');
-        drawText(userData.business_name, userData.businessNamePos || framePos.businessName, 32, '5%', '84%');
-        drawText(userData.phone_number, userData.phonePos || framePos.phone, 28, '5%', '87%');
-        drawText(userData.website, userData.websitePos || framePos.website, 24, '5%', '90%');
-        drawText(userData.email, userData.emailPos || framePos.email, 24, '5%', '93%');
+        if (userData.enabledFields?.name !== false)
+           drawText(userData.name, userData.namePos || framePos.name, nameSize, '5%', '82%');
+        
+        if (userData.enabledFields?.business_name !== false)
+           drawText(userData.business_name, userData.businessNamePos || framePos.businessName, nameSize, '5%', '84%');
+        
+        if (userData.enabledFields?.designation !== false)
+           drawText(userData.designation, userData.designationPos || framePos.designation, detailSize, '5%', '96%');
+
+        if (userData.enabledFields?.phone !== false)
+           drawText(userData.phone_number, userData.phonePos || framePos.phone, detailSize, '5%', '86%');
+        
+        if (userData.enabledFields?.website !== false)
+           drawText(userData.website, userData.websitePos || framePos.website, detailSize, '5%', '88%');
+        
+        if (userData.enabledFields?.email !== false)
+           drawText(userData.email, userData.emailPos || framePos.email, detailSize, '5%', '90%');
+
+        if (userData.enabledFields?.address !== false)
+           drawText(userData.address || userData.businessAddress, userData.addressPos || framePos.address, detailSize, '5%', '92%');
+        
+        if (userData.enabledFields?.gst !== false && userData.gst_number)
+           drawText(userData.gst_number, userData.gstPos || framePos.gst, detailSize, '5%', '94%');
         
         const drawImg = (img, pos, dim, defaultX = '70%', defaultY = '70%') => {
           if (!img.complete || img.naturalWidth === 0) return;
@@ -260,8 +302,12 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
             ctx.drawImage(img, x, y, s, s);
           }
         };
-        drawImg(userImg, userData.userPhotoPos || framePos.userPhoto, 15, '70%', '75%');
-        drawImg(userImg, userData.logoPos || framePos.logo, 10, '10%', '10%');
+        if (userData.enabledFields?.userPhoto !== false && userData.userPhoto) {
+          drawImg(photoImg, userData.userPhotoPos || framePos.userPhoto, 15, '70%', '75%');
+        }
+        if (userData.enabledFields?.logo !== false && userData.logo) {
+          drawImg(logoImg, userData.logoPos || framePos.logo, 10, '10%', '10%');
+        }
         ctx.restore();
       }
 

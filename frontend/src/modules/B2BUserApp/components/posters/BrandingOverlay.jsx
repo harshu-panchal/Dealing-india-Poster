@@ -1,9 +1,24 @@
 import React from 'react';
 
-const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, activeFrame = null, framePos = null }) => {
+const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, activeFrame = null, frameStyle = null }) => {
   const isCompact = size === 'compact';
   const defaultLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ef4444'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='40' fill='white' font-weight='black'%3EL%3C/text%3E%3C/svg%3E";
   const hasFrame = !!(userData.selectedFrame || activeFrame);
+  const framePos = frameStyle?.positions || {};
+
+  const fwToCss = (fw) => {
+    if (fw === 'black') return '900';
+    if (fw === 'bold') return '700';
+    if (fw === 'semibold') return '600';
+    return '400';
+  };
+
+  const lsToCss = (ls) => {
+    if (ls === 'tight') return '-0.02em';
+    if (ls === 'wide') return '0.05em';
+    if (ls === 'widest') return '0.1em';
+    return 'normal';
+  };
 
   const bgStyle = activeFrame ? {
     backgroundImage: `url(${activeFrame})`,
@@ -45,11 +60,12 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
                 style={{ 
                   left: userData.userPhotoPos?.x || userData.logoPos?.x || framePos?.userPhoto?.x || framePos?.logo?.x || '70%', 
                   top: userData.userPhotoPos?.y || userData.logoPos?.y || framePos?.userPhoto?.y || framePos?.logo?.y || '74%',
-                  display: (userData.userPhoto || userData.logo || defaultLogo) ? 'block' : 'none'
+                  display: (userData.enabledFields?.userPhoto !== false || userData.enabledFields?.logo !== false) ? 'block' : 'none',
+                  opacity: (userData.enabledFields?.userPhoto === false && userData.enabledFields?.logo === false) ? 0 : 1
                 }}
               >
                 <img
-                  src={userData.userPhoto || userData.logo || defaultLogo}
+                  src={(userData.enabledFields?.userPhoto !== false && userData.userPhoto) ? userData.userPhoto : (userData.enabledFields?.logo !== false && userData.logo) ? userData.logo : defaultLogo}
                   className="w-full h-full object-cover"
                   alt="profile"
                   crossOrigin="anonymous"
@@ -60,11 +76,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
               {/* Primary Identity */}
               {userData.enabledFields?.name !== false && userData.name && (
                 <span
-                  className={`absolute ${nameSizeClass} font-black text-white uppercase tracking-tight whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.namePos?.x || framePos?.name?.x || '5%', 
                     top: userData.namePos?.y || framePos?.name?.y || '82%', 
-                    textShadow: '0 1px 3px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.nameSize || (isCompact ? '0.6rem' : '0.8rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 3px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 95 
                   }}
                 >
@@ -74,11 +95,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
 
               {userData.enabledFields?.business_name !== false && userData.business_name && (
                 <span
-                  className={`absolute ${nameSizeClass} font-black text-white uppercase tracking-tight whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.businessNamePos?.x || framePos?.businessName?.x || '5%', 
                     top: userData.businessNamePos?.y || framePos?.businessName?.y || '84%', 
-                    textShadow: '0 1px 3px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.nameSize || (isCompact ? '0.6rem' : '0.8rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 3px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 94 
                   }}
                 >
@@ -89,11 +115,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
               {/* Professional Details */}
               {userData.enabledFields?.designation !== false && userData.designation && (
                 <span
-                  className={`absolute ${detailSizeClass} font-bold text-[#ef4444] uppercase tracking-wider whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.designationPos?.x || framePos?.designation?.x || '5%', 
                     top: userData.designationPos?.y || framePos?.designation?.y || '96%', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.detailSize || (isCompact ? '0.45rem' : '0.6rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 2px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 93 
                   }}
                 >
@@ -104,11 +135,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
               {/* Contact Info */}
               {userData.enabledFields?.phone !== false && userData.phone_number && (
                 <span
-                  className={`absolute ${detailSizeClass} font-medium text-white/90 tracking-widest whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.phonePos?.x || framePos?.phone?.x || '5%', 
                     top: userData.phonePos?.y || framePos?.phone?.y || '86%', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.detailSize || (isCompact ? '0.45rem' : '0.6rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 2px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 92 
                   }}
                 >
@@ -118,11 +154,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
 
               {userData.enabledFields?.email !== false && userData.email && (
                 <span
-                  className={`absolute ${detailSizeClass} font-medium text-white/90 whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.emailPos?.x || framePos?.email?.x || '5%', 
                     top: userData.emailPos?.y || framePos?.email?.y || '90%', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.detailSize || (isCompact ? '0.45rem' : '0.6rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 2px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 91 
                   }}
                 >
@@ -132,11 +173,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
 
               {userData.enabledFields?.website !== false && userData.website && (
                 <span
-                  className={`absolute ${detailSizeClass} font-medium text-white/90 whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.websitePos?.x || framePos?.website?.x || '5%', 
                     top: userData.websitePos?.y || framePos?.website?.y || '88%', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.detailSize || (isCompact ? '0.45rem' : '0.6rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 2px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 90 
                   }}
                 >
@@ -146,11 +192,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
 
               {userData.enabledFields?.address !== false && (userData.address || userData.businessAddress) && (
                 <span
-                  className={`absolute ${detailSizeClass} font-medium text-white/80 whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.addressPos?.x || framePos?.address?.x || '5%', 
                     top: userData.addressPos?.y || framePos?.address?.y || '92%', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.detailSize || (isCompact ? '0.45rem' : '0.6rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 2px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 89 
                   }}
                 >
@@ -160,11 +211,16 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
 
               {userData.enabledFields?.gst !== false && userData.gst_number && (
                 <span
-                  className={`absolute ${detailSizeClass} font-medium text-white/80 whitespace-nowrap`}
+                  className="absolute whitespace-nowrap"
                   style={{ 
                     left: userData.gstPos?.x || framePos?.gst?.x || '5%', 
                     top: userData.gstPos?.y || framePos?.gst?.y || '94%', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)', 
+                    color: frameStyle?.color || 'white',
+                    fontSize: frameStyle?.detailSize || (isCompact ? '0.45rem' : '0.6rem'),
+                    fontWeight: fwToCss(frameStyle?.fontWeight || 'bold'),
+                    textShadow: frameStyle?.textShadow || '0 1px 2px rgba(0,0,0,0.8)',
+                    textTransform: frameStyle?.textTransform || 'uppercase',
+                    letterSpacing: lsToCss(frameStyle?.letterSpacing),
                     zIndex: 88 
                   }}
                 >

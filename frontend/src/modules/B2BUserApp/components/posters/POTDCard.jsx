@@ -365,7 +365,7 @@ const POTDCard = ({ poster, onEdit }) => {
             size="regular"
             isOverlay={true}
             activeFrame={activeFrame}
-            framePos={framePos}
+            frameStyle={activeFrameObj?.textStyle}
           />
         )}
       </div>
@@ -377,7 +377,7 @@ const POTDCard = ({ poster, onEdit }) => {
           size="regular"
           isOverlay={false}
           activeFrame={activeFrame}
-          framePos={framePos}
+          frameStyle={activeFrameObj?.textStyle}
         />
       )}
 
