@@ -541,38 +541,82 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
         <button className="bg-transparent text-white border-none cursor-pointer" onClick={onClose}><ArrowLeft size={24} /></button>
         <h3 className="uppercase">Video Poster</h3>
       </div>
-      <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col p-6 items-center">
-        <div className="relative w-full max-w-[340px] rounded-[1.5rem] overflow-hidden shadow-2xl bg-white border-[6px] border-white">
-          <canvas ref={canvasRef} className="w-full h-auto" />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors pointer-events-none">
-            <button 
-               className="w-16 h-16 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white shadow-xl hover:scale-110 transition-transform cursor-pointer pointer-events-auto"
-               onClick={(e) => {
-                 e.stopPropagation();
-                 setIsPlaying(!isPlaying);
-                 if (!isPlaying) posterAudioRef.current?.play().catch(e => console.log('Interrupted'));
-                 else posterAudioRef.current?.pause();
-               }}
-            >
-              {isPlaying ? <Pause size={32} fill="white" /> : <Play size={32} fill="white" className="ml-1" />}
-            </button>
-          </div>
-        </div>
-        <div className="w-full max-w-[400px] mt-8 space-y-6">
-          <div className="bg-white p-4 rounded-2xl flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500"><Music2 /></div>
-              <div><h5 className="font-black">{selectedMusic?.title || 'Default Audio'}</h5></div>
-            </div>
-            <button className="px-4 py-2 bg-gray-50 rounded-xl font-black text-xs uppercase" onClick={() => setShowMusicModal(true)}>Edit</button>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {effects.map(fx => (
-              <button key={fx.id} className={`flex flex-col items-center gap-2 border-none bg-transparent cursor-pointer ${selectedEffect === fx.id ? 'text-rose-600' : 'text-gray-400'}`} onClick={() => setSelectedEffect(fx.id)}>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${selectedEffect === fx.id ? 'bg-rose-600 text-white shadow-lg' : 'bg-white'}`}>{fx.icon}</div>
-                <span className="text-[10px] font-black uppercase tracking-widest">{fx.title}</span>
+      <div className="flex-1 overflow-hidden bg-gray-50 flex flex-col md:flex-row">
+        {/* Left: Preview Section */}
+        <div className="flex-[1.5] p-4 md:p-8 flex flex-col items-center justify-center overflow-y-auto bg-[#f8fafc]">
+          <div className="relative w-full max-w-[340px] md:max-w-[480px] aspect-square rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] bg-white border-[6px] md:border-[12px] border-white transition-all duration-500">
+            <canvas ref={canvasRef} className="w-full h-full" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors pointer-events-none group">
+              <button 
+                 className="w-16 h-16 md:w-24 md:h-24 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white shadow-xl hover:scale-110 active:scale-95 transition-all cursor-pointer pointer-events-auto"
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   setIsPlaying(!isPlaying);
+                   if (!isPlaying) posterAudioRef.current?.play().catch(e => console.log('Interrupted'));
+                   else posterAudioRef.current?.pause();
+                 }}
+              >
+                {isPlaying ? <Pause size={48} fill="white" /> : <Play size={48} fill="white" className="ml-2" />}
               </button>
-            ))}
+            </div>
+          </div>
+          <p className="mt-6 text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs">Previewing Video Greeting</p>
+        </div>
+
+        {/* Right: Controls Section */}
+        <div className="flex-1 bg-white border-l border-slate-100 p-6 md:p-10 overflow-y-auto flex flex-col gap-10">
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="font-black uppercase tracking-wider text-slate-800 flex items-center gap-3">
+                <Music2 className="text-rose-500" size={20} />
+                Background Music
+              </h4>
+              <button 
+                className="px-5 py-2.5 bg-rose-50 text-rose-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-rose-100 transition-colors" 
+                onClick={() => setShowMusicModal(true)}
+              >
+                Change
+              </button>
+            </div>
+            
+            <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-4 group">
+              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm group-hover:scale-110 transition-transform">
+                <Music2 size={24} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h5 className="font-black text-slate-800 truncate mb-0.5">{selectedMusic?.title || 'Default Audio'}</h5>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedMusic?.category || 'Music Track'}</p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h4 className="font-black uppercase tracking-wider text-slate-800 mb-6 flex items-center gap-3">
+              <Sparkles className="text-rose-500" size={20} />
+              Visual Effects
+            </h4>
+            <div className="grid grid-cols-4 md:grid-cols-3 gap-4">
+              {effects.map(fx => (
+                <button 
+                  key={fx.id} 
+                  className={`flex flex-col items-center gap-3 border-none bg-transparent cursor-pointer transition-all ${selectedEffect === fx.id ? 'scale-105' : 'hover:scale-105'}`} 
+                  onClick={() => setSelectedEffect(fx.id)}
+                >
+                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-[1.2rem] md:rounded-[1.5rem] flex items-center justify-center transition-all ${selectedEffect === fx.id ? 'bg-rose-600 text-white shadow-[0_12px_24px_-8px_rgba(225,29,72,0.5)]' : 'bg-slate-50 text-slate-400 border border-slate-100 hover:bg-white'}`}>
+                    {fx.icon}
+                  </div>
+                  <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${selectedEffect === fx.id ? 'text-rose-600' : 'text-slate-400'}`}>
+                    {fx.title}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div className="mt-auto pt-10 border-t border-slate-50 hidden md:block">
+            <p className="text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em] leading-relaxed">
+              Choose your favorite music and visual style to create a stunning video greeting.
+            </p>
           </div>
         </div>
       </div>
@@ -583,8 +627,14 @@ const VideoEditor = ({ template, userData, onClose, isBusinessCard = false, auto
       </div>
       <AnimatePresence>
         {showMusicModal && (
-          <motion.div className="fixed inset-0 bg-black/60 z-[4000] flex items-end" onClick={() => setShowMusicModal(false)}>
-            <motion.div className="w-full bg-white rounded-t-[3rem] h-[80vh] p-6 flex flex-col" onClick={e => e.stopPropagation()} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}>
+          <motion.div className="fixed inset-0 bg-black/60 z-[4000] flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setShowMusicModal(false)}>
+            <motion.div 
+              className="w-full md:max-w-2xl bg-white rounded-t-[3rem] md:rounded-[2rem] h-[80vh] md:h-[70vh] p-6 md:p-10 flex flex-col shadow-2xl" 
+              onClick={e => e.stopPropagation()} 
+              initial={{ y: '100%', opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }} 
+              exit={{ y: '100%', opacity: 0 }}
+            >
               <div className="flex justify-between items-center mb-6">
                 <button className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border-none" onClick={() => setShowMusicModal(false)}><X /></button>
                 <h3 className="uppercase font-black">Choose Music</h3>

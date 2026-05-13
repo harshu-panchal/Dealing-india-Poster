@@ -132,12 +132,15 @@ export const EditorProvider = ({ children }) => {
   };
 
   const openEditor = (template, initialTab = 'branding') => {
-    const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
+    let normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
+    // If template has no saved frame, fallback to the first available frame (matching home page defaults)
+    if (!normalizedFrame && frames && frames.length > 0) {
+      normalizedFrame = normalizeFrameValue(frames[0].image || frames[0].url);
+    }
+    
     setEditingTemplate(injectUserData(template));
     setInitialEditorTab(initialTab);
-    // Load frame only from the template being edited to avoid cross-poster leakage.
     setSelectedFrame(normalizedFrame || null);
-    // Keep viewingDetail open
   };
 
   const openDetail = (template) => {
@@ -158,9 +161,13 @@ export const EditorProvider = ({ children }) => {
       return;
     }
 
-    const normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
+    let normalizedFrame = normalizeFrameValue(template?.customData?.selectedFrame);
+    // If template has no saved frame, fallback to the first available frame
+    if (!normalizedFrame && frames && frames.length > 0) {
+      normalizedFrame = normalizeFrameValue(frames[0].image || frames[0].url);
+    }
+
     setViewingDetail(injectUserData(template));
-    // Load frame from this template's customData, or CLEAR it if there's no saved frame
     setSelectedFrame(normalizedFrame || null);
   };
 
