@@ -120,27 +120,33 @@ const BusinessCardEditor = () => {
 
         {/* Form Controls (Desktop Slide-in or Tooltip?) - Let's keep it clean on mobile */}
         {/* Main Content Area - Three Column Studio Layout for Desktop */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-50">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#f1f5f9]">
           
           {/* COLUMN 1: Template Gallery (Left Sidebar) */}
-          <div className="hidden md:flex w-64 flex-col bg-white border-r border-slate-100 overflow-hidden">
-            <div className="p-4 border-b border-slate-50">
-               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                 <Layout size={12} className="text-red-500" />
-                 Templates ({allTemplates.length})
+          <div className="hidden lg:flex w-[280px] flex-col bg-white border-r border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+               <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                 <Layout size={14} className="text-rose-500" />
+                 Design Library
                </h3>
+               <span className="bg-slate-50 text-slate-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-100">
+                 {allTemplates.length}
+               </span>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-slate-50/20">
                {allTemplates.map(t => (
                  <div 
                    key={t._id}
                    onClick={() => { setTemplate(t); navigate(`/business-card/editor/${t._id}`); }}
-                   className={`group relative aspect-[1.75/1] rounded-xl overflow-hidden cursor-pointer transition-all border-2 ${template?._id === t._id ? 'border-red-500 shadow-lg' : 'border-transparent hover:border-slate-200'}`}
+                   className={`group relative aspect-[1.75/1] rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border-[3px] shadow-sm ${template?._id === t._id ? 'border-rose-500 ring-4 ring-rose-500/10' : 'border-transparent hover:border-slate-300 hover:shadow-md'}`}
                  >
-                   <img src={t.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                   <img src={t.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                   <div className={`absolute inset-0 transition-opacity duration-300 ${template?._id === t._id ? 'bg-rose-500/5 opacity-100' : 'bg-black/0 group-hover:bg-black/5'}`} />
                    {template?._id === t._id && (
-                     <div className="absolute inset-0 bg-red-500/10 backdrop-blur-[1px] flex items-center justify-center">
-                        <Check size={20} className="text-red-500 bg-white rounded-full p-0.5 shadow-sm" />
+                     <div className="absolute top-2 right-2">
+                        <div className="bg-rose-500 text-white rounded-full p-1 shadow-lg">
+                           <Check size={12} strokeWidth={4} />
+                        </div>
                      </div>
                    )}
                  </div>
@@ -149,196 +155,233 @@ const BusinessCardEditor = () => {
           </div>
 
           {/* COLUMN 2: Center Stage (Card Preview) */}
-          <div className="flex-1 p-4 lg:p-8 flex flex-col items-center justify-start overflow-y-auto bg-slate-50/30">
-            <div className="w-full max-w-[650px] sticky top-0">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Live Editor</span>
+          <div className="flex-1 p-6 md:p-12 lg:p-20 flex flex-col items-center justify-center overflow-y-auto relative">
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ef4444 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+            
+            <div className="w-full max-w-[700px] relative z-10">
+              <div className="mb-8 flex items-center justify-between">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Workspace Active</span>
+                  </div>
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight hidden md:block">{template.name || 'Professional Business Card'}</h2>
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Landscape • Standard Size</p>
+                <div className="flex flex-col items-end gap-1">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Landscape • Standard 3.5 x 2</p>
+                   <div className="flex gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-slate-200" />
+                      <div className="w-2 h-2 rounded-full bg-slate-200" />
+                      <div className="w-2 h-2 rounded-full bg-rose-500" />
+                   </div>
+                </div>
               </div>
 
               {/* Card Preview Container */}
-              <div 
-                ref={canvasRef}
-                className="w-full aspect-[1.75/1] bg-white shadow-[0_30px_70px_rgba(0,0,0,0.12)] relative overflow-hidden rounded-2xl border border-slate-200"
-                style={{ 
-                   backgroundImage: `url(${template.image})`, 
-                   backgroundSize: 'cover'
-                }}
-              >
-                {/* Field Indicators/Pencils */}
-                {template.fields?.map(field => (
-                  <div 
-                    key={field.key}
-                    onClick={() => handleFieldClick(field.key)}
-                    className="absolute flex items-center gap-1 cursor-pointer group"
-                    style={{
-                      top: field.position.y || '10%',
-                      left: field.position.x || '10%',
-                      zIndex: 20
-                    }}
-                  >
-                    <div className="bg-[#3b82f6] text-white p-1 rounded shadow-lg group-hover:scale-110 transition-transform">
-                       <Pencil size={10} strokeWidth={3} />
+              <div className="relative group transition-all duration-500">
+                <div 
+                  ref={canvasRef}
+                  className="w-full aspect-[1.75/1] bg-white shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] md:shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)] relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] border-[8px] md:border-[12px] border-white transition-all group-hover:scale-[1.02]"
+                  style={{ 
+                     backgroundImage: `url(${template.image})`, 
+                     backgroundSize: '100% 100%',
+                     backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  {/* Field Indicators/Pencils */}
+                  {template.fields?.map(field => (
+                    <div 
+                      key={field.key}
+                      onClick={() => handleFieldClick(field.key)}
+                      className="absolute flex items-center gap-1 cursor-pointer group/field z-[100]"
+                      style={{
+                        top: field.position.y || '10%',
+                        left: field.position.x || '10%',
+                      }}
+                    >
+                      <div className="bg-[#3b82f6] text-white p-1.5 rounded-lg shadow-xl group-hover/field:scale-125 group-hover/field:rotate-12 transition-all">
+                         <Pencil size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-[9px] font-black bg-slate-900 text-white px-2 py-1 rounded-full shadow-2xl opacity-0 group-hover/field:opacity-100 transition-all -translate-x-2 group-hover/field:translate-x-0 whitespace-nowrap">
+                        Edit {field.label}
+                      </span>
                     </div>
-                    <span className="text-[8px] font-black bg-white/80 backdrop-blur-sm px-1.5 rounded text-slate-800 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      {userData[field.key] || field.label}
-                    </span>
-                  </div>
-                ))}
+                  ))}
 
-                {/* Actual dynamic content (Text & Images) */}
-                {template.fields?.map(field => {
-                   if (field.type === 'image') {
-                     const imgUrl = userData[field.key];
-                     if (!imgUrl) return null;
-                     return (
-                       <div
-                         key={`${field.key}-img`}
-                         className="absolute overflow-hidden"
-                         style={{
-                           top: field.position.y || '10%',
-                           left: field.position.x || '10%',
-                           width: field.size?.width || '50px',
-                           height: field.size?.height || '50px',
-                           borderRadius: field.key === 'userPhoto' ? '50%' : '0'
-                         }}
-                       >
-                         <img src={imgUrl} className="w-full h-full object-contain" alt="" />
-                       </div>
-                     );
-                   }
+                  {/* Actual dynamic content (Text & Images) */}
+                  {template.fields?.map(field => {
+                    if (field.type === 'image') {
+                      const imgUrl = userData[field.key];
+                      if (!imgUrl) return null;
+                      return (
+                        <div
+                          key={`${field.key}-img`}
+                          className="absolute overflow-hidden"
+                          style={{
+                            top: field.position.y || '10%',
+                            left: field.position.x || '10%',
+                            width: field.size?.width || '12%',
+                            height: field.size?.height || 'auto',
+                            aspectRatio: '1/1',
+                            borderRadius: field.key === 'userPhoto' ? '50%' : '8px',
+                            border: field.key === 'userPhoto' ? '2px solid white' : 'none',
+                            boxShadow: field.key === 'userPhoto' ? '0 10px 20px rgba(0,0,0,0.1)' : 'none'
+                          }}
+                        >
+                          <img src={imgUrl} className="w-full h-full object-cover" alt="" />
+                        </div>
+                      );
+                    }
 
-                   if (field.type !== 'text') return null;
-                   return (
-                     <div
-                       key={`${field.key}-text`}
-                       className="absolute pointer-events-none"
-                       style={{
-                         top: field.position.y || '10%',
-                         left: field.position.x || '10%',
-                         ...(field.style || {}),
-                         ...(fieldStyles[field.key] || {})
-                       }}
-                     >
-                       {userData[field.key] || field.label}
-                     </div>
-                   );
-                })}
+                    if (field.type !== 'text') return null;
+                    return (
+                      <div
+                        key={`${field.key}-text`}
+                        className="absolute pointer-events-none whitespace-nowrap"
+                        style={{
+                          top: field.position.y || '10%',
+                          left: field.position.x || '10%',
+                          ...(field.style || {}),
+                          ...(fieldStyles[field.key] || {})
+                        }}
+                      >
+                        {userData[field.key] || field.label}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Floating tool hint */}
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Click fields on card to style</p>
+                </div>
               </div>
-              <div className="mt-6 flex justify-center gap-4">
-                 <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors">
-                   <ImageIcon size={14} className="text-red-500" /> Change Background
+
+              <div className="mt-16 flex flex-wrap justify-center gap-4">
+                 <button className="flex items-center gap-3 px-6 py-3 bg-white rounded-2xl shadow-sm border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-50 hover:shadow-md active:scale-95 transition-all group">
+                   <ImageIcon size={16} className="text-rose-500 transition-transform group-hover:rotate-12" /> 
+                   Backgrounds
                  </button>
-                 <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-colors">
-                   <Palette size={14} className="text-red-500" /> Global Styles
+                 <button className="flex items-center gap-3 px-6 py-3 bg-white rounded-2xl shadow-sm border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-50 hover:shadow-md active:scale-95 transition-all group">
+                   <Palette size={16} className="text-rose-500 transition-transform group-hover:scale-110" /> 
+                   Theme Styles
                  </button>
               </div>
             </div>
           </div>
 
           {/* COLUMN 3: Right Panel (Form Controls) */}
-          <div className="w-full md:w-80 lg:w-96 flex flex-col bg-white border-l border-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.02)]">
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-              <div className="mb-8">
-                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-[0.2em] mb-1">Editor Options</h3>
-                <p className="text-[10px] font-bold text-slate-400">Fill your card details below</p>
+          <div className="w-full md:w-[360px] lg:w-[420px] flex flex-col bg-white border-l border-slate-200 shadow-[-10px_0_40px_rgba(0,0,0,0.03)] z-20 relative">
+            <div className="flex-1 overflow-y-auto p-8 lg:p-10 custom-scrollbar">
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-2">
+                   <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500">
+                      <Save size={16} />
+                   </div>
+                   <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-[0.2em]">Personalize Details</h3>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase tracking-widest">Changes are updated in real-time on the card preview</p>
               </div>
 
-              <div className="space-y-6">
-                {/* Image Uploaders */}
-                {['logo', 'userPhoto'].map(key => (
-                  <div key={key} className="group">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                      {key === 'logo' ? 'Company Logo' : 'Profile Image'}
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-red-500/30 ${userData[key] ? 'border-solid border-red-500' : ''}`}>
-                        {userData[key] ? (
-                          <img src={userData[key]} className="w-full h-full object-cover" alt="" />
-                        ) : (
-                          <ImageIcon size={20} className="text-slate-300" />
-                        )}
+              <div className="space-y-10">
+                {/* Image Uploaders Section */}
+                <div className="space-y-6">
+                  {['logo', 'userPhoto'].map(key => (
+                    <div key={key} className="group">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest">
+                          {key === 'logo' ? 'Business Logo' : 'Profile Photo'}
+                        </label>
+                        {userData[key] && <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Applied</span>}
                       </div>
-                      <label className="flex-1">
-                        <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 text-[10px] font-black text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer text-center uppercase tracking-widest">
-                          {userData[key] ? 'Change Image' : 'Upload Image'}
+                      <div className="flex items-center gap-5">
+                        <div className={`w-20 h-20 rounded-2xl bg-slate-50 border-[3px] border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all group-hover:border-rose-500/40 ${userData[key] ? 'border-solid border-rose-500 shadow-lg shadow-rose-500/10' : ''}`}>
+                          {userData[key] ? (
+                            <img src={userData[key]} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <ImageIcon size={24} className="text-slate-200" />
+                          )}
                         </div>
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => setUserData({...userData, [key]: reader.result});
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
+                        <label className="flex-1">
+                          <div className="px-5 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer text-center uppercase tracking-widest shadow-sm">
+                            {userData[key] ? 'Update Image' : 'Pick Image'}
+                          </div>
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setUserData({...userData, [key]: reader.result});
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
-                {/* Text Fields */}
-                {['name', 'designation', 'phone', 'email', 'business_name', 'website', 'address'].map(key => (
-                  <div key={key} className="group">
-                    <div className="flex items-center justify-between mb-2">
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-red-500">
-                         {key.replace('_', ' ')}
-                       </label>
-                       {userData[key] && <Check size={12} className="text-green-500" />}
+                {/* Text Fields Section */}
+                <div className="space-y-5">
+                  <h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Information Fields</h4>
+                  {['name', 'designation', 'phone', 'email', 'business_name', 'website', 'address'].map(key => (
+                    <div key={key} className="group">
+                      <div className="flex items-center justify-between mb-2.5">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-focus-within:text-rose-600 transition-colors">
+                           {key.replace('_', ' ')}
+                         </label>
+                      </div>
+                      <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 group-focus-within:border-rose-500/40 group-focus-within:bg-white group-focus-within:shadow-[0_15px_30px_rgba(225,29,72,0.08)] transition-all duration-300">
+                        <input 
+                          type="text" 
+                          value={userData[key]} 
+                          onChange={(e) => setUserData({...userData, [key]: e.target.value})}
+                          placeholder={`Enter your ${key.replace('_', ' ')}...`}
+                          className="w-full border-none p-0 bg-transparent text-[13px] font-black text-slate-800 focus:outline-none placeholder:text-slate-300 uppercase tracking-tight"
+                        />
+                      </div>
                     </div>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group-focus-within:border-red-500/30 group-focus-within:bg-white group-focus-within:shadow-lg transition-all duration-300">
-                      <input 
-                        type="text" 
-                        value={userData[key]} 
-                        onChange={(e) => setUserData({...userData, [key]: e.target.value})}
-                        placeholder={`Your ${key}...`}
-                        className="w-full border-none p-0 bg-transparent text-[13px] font-black text-slate-800 focus:outline-none placeholder:text-slate-300"
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Actions from Screenshot 3 */}
-        <div className="bg-white border-t border-slate-100 px-6 py-4 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.05)] safe-area-bottom">
-           <button className="h-11 px-6 rounded-2xl border-2 border-[#ef4444] text-[#ef4444] text-[10px] font-black uppercase tracking-widest bg-transparent hover:bg-red-50 transition-colors cursor-pointer">
-             Edit Poster
+        {/* Bottom Actions - Premium Design */}
+        <div className="bg-white border-t border-slate-200 px-6 lg:px-12 py-5 flex items-center justify-between shadow-[0_-20px_50px_rgba(0,0,0,0.04)] z-[30] shrink-0">
+           <button className="h-12 px-8 rounded-2xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-900/10 border-none cursor-pointer">
+             Design History
            </button>
 
-           <div className="flex items-center gap-6">
-              <div onClick={handleDownload} className="flex flex-col items-center gap-1 cursor-pointer group">
-                 <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors">
-                    <Video size={18} />
+           <div className="flex items-center gap-8 md:gap-10">
+              <div onClick={handleDownload} className="flex flex-col items-center gap-1.5 cursor-pointer group">
+                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-50 group-hover:text-rose-600 group-hover:scale-110 transition-all duration-300">
+                    <Video size={22} />
                  </div>
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Video</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter group-hover:text-slate-800 transition-colors">Video</span>
               </div>
-              <div onClick={handleDownload} className="flex flex-col items-center gap-1 cursor-pointer group">
-                 <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors">
-                    <Download size={18} />
+              <div onClick={handleDownload} className="flex flex-col items-center gap-1.5 cursor-pointer group">
+                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-50 group-hover:text-rose-600 group-hover:scale-110 transition-all duration-300">
+                    <Download size={22} />
                  </div>
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter text-center">Download</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter text-center group-hover:text-slate-800 transition-colors">Save</span>
               </div>
-              <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                 <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#25d366]/10 group-hover:text-[#25d366] transition-colors">
-                    <Phone size={18} />
+              <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
+                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 group-hover:scale-110 transition-all duration-300">
+                    <MessageCircle size={22} />
                  </div>
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Whatsapp</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter group-hover:text-slate-800 transition-colors">Direct</span>
               </div>
-              <div className="flex flex-col items-center gap-1 cursor-pointer group">
-                 <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-red-50 group-hover:text-red-500 transition-colors">
-                    <Share2 size={18} />
+              <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
+                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-50 group-hover:text-rose-600 group-hover:scale-110 transition-all duration-300">
+                    <Share2 size={22} />
                  </div>
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Share</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter group-hover:text-slate-800 transition-colors">Share</span>
               </div>
            </div>
         </div>
