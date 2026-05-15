@@ -1,363 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Phone, ChevronRight, ArrowLeft, Loader2, Gift, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Loader2, ShieldAlert, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const [name, setName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [isError, setIsError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [referralCode, setReferralCode] = useState('');
-  const [showReferralInput, setShowReferralInput] = useState(false);
   const [searchParams] = useSearchParams();
-
-  const [agreed, setAgreed] = useState(false);
-  const [policyError, setPolicyError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({ name: '', mobile: '' });
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'privacy' or 'terms'
-  const [policies, setPolicies] = useState({ privacy: '', terms: '' });
-  const [isLocked, setIsLocked] = useState(false); // Locks inputs for automated handshake
-
   const { login } = useAuth();
   const navigate = useNavigate();
+  
+  const [status, setStatus] = useState('checking'); // 'checking' | 'authenticating' | 'error'
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const MAIN_APP_URL = import.meta.env.VITE_MAIN_APP_URL || 'https://dealingindia.com';
 
-  // Fetch Policies
-  useEffect(() => {
-    const fetchPolicies = async () => {
-      try {
-        const { data } = await axios.get(`${API_URL}/user/settings`);
-        setPolicies({
-          privacy: data.privacyPolicy || '',
-          terms: data.termsAndConditions || ''
-        });
-      } catch (err) {
-        console.error('Failed to fetch policies:', err);
-      }
-    };
-    fetchPolicies();
-  }, [API_URL]);
-
-  // Handshake Listener & URL Referral Detect
   useEffect(() => {
     const queryMobile = searchParams.get('mobile') || searchParams.get('mobileNumber');
     const queryName = searchParams.get('name');
-    const ref = searchParams.get('ref');
-
-    if (ref) {
-      setReferralCode(ref.toUpperCase());
-      setShowReferralInput(true);
-    }
+    const refCode = searchParams.get('ref') || '';
 
     if (queryMobile && queryName) {
-      // Instantly lock, fill inputs and trigger login
       const cleanName = decodeURIComponent(queryName);
-      const cleanMobile = queryMobile.replace(/[^0-9]/g, '').slice(-10); // standardise 10 digits
+      const cleanMobile = queryMobile.replace(/[^0-9]/g, '').slice(-10); // 10 digits standardization
       
-      setName(cleanName);
-      setMobileNumber(cleanMobile);
-      setAgreed(true);
-      setIsLocked(true);
+      if (!/^[0-9]{10}$/.test(cleanMobile)) {
+        setStatus('error');
+        setErrorMsg('Invalid phone number received via deep-link.');
+        return;
+      }
 
-      const autoLoginRoutine = async () => {
-        setIsLoggingIn(true);
-        setIsError('');
+      setStatus('authenticating');
+      
+      const triggerSSO = async () => {
         try {
-          await login(cleanName, cleanMobile, ref || '', true);
+          // The 0-Click SSO background login
+          await login(cleanName, cleanMobile, refCode, true);
+          // Navigate immediately to main app!
           navigate('/');
         } catch (err) {
-          console.error('Handshake login failed:', err);
-          setIsError(err || 'Automated handshake failed. Please double-check details.');
-          setIsLocked(false); // Unlock on error to allow manual re-entry
-        } finally {
-          setIsLoggingIn(false);
+          console.error('SSO Handshake Failed:', err);
+          setStatus('error');
+          setErrorMsg(err || 'Unable to authenticate session safely. Please try again.');
         }
       };
-      autoLoginRoutine();
+
+      triggerSSO();
+    } else {
+      // No params found = user tried accessing /login directly
+      setStatus('error');
     }
   }, [searchParams, login, navigate]);
 
-  const handleLogin = async (e) => {
-    if (e) e.preventDefault();
-    
-    setFieldErrors({ name: '', mobile: '' });
-    setPolicyError('');
-    setIsError('');
-
-    let hasError = false;
-    const errors = { name: '', mobile: '' };
-
-    if (!name.trim()) {
-      errors.name = 'Full name is required';
-      hasError = true;
-    }
-
-    if (!mobileNumber.trim()) {
-      errors.mobile = 'Mobile number is required';
-      hasError = true;
-    } else if (!/^[0-9]{10}$/.test(mobileNumber)) {
-      errors.mobile = 'Please enter a valid 10-digit mobile number';
-      hasError = true;
-    }
-
-    if (hasError) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    if (!agreed) {
-      setPolicyError('Please agree to our Privacy Policy and Terms of Service to continue.');
-      return;
-    }
-
-    setIsLoggingIn(true);
-    try {
-      await login(name.trim(), mobileNumber, referralCode, agreed);
-      navigate('/');
-    } catch (err) {
-      setIsError(err);
-    } finally {
-      setIsLoggingIn(false);
-    }
+  const handleRedirect = () => {
+    window.location.href = MAIN_APP_URL;
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Orbs for premium feel */}
-      <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-red-400 opacity-10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-blue-400 opacity-10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Ambient branding glows */}
+      <div className="absolute top-[-20%] right-[-20%] w-96 h-96 bg-red-500 opacity-[0.07] rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] left-[-20%] w-96 h-96 bg-blue-500 opacity-[0.05] rounded-full blur-[120px] pointer-events-none" />
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[420px] bg-white rounded-[32px] p-8 shadow-2xl shadow-slate-200/50 border border-slate-100 z-10"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-[460px] bg-white rounded-[40px] p-8 sm:p-12 shadow-[0_32px_64px_-16px_rgba(15,23,42,0.08)] border border-slate-50 z-10 flex flex-col items-center text-center"
       >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-[#ef4444] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-100 mb-6">
-             <div className="text-2xl font-black italic">A</div>
-          </div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-            Welcome Back
-          </h1>
-          <p className="text-slate-400 text-sm font-semibold mt-1 text-center font-sans">
-            {isLocked ? 'Authenticating secure handshake...' : 'Ready to create more amazing posters?'}
-          </p>
+        {/* Brand Identity */}
+        <div className="w-20 h-20 bg-[#ef4444] rounded-[28px] flex items-center justify-center text-white shadow-[0_20px_40px_-10px_rgba(239,68,68,0.3)] mb-8 relative">
+          <div className="text-3xl font-black italic tracking-tighter">A</div>
+          {status === 'authenticating' && (
+            <span className="absolute inset-[-4px] border-2 border-[#ef4444] rounded-[32px] animate-ping opacity-20" />
+          )}
         </div>
 
-        {isError && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-500 text-xs font-bold"
-          >
-            {isError}
-          </motion.div>
-        )}
-
-        <motion.form 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          onSubmit={handleLogin} 
-          className="space-y-6"
-        >
-          {/* Name field */}
-          <div className="relative group">
-            <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Full Name</label>
-            <div className="relative flex items-center">
-              <User size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Enter Your Full Name"
-                disabled={isLocked || isLoggingIn}
-                className={`w-full h-14 bg-slate-50 border-2 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 placeholder:text-slate-300 transition-all font-sans ${fieldErrors.name ? 'border-red-500 bg-red-50/30' : 'border-slate-50 focus:bg-white focus:border-[#ef4444]/20'} ${(isLocked || isLoggingIn) ? 'opacity-75 cursor-not-allowed' : ''}`}
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (e.target.value) setFieldErrors(prev => ({ ...prev, name: '' }));
-                }}
-              />
+        {status === 'authenticating' || status === 'checking' ? (
+          <div className="flex flex-col items-center">
+            <div className="relative mb-8">
+              <Loader2 size={40} className="text-[#ef4444] animate-spin stroke-[2.5]" />
             </div>
-            {fieldErrors.name && (
-              <motion.p 
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-[0.65rem] font-bold text-red-500 uppercase tracking-widest mt-2 ml-2"
-              >
-                {fieldErrors.name}
-              </motion.p>
-            )}
+            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mb-3 leading-tight uppercase italic">
+              Setting Up Workspace
+            </h2>
+            <p className="text-slate-400 text-sm font-semibold tracking-wide leading-relaxed font-sans animate-pulse">
+              🔒 Securely authenticating session...
+            </p>
           </div>
-
-          {/* Mobile field */}
-          <div className="relative group">
-            <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Mobile Number</label>
-            <div className="relative flex items-center">
-              <Phone size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Enter 10-digit Mobile"
-                disabled={isLocked || isLoggingIn}
-                className={`w-full h-14 bg-slate-50 border-2 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 placeholder:text-slate-300 transition-all font-sans ${fieldErrors.mobile ? 'border-red-500 bg-red-50/30' : 'border-slate-50 focus:bg-white focus:border-[#ef4444]/20'} ${(isLocked || isLoggingIn) ? 'opacity-75 cursor-not-allowed' : ''}`}
-                value={mobileNumber}
-                onChange={(e) => {
-                  let val = e.target.value;
-                  // Only digits and limit to 10
-                  if (/^\d*$/.test(val)) {
-                    if (val.length > 10) val = val.substring(0, 10);
-                    setMobileNumber(val);
-                    if (val) setFieldErrors(prev => ({ ...prev, mobile: '' }));
-                  }
-                }}
-              />
-            </div>
-            {fieldErrors.mobile && (
-              <motion.p 
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-[0.65rem] font-bold text-red-500 uppercase tracking-widest mt-2 ml-2"
-              >
-                {fieldErrors.mobile}
-              </motion.p>
-            )}
-          </div>
-
-          {!showReferralInput ? (
-            <button 
-              type="button"
-              disabled={isLocked || isLoggingIn}
-              onClick={() => setShowReferralInput(true)}
-              className="text-[0.65rem] font-black text-[#ef4444] uppercase tracking-widest hover:underline bg-transparent border-none cursor-pointer flex items-center gap-1.5 ml-1 disabled:opacity-50"
-            >
-              <Gift size={12} /> Have a referral code?
-            </button>
-          ) : (
-            <div className="relative group">
-              <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Referral Code (Optional)</label>
-              <div className="relative flex items-center">
-                <Gift size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Enter Referral Code"
-                  disabled={isLocked || isLoggingIn}
-                  className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 placeholder:text-slate-300 focus:bg-white focus:border-[#ef4444]/20 transition-all uppercase"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                />
-                {referralCode && (
-                  <div className="absolute right-4 px-2 py-1 bg-emerald-50 text-emerald-500 text-[10px] font-black rounded-lg border border-emerald-100 uppercase tracking-tighter">
-                    Applied
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative flex items-center mt-0.5">
-                <input 
-                  type="checkbox" 
-                  disabled={isLocked || isLoggingIn}
-                  className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-200 transition-all checked:border-[#ef4444] checked:bg-[#ef4444] disabled:opacity-50"
-                  checked={agreed}
-                  onChange={(e) => {
-                    setAgreed(e.target.checked);
-                    if (e.target.checked) setPolicyError('');
-                  }}
-                />
-                <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" strokeWidth="1">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                  </svg>
-                </div>
-              </div>
-              <span className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                I agree to the <button type="button" onClick={() => { setModalType('privacy'); setShowModal(true); }} className="text-[#ef4444] hover:underline bg-transparent border-none p-0 font-black cursor-pointer">Privacy Policy</button> & <button type="button" onClick={() => { setModalType('terms'); setShowModal(true); }} className="text-[#ef4444] hover:underline bg-transparent border-none p-0 font-black cursor-pointer">Terms of Service</button>
-              </span>
-            </label>
-            {policyError && (
-              <motion.p 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-[0.65rem] font-bold text-red-500 uppercase tracking-widest ml-8"
-              >
-                {policyError}
-              </motion.p>
-            )}
-          </div>
-
-          <button 
-            disabled={isLoggingIn}
-            className="w-full h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-[0.98] transition-all border-none group cursor-pointer disabled:opacity-70"
-          >
-            {isLoggingIn ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <>
-                <span>Login Now</span>
-                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </button>
-        </motion.form>
-      </motion.div>
-
-      {/* Footer Disclaimer */}
-      <p className="mt-8 text-[0.6rem] text-slate-400 font-bold uppercase tracking-widest leading-loose text-center max-w-[300px]">
-        Official B2B Portal for Dealingindia<br/>
-        <span className="text-slate-300">© 2026 Dealingindia</span>
-      </p>
-
-      {/* Policy Modal */}
-      <AnimatePresence>
-        {showModal && (
+        ) : (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-            onClick={() => setShowModal(false)}
+            className="flex flex-col items-center"
           >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-[32px] w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
-              onClick={e => e.stopPropagation()}
+            {/* Error/Direct Access View */}
+            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mb-6 border border-rose-100">
+              <ShieldAlert size={28} />
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mb-4 uppercase italic leading-tight">
+              {errorMsg ? "Authentication Failed" : "Access Poster Studio via Dealing India"}
+            </h2>
+
+            <p className="text-slate-500 text-sm font-bold font-sans leading-relaxed tracking-wide mb-8 px-2">
+              {errorMsg ? errorMsg : "To ensure your designs save to the correct account, please launch Poster Studio directly from your active Dealing India user or vendor dashboard."}
+            </p>
+
+            <button 
+              onClick={handleRedirect}
+              className="w-full h-14 bg-[#ef4444] text-white rounded-2xl font-black text-sm tracking-widest uppercase shadow-[0_16px_32px_-8px_rgba(239,68,68,0.3)] hover:shadow-[0_20px_40px_-8px_rgba(239,68,68,0.4)] hover:scale-[1.01] active:scale-[0.98] transition-all border-none cursor-pointer flex items-center justify-center gap-3 group"
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">
-                  {modalType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
-                </h2>
-                <button 
-                  onClick={() => setShowModal(false)}
-                  className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors border-none cursor-pointer"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-              </div>
-              <div className="p-8 overflow-y-auto font-sans text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                {modalType === 'privacy' ? policies.privacy : policies.terms}
-                {(!policies.privacy && modalType === 'privacy') && "Privacy policy not yet configured."}
-                {(!policies.terms && modalType === 'terms') && "Terms of service not yet configured."}
-              </div>
-              <div className="p-6 bg-slate-50 flex justify-end">
-                <button 
-                  onClick={() => setShowModal(false)}
-                  className="px-8 h-12 bg-[#ef4444] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-100 border-none cursor-pointer"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
+              <span>Return to Dealing India</span>
+              <ExternalLink size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </button>
           </motion.div>
         )}
-      </AnimatePresence>
+      </motion.div>
+
+      {/* Clean branding footer */}
+      <p className="mt-8 text-[0.65rem] text-slate-400 font-black uppercase tracking-widest text-center flex items-center gap-2 opacity-60 z-10">
+        <span>Dealing India</span>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
+        <span>Poster Engine</span>
+      </p>
     </div>
   );
 };
