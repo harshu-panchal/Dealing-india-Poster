@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, User, HelpCircle, Search, Mic, CalendarCheck, Plus } from 'lucide-react';
+import { Bell, User, HelpCircle, Search, Mic, CalendarCheck, Plus, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEditor } from '../../context/EditorContext';
+import { getReturnUrl, hasReturnUrl } from '../../hooks/useReturnUrl';
 
 
 const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenSidebar }) => {
@@ -33,9 +34,10 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
           </div>
           <span className="text-white text-[1rem] md:text-[1.15rem] font-bold whitespace-nowrap">Posters</span>
           <button 
-            onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}
+            onClick={() => { window.location.href = getReturnUrl(); }}
             className="bg-[#fde047] text-[#854d0e] px-1.5 md:px-2.5 py-1 rounded-sm text-[0.6rem] md:text-[0.7rem] font-extrabold flex items-center gap-1 ml-0.5 md:ml-1 flex-shrink-0 cursor-pointer border-none outline-none shadow-sm hover:bg-[#facc15] transition-colors"
           >
+            {hasReturnUrl() && <ArrowLeft size={10} strokeWidth={3} className="shrink-0" />}
              Dealingindia <span className="text-[0.8rem] md:text-[1rem] leading-none">›</span>
           </button>
         </div>

@@ -70,6 +70,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
 import { useEffect } from 'react';
+import { captureReturnUrl } from './modules/B2BUserApp/hooks/useReturnUrl';
 
 function AppContent() {
   const { i18n } = useTranslation();
@@ -88,6 +89,9 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
+    // Capture ?return_url= from Dealing India and persist it
+    captureReturnUrl();
+
     // Initialize push notifications
     initializePushNotifications();
     
