@@ -61,9 +61,9 @@ const ProtectedAdminRoute = ({ children }) => {
   return isAdmin ? children : <Navigate to="/admin/login" replace />;
 };
 
-// Protected Route for User
 const UserPrivateRoute = ({ children, isAuthenticated }) => {
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  const location = useLocation();
+  return isAuthenticated ? children : <Navigate to={`/login${location.search}`} replace />;
 };
 
 import axios from 'axios';
@@ -78,7 +78,7 @@ function AppContent() {
   const { user, loading } = useAuth();
 
   const isAuthenticated = !!user; 
-  const isProfileIncomplete = isAuthenticated && (!user.user?.name || !user.user?.email || !user.user?.mobileNumber);
+  const isProfileIncomplete = isAuthenticated && (!user.user?.name || !user.user?.mobileNumber);
 
   const { 
     editingTemplate, closeEditor, 
