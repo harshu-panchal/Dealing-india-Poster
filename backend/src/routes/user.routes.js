@@ -1,5 +1,5 @@
 import express from 'express';
-import { sendOTP, verifyOTP, logoutUser, updateProfile, saveTemplate, getSavedTemplates, getPublicSettings, getProfile } from '../controllers/user.auth.controller.js';
+import { loginOrRegister, logoutUser, updateProfile, saveTemplate, getSavedTemplates, getPublicSettings, getProfile } from '../controllers/user.auth.controller.js';
 import { getPublicEvents, getEventTemplates } from '../controllers/admin.event.controller.js';
 import { getPublicCategories, getPublicTemplates, getWhatsNewContent } from '../controllers/user.category.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
@@ -12,8 +12,7 @@ import { submitFeedback } from '../controllers/feedback.controller.js';
 
 const router = express.Router();
 
-router.post('/send-otp', sendOTP);
-router.post('/verify-otp', verifyOTP);
+router.post('/login', loginOrRegister);
 router.post('/logout', protect, logoutUser);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
