@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ShieldAlert, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,6 +8,9 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const navigate = useNavigate();
+  
+  // Prevent duplicate background SSO calls on rapid re-renders
+  const loginStarted = useRef(false);
   
   const [status, setStatus] = useState('checking'); // 'checking' | 'authenticating' | 'error'
   const [errorMsg, setErrorMsg] = useState('');
@@ -20,6 +23,9 @@ const Login = () => {
     const refCode = searchParams.get('ref') || '';
 
     if (queryMobile && queryName) {
+      if (loginStarted.current) return;
+      loginStarted.current = true;
+
       const cleanName = decodeURIComponent(queryName);
       const cleanMobile = queryMobile.replace(/[^0-9]/g, '').slice(-10); // 10 digits standardization
       

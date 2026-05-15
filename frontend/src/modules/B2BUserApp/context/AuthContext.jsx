@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { registerFCMToken, removeFCMToken } from '../../../services/pushNotificationService';
 
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
-  const login = async (name, mobileNumber, referralCode, agreedToPolicies) => {
+  const login = useCallback(async (name, mobileNumber, referralCode, agreedToPolicies) => {
     try {
       const payload = { name, mobileNumber };
       
@@ -83,9 +83,9 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       throw error.response?.data?.message || 'Login failed';
     }
-  };
+  }, [API_URL]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       if (user?.accessToken) {
         await axios.post(`${API_URL}/user/logout`, {}, {
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       localStorage.removeItem('userInfo');
     }
-  };
+  }, [user, API_URL]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>

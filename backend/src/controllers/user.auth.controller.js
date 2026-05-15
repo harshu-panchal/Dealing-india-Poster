@@ -132,8 +132,11 @@ export const loginOrRegister = async (req, res) => {
     console.error(error);
 
     if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyValue || {})[0] || 'unknown';
+      const duplicateValue = Object.values(error.keyValue || {})[0] || '';
+      console.error(`[MONGODB COLLISION]: Field '${duplicateField}' has duplicate value: '${duplicateValue}'`);
       return res.status(400).json({ 
-        message: 'This mobile number is already registered with another account.',
+        message: `Database Collision: The ${duplicateField} "${duplicateValue}" is already registered with another account.`,
         details: error.keyValue 
       });
     }
