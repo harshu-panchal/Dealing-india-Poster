@@ -100,11 +100,15 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   const sidebarContent = (
     <div className={`${isPersistent ? 'relative h-full' : 'fixed top-0 left-0 bottom-0'} w-[280px] bg-white z-[2001] shadow-xl flex flex-col border-r border-[#f1f5f9]`}>
       {/* Red Profile Section */}
-      <div className="bg-[#ef4444] p-6 pt-10 text-white relative">
+      <div 
+        className="bg-[#ef4444] p-6 text-white relative"
+        style={{ paddingTop: 'calc(2.5rem + env(safe-area-inset-top, 0px))' }}
+      >
         {!isPersistent && (
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-1 hover:bg-white/10 rounded-full transition-colors"
+            className="absolute right-4 p-1 hover:bg-white/10 rounded-full transition-colors"
+            style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
           >
             <X size={24} />
           </button>

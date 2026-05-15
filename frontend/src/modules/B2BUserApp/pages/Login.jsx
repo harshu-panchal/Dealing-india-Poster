@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Phone, Lock, ChevronRight, Chrome as Google, Share2 as Facebook, Mail, ArrowLeft, Loader2, MessageSquare, Gift } from 'lucide-react';
+import { Phone, Lock, ChevronRight, Mail, ArrowLeft, Loader2, MessageSquare, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
@@ -408,22 +408,6 @@ const Login = () => {
             </motion.form>
           )}
         </AnimatePresence>
-
-        <div className="relative my-10 text-center">
-           <hr className="border-slate-100" />
-           <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[0.65rem] font-bold text-slate-300 uppercase tracking-widest">Or Continue With</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-10">
-           <button className="h-14 bg-white border-2 border-slate-50 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-all group cursor-pointer font-bold text-slate-700">
-              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[#ef4444]"><Google size={16} /></div>
-              <span className="text-xs">Google</span>
-           </button>
-           <button className="h-14 bg-white border-2 border-slate-50 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-all group cursor-pointer font-bold text-slate-700">
-              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[#3b82f6]"><Facebook size={18} fill="currentColor" /></div>
-              <span className="text-xs">Facebook</span>
-           </button>
-        </div>
       </motion.div>
 
       {/* Footer Disclaimer */}

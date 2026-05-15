@@ -458,6 +458,7 @@ const PosterEditor = ({ template, onClose }) => {
                 {/* Frame Layer (Inside square only) */}
                 {effectiveSelectedFrame && (
                   <img
+                    key={effectiveSelectedFrame}
                     src={effectiveSelectedFrame}
                     className="absolute inset-0 w-full h-full object-fill pointer-events-none z-[60]"
                     alt="Frame Overlay"

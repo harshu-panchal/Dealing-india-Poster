@@ -41,6 +41,7 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
       <div className={`w-full h-full overflow-hidden absolute inset-0 z-[80]`}>
         {/* Frame Background Image with CORS support */}
         <img 
+          key={activeFrame}
           src={activeFrame} 
           className="absolute inset-0 w-full h-full object-fill pointer-events-none" 
           crossOrigin="anonymous"

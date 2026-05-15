@@ -32,6 +32,7 @@
     width: 100% !important;
     overflow: hidden;
     background-color: var(--bg-color);
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   * {

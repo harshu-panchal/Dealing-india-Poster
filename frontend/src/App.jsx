@@ -142,7 +142,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex bg-bg h-full w-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row bg-bg h-full w-full overflow-hidden">
       {/* Onboarding Modal - Mandatory for incomplete profiles */}
       <OnboardingModal isOpen={isProfileIncomplete} />
       
@@ -159,16 +159,17 @@ function AppContent() {
       )}
 
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+        {isAuthenticated && showBars && (
+          <CommonHeader 
+            showSearch={showSearch} 
+            onSearchChange={(val) => console.log('Search:', val)} 
+            onOpenSidebar={() => setShowSidebar(true)}
+          />
+        )}
+        
         {/* Scrollable Content Area */}
-        <main className="flex-1 w-full overflow-y-auto overflow-x-hidden scroll-smooth relative">
+        <main className="flex-1 w-full min-w-0 overflow-y-auto overflow-x-hidden scroll-smooth relative">
           <div className="w-full">
-            {isAuthenticated && showBars && (
-              <CommonHeader 
-                showSearch={showSearch} 
-                onSearchChange={(val) => console.log('Search:', val)} 
-                onOpenSidebar={() => setShowSidebar(true)}
-              />
-            )}
             
             <Suspense fallback={<ShimmerLayout />}>
               <Routes>
