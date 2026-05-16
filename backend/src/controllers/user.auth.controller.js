@@ -406,3 +406,130 @@ export const getPublicSettings = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// @desc    Poster App - Login with Mobile only (No OTP)
+// @route   POST /api/user/poster-login
+export const posterLogin = async (req, res) => {
+  const { mobileNumber } = req.body;
+
+  if (!mobileNumber) {
+    return res.status(400).json({ message: 'Mobile number is required' });
+  }
+
+  try {
+    const user = await User.findOne({ mobileNumber });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found. Please register.' });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(200).json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        mobileNumber: user.mobileNumber,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+        logo: user.logo,
+        contentLanguage: user.contentLanguage,
+        website: user.website,
+        businessName: user.businessName,
+        gstNumber: user.gstNumber,
+        isVerified: user.isVerified,
+        referralCode: user.referralCode,
+        points: Number(user.points) || 0,
+        referralCount: Number(user.referralCount) || 0,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Poster App - Register with Name and Mobile (No OTP)
+// @route   POST /api/user/poster-register
+export const posterRegister = async (req, res) => {
+  const { mobileNumber, name, referralCode, agreedToPolicies } = req.body;
+
+  if (!mobileNumber || !name) {
+    return res.status(400).json({ message: 'Mobile number and name are required' });
+  }
+
+  try {
+    // Check if user already exists
+    let existingUser = await User.findOne({ mobileNumber });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Mobile number already registered. Please login.' });
+    }
+
+    const user = new User({
+      mobileNumber,
+      name,
+      email: `${mobileNumber}@dealingindia.com`, // Placeholder to avoid unique index conflict on null
+      isVerified: true, 
+      agreedToPolicies: agreedToPolicies || false,
+    });
+
+    // Handle Referral logic (similar to verifyOTP)
+    if (referralCode) {
+      const uppercaseCode = referralCode.toUpperCase().trim();
+      const referrer = await User.findOne({ referralCode: uppercaseCode });
+
+      if (referrer && referrer.mobileNumber !== mobileNumber) {
+        user.referredBy = referrer._id;
+        
+        const referralPointsSetting = await Settings.findOne({ key: 'referralPoints' });
+        const pointsToAdd = referralPointsSetting ? (parseInt(referralPointsSetting.value) || 10) : 10;
+
+        referrer.points = (Number(referrer.points) || 0) + pointsToAdd;
+        referrer.referralCount = (Number(referrer.referralCount) || 0) + 1;
+        user.points = pointsToAdd;
+
+        await referrer.save();
+      }
+    }
+
+    await user.save();
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(201).json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        mobileNumber: user.mobileNumber,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+        logo: user.logo,
+        contentLanguage: user.contentLanguage,
+        website: user.website,
+        businessName: user.businessName,
+        gstNumber: user.gstNumber,
+        isVerified: user.isVerified,
+        referralCode: user.referralCode,
+        points: Number(user.points) || 0,
+        referralCount: Number(user.referralCount) || 0,
+      },
+    });
+  } catch (error) {
+    console.error('[POSTER REGISTER ERROR]:', error);
+    if (error.code === 11000) {
+      const field = error.keyValue ? Object.keys(error.keyValue)[0] : 'details';
+      return res.status(400).json({ message: `This ${field} is already in use by another account.` });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};

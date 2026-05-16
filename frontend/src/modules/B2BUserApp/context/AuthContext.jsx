@@ -2,9 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { registerFCMToken, removeFCMToken } from '../../../services/pushNotificationService';
 
-const AuthContext = createContext();
+const AuthContext = createContext({});
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    return {}; // Prevent destructuring crash
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -115,8 +121,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const posterLogin = async (mobileNumber) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/user/poster-login`, { mobileNumber });
+      setUser(data);
+      localStorage.setItem('userInfo', JSON.stringify(data));
+      setTimeout(() => registerFCMToken(true), 1000);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Login failed';
+    }
+  };
+
+  const posterRegister = async (mobileNumber, name, referralCode, agreedToPolicies) => {
+    try {
+      const { data } = await axios.post(`${API_URL}/user/poster-register`, { 
+        mobileNumber, 
+        name, 
+        referralCode, 
+        agreedToPolicies 
+      });
+      setUser(data);
+      localStorage.setItem('userInfo', JSON.stringify(data));
+      setTimeout(() => registerFCMToken(true), 1000);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Registration failed';
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, sendOtp, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, sendOtp, posterLogin, posterRegister, logout }}>
       {children}
     </AuthContext.Provider>
   );
