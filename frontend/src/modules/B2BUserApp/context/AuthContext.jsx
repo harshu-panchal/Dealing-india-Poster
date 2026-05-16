@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { registerFCMToken, removeFCMToken } from '../../../services/pushNotificationService';
 
@@ -59,9 +59,10 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
-  const login = useCallback(async (name, mobileNumber, referralCode, agreedToPolicies) => {
+  const login = async (identifier, otp, referralCode, agreedToPolicies) => {
     try {
-      const payload = { name, mobileNumber };
+      const isEmail = identifier.includes('@');
+      const payload = isEmail ? { email: identifier, otp } : { mobileNumber: identifier, otp };
       
       if (referralCode) {
         payload.referralCode = referralCode;
@@ -71,7 +72,7 @@ export const AuthProvider = ({ children }) => {
         payload.agreedToPolicies = agreedToPolicies;
       }
 
-      const { data } = await axios.post(`${API_URL}/user/login`, payload);
+      const { data } = await axios.post(`${API_URL}/user/verify-otp`, payload);
 
       setUser(data);
       localStorage.setItem('userInfo', JSON.stringify(data));
@@ -83,9 +84,21 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       throw error.response?.data?.message || 'Login failed';
     }
-  }, [API_URL]);
+  };
 
-  const logout = useCallback(async () => {
+  const sendOtp = async (identifier) => {
+    try {
+      const isEmail = identifier.includes('@');
+      const payload = isEmail ? { email: identifier } : { mobileNumber: identifier };
+
+      const { data } = await axios.post(`${API_URL}/user/send-otp`, payload);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Failed to send OTP';
+    }
+  };
+
+  const logout = async () => {
     try {
       if (user?.accessToken) {
         await axios.post(`${API_URL}/user/logout`, {}, {
@@ -100,10 +113,10 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       localStorage.removeItem('userInfo');
     }
-  }, [user, API_URL]);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, sendOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );

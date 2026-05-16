@@ -5,35 +5,81 @@ import * as otpService from '../services/otp.service.js';
 import { sendOTPEmail } from '../services/mail.service.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
-// @desc    Login or Register user via Mobile number
-// @route   POST /api/user/login
-export const loginOrRegister = async (req, res) => {
-  const { name, mobileNumber, referralCode, agreedToPolicies } = req.body;
+// @desc    Send OTP to email/mobile
+// @route   POST /api/user/send-otp
+export const sendOTP = async (req, res) => {
+  const { mobileNumber, email } = req.body;
 
-  if (!mobileNumber) {
-    return res.status(400).json({ message: 'Mobile number is required' });
+  if (!mobileNumber && !email) {
+    return res.status(400).json({ message: 'Mobile number or email is required' });
   }
 
-  // Standardizing 10-digit validation
-  const cleanMobile = mobileNumber.toString().trim();
-  if (!/^\d{10}$/.test(cleanMobile)) {
-    return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number' });
-  }
+  const identifier = mobileNumber || email;
+  const type = mobileNumber ? 'mobile' : 'email';
 
   try {
-    let user = await User.findOne({ mobileNumber: cleanMobile });
+    const otp = otpService.generateOTP();
+    const hashedOtp = await otpService.hashOTP(otp);
+
+    await otpService.saveOTP(identifier, hashedOtp, type);
+
+    // 📬 REAL EMAIL INTEGRATION (Temporarily commented out for Vercel/Render SMTP blocks)
+    /*
+    if (type === 'email') {
+        try {
+            await sendOTPEmail(identifier, otp);
+        } catch (mailErr) {
+            console.error('Email failed but terminal shows OTP:', otp);
+        }
+    }
+    */
+
+    // Always log to terminal for developer reference
+    console.log(`\n\x1b[33m[OTP SENT to ${identifier}] : ${otp}\x1b[0m\n`);
+
+    res.status(200).json({ message: `OTP sent successfully to your ${type}` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Verify OTP and Login/Register
+// @route   POST /api/user/verify-otp
+export const verifyOTP = async (req, res) => {
+  const { mobileNumber, email, otp, referralCode, agreedToPolicies } = req.body;
+
+  if ((!mobileNumber && !email) || !otp) {
+    return res.status(400).json({ message: 'Identity and OTP are required' });
+  }
+
+  const identifier = mobileNumber || email;
+
+  try {
+    const otpRecord = await OTP.findOne({ identifier });
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'OTP expired or not found' });
+    }
+
+    const isValid = await otpService.verifyHashedOTP(otp, otpRecord.otp);
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    // OTP is valid, now find/create user
+    const filter = {};
+    if (mobileNumber) filter.mobileNumber = mobileNumber;
+    if (email) filter.email = email;
+
+    let user = await User.findOne(filter);
     let isNewUser = false;
 
-    console.log(`[DEBUG]: loginOrRegister for mobile: ${cleanMobile}. isNew: ${!user}`);
+    console.log(`[DEBUG]: Verifying OTP for identity: ${identifier}. isNew: ${!user}`);
 
     if (!user) {
-      if (!name || !name.trim()) {
-        return res.status(400).json({ message: 'Name is required for first-time registration' });
-      }
       isNewUser = true;
       user = new User({
-        name: name.trim(),
-        mobileNumber: cleanMobile,
+        mobileNumber: mobileNumber || undefined,
+        email: email || undefined,
         isVerified: true,
         agreedToPolicies: agreedToPolicies || false,
       });
@@ -48,8 +94,10 @@ export const loginOrRegister = async (req, res) => {
           console.log(`[DEBUG]: REFERRAL FAILED - No user found with code: ${uppercaseCode}`);
         } else {
           console.log(`[DEBUG]: Referrer found: ${referrer.name || 'Unnamed'} (${referrer._id})`);
+          console.log(`[DEBUG]: Referrer Identifiers - Mobile: ${referrer.mobileNumber}, Email: ${referrer.email}`);
+          console.log(`[DEBUG]: Current Registrant - Mobile: ${mobileNumber}, Email: ${email}`);
 
-          const isSelfReferral = referrer.mobileNumber === cleanMobile;
+          const isSelfReferral = referrer.mobileNumber === mobileNumber || (email && referrer.email === email);
 
           if (!isSelfReferral) {
             console.log(`[DEBUG]: REFERRAL SUCCESS - Applying points...`);
@@ -80,12 +128,6 @@ export const loginOrRegister = async (req, res) => {
       if (agreedToPolicies !== undefined) {
         user.agreedToPolicies = agreedToPolicies;
       }
-      
-      // If name was provided and backend doesn't have one, update it
-      if (name && name.trim() && !user.name) {
-        user.name = name.trim();
-      }
-
       // Ensure existing users get a referral code if they don't have one
       if (!user.referralCode) {
         const generateCode = () => 'DI' + Math.random().toString(36).substring(2, 9).toUpperCase();
@@ -106,10 +148,12 @@ export const loginOrRegister = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
+    // Delete OTP after successful verification
+    await OTP.deleteOne({ _id: otpRecord._id });
+
     res.status(200).json({
       accessToken,
       refreshToken,
-      isNewUser,
       user: {
         id: user._id,
         name: user.name,
@@ -128,15 +172,12 @@ export const loginOrRegister = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(`[DEBUG ERROR]: loginOrRegister failed at ${new Date().toISOString()}:`);
+    console.error(`[DEBUG ERROR]: verifyOTP failed at ${new Date().toISOString()}:`);
     console.error(error);
 
     if (error.code === 11000) {
-      const duplicateField = Object.keys(error.keyValue || {})[0] || 'unknown';
-      const duplicateValue = Object.values(error.keyValue || {})[0] || '';
-      console.error(`[MONGODB COLLISION]: Field '${duplicateField}' has duplicate value: '${duplicateValue}'`);
       return res.status(400).json({ 
-        message: `Database Collision: The ${duplicateField} "${duplicateValue}" is already registered with another account.`,
+        message: 'This email or mobile number is already registered with another account.',
         details: error.keyValue 
       });
     }

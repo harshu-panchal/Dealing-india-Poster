@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Phone, Camera, Image as ImageIcon, ChevronRight, Loader2, Check, Upload, Mail } from 'lucide-react';
+import { User, Phone, Camera, Image as ImageIcon, Globe, ChevronRight, Loader2, Check, Upload, Mail } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
@@ -59,11 +59,12 @@ const OnboardingModal = ({ isOpen }) => {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email.trim()) {
-      if (!emailRegex.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-        isValid = false;
-      }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      isValid = false;
     }
 
     setErrors(newErrors);
@@ -118,7 +119,7 @@ const OnboardingModal = ({ isOpen }) => {
     }
   };
 
-
+  const languages = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Bengali', 'Tamil'];
 
   return (
     <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-y-auto">
@@ -137,7 +138,7 @@ const OnboardingModal = ({ isOpen }) => {
             <div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic">Complete Profile</h2>
               <p className="text-white/80 text-xs sm:text-sm font-semibold mt-1">
-                {step === 1 ? 'Step 1: Personal Details' : 'Step 2: Profile Branding'}
+                {step === 1 ? 'Step 1: Personal Details' : 'Step 2: Branding & Language'}
               </p>
             </div>
             <div className="flex gap-1.5 mb-1">
@@ -198,7 +199,7 @@ const OnboardingModal = ({ isOpen }) => {
                   </div>
 
                   <div className="relative group">
-                    <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Email Address (Optional)</label>
+                    <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Email Address</label>
                     <div className="relative flex items-center">
                       <Mail size={18} className={`absolute left-4 transition-colors ${errors.email ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#ef4444]'}`} />
                       <input
@@ -271,7 +272,19 @@ const OnboardingModal = ({ isOpen }) => {
                   </div>
                 </div>
 
-
+                <div className="relative group">
+                  <label className="text-[0.65rem] font-black uppercase tracking-widest text-slate-400 ml-2 mb-2 block">Content Language</label>
+                  <div className="relative flex items-center">
+                    <Globe size={18} className="absolute left-4 text-slate-400 group-focus-within:text-[#ef4444] transition-colors" />
+                    <select
+                      className="w-full h-14 bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl px-12 text-[1rem] font-bold text-slate-800 appearance-none focus:bg-white focus:border-[#ef4444]/20 transition-all cursor-pointer font-sans"
+                      value={formData.contentLanguage}
+                      onChange={(e) => setFormData({ ...formData, contentLanguage: e.target.value })}
+                    >
+                      {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                    </select>
+                  </div>
+                </div>
 
                 <div className="flex gap-4">
                   <button
