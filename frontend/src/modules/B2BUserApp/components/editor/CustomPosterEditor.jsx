@@ -249,7 +249,7 @@ const CustomPosterEditor = ({ onClose }) => {
             {/* Dealing India Branding Badge */}
             <div className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none">
               <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
-              <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+              <span className="brand-gradient-text font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
             </div>
 
             
@@ -535,6 +535,7 @@ const CustomPosterEditor = ({ onClose }) => {
                 ) : (
                   <div className="p-12 text-center">
                     <Type size={48} className="mx-auto text-slate-200 mb-4" />
+                    <h2 className="text-2xl font-black brand-gradient-text tracking-tight">Dealingindia</h2>
                     <p className="text-xs font-bold text-slate-400 leading-relaxed">Select a text block to customize<br/>or add a new one</p>
                   </div>
                 )}

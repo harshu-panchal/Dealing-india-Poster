@@ -63,4 +63,13 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-text-secondary;
   }
+
+  .brand-gradient-text {
+    background: linear-gradient(to right, #ff0080, #ff8c00, #ffd700, #32cd32, #00bfff, #8a2be2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+  }
 }

@@ -33,10 +33,10 @@ export const EditorProvider = ({ children }) => {
       business_name: false,
       phone: true,
       website: false,
-      email: true,
+      email: false,
       address: false,
       gst: false,
-      userPhoto: true,
+      userPhoto: false,
       logo: false,
       designation: false
     }

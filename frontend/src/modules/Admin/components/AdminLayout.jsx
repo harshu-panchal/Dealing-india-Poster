@@ -145,7 +145,7 @@ const AdminLayout = () => {
             <Layers size={18} strokeWidth={2.5} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 leading-none mb-1">Dealingindia</span>
+            <span className="text-[10px] font-black tracking-[0.2em] brand-gradient-text leading-none mb-1">Dealingindia</span>
             <span className="text-[0.7rem] font-black text-[var(--admin-text-main)] tracking-normal uppercase">POSTER ADMIN</span>
           </div>
         </div>

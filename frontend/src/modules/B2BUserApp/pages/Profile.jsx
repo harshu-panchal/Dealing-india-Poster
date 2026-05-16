@@ -432,7 +432,7 @@ const Profile = () => {
              <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" /> Logout Securely
           </button>
           <div className="mt-10 flex flex-col items-center gap-2">
-             <p className="text-[0.6rem] font-black text-slate-300 uppercase tracking-[0.4em]">Dealingindia</p>
+             <p className="text-[0.6rem] font-black brand-gradient-text uppercase tracking-[0.4em]">Dealingindia</p>
              <p className="text-[0.55rem] font-bold text-slate-300 uppercase tracking-[0.2em]">Build 2.4.5 • Latest Stable</p>
           </div>
         </div>

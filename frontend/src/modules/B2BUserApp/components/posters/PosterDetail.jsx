@@ -498,14 +498,14 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
           </div>
           <button
             onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}
-            className="bg-[#fde047] text-[#854d0e] px-4 py-1.5 rounded-[4px] text-[0.7rem] font-black active:scale-95 transition-transform shadow-sm border-none uppercase tracking-tighter cursor-pointer"
+            className="bg-white px-4 py-1.5 rounded-[4px] text-[0.7rem] font-black active:scale-95 transition-transform shadow-sm border-none uppercase tracking-tighter cursor-pointer"
           >
-            Dealingindia
+            <span className="brand-gradient-text">Dealingindia</span>
           </button>
         </div>
 
         <div className="bg-[#fff7ed] text-[#c2410c] p-2.5 px-4 text-center text-[0.8rem] font-bold border-b border-[#ffedd5] shrink-0">
-          Premium Category Access. <strong className="cursor-pointer underline ml-1" onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}>Dealingindia</strong>
+          Premium Category Access. <strong className="cursor-pointer underline ml-1 brand-gradient-text" onClick={() => window.open('https://www.dealingindia.com/landing', '_blank')}>Dealingindia</strong>
         </div>
 
         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-slate-50">
@@ -523,7 +523,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                   className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-black/10 shadow-lg pointer-events-none"
                 >
                   <img src="/dealing-india-logo.png" className="w-8 h-8 object-contain" alt="DI" crossOrigin="anonymous" />
-                  <span className="text-black font-black tracking-tighter text-sm uppercase whitespace-nowrap">Dealingindia</span>
+                  <span className="brand-gradient-text font-black tracking-tighter text-sm uppercase whitespace-nowrap">Dealingindia</span>
 
                 </div>
                 {/* Poster Background */}

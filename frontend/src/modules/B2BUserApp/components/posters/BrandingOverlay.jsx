@@ -244,15 +244,17 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
         style={bgStyle}
       >
         {/* Left: circular photo / logo */}
-        <div className={`flex-shrink-0 ${photoSizeClass} rounded-full overflow-hidden border-2 border-white/20 shadow-lg`}>
-          <img
-            src={userData.userPhoto || userData.logo || defaultLogo}
-            className="w-full h-full object-cover"
-            alt="profile"
-            crossOrigin="anonymous"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        </div>
+        {(userData.enabledFields?.userPhoto !== false || userData.enabledFields?.logo !== false) && (
+          <div className={`flex-shrink-0 ${photoSizeClass} rounded-full overflow-hidden border-2 border-white/20 shadow-lg`}>
+            <img
+              src={(userData.enabledFields?.userPhoto !== false && userData.userPhoto) ? userData.userPhoto : (userData.enabledFields?.logo !== false && userData.logo) ? userData.logo : defaultLogo}
+              className="w-full h-full object-cover"
+              alt="profile"
+              crossOrigin="anonymous"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+        )}
 
         {/* Right: name, business, phone — stacked vertically, left-aligned */}
         <div className="flex-1 flex flex-col justify-center min-w-0 overflow-hidden py-1">
@@ -271,7 +273,7 @@ const BrandingOverlay = ({ userData = {}, size = 'regular', isOverlay = false, a
               {userData.designation}
             </span>
           )}
-          {userData.phone_number && (
+          {userData.enabledFields?.phone !== false && userData.phone_number && (
             <span className={`${detailSizeClass} text-white/70 font-semibold truncate leading-tight mt-0.5`}>
               {userData.phone_number}
             </span>

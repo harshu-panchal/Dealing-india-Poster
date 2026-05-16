@@ -471,7 +471,7 @@ const PosterEditor = ({ template, onClose }) => {
                   className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none"
                 >
                   <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
-                  <span className="text-black font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+                  <span className="brand-gradient-text font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
                 </div>
               </div>
 

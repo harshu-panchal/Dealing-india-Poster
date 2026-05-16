@@ -26,7 +26,7 @@ const AboutUs = () => {
             <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center text-[#ef4444] mb-4">
               <Info size={40} />
             </div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Dealingindia</h2>
+            <h2 className="text-2xl font-black brand-gradient-text tracking-tight">Dealingindia</h2>
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Your Branding Partner</p>
           </div>
 
