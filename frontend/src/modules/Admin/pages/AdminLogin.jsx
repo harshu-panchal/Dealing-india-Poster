@@ -67,10 +67,12 @@ const AdminLogin = () => {
           </div>
         </div>
 
+        {error && (
           <div className="login-item bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-black tracking-widest uppercase p-4 rounded-2xl mb-8 flex items-center gap-3 animate-pulse">
             <Activity size={14} />
             {error}
           </div>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-6 relative">
           <div className="login-item space-y-2">
@@ -83,7 +85,7 @@ const AdminLogin = () => {
                 type="text" 
                 required
                 className="h-16 pl-14 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-800 shadow-inner"
-                placeholder="Principal ID"
+                placeholder=""
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
               />
@@ -100,7 +102,7 @@ const AdminLogin = () => {
                 type={showPassword ? 'text' : 'password'} 
                 required
                 className="h-16 pl-14 pr-14 bg-slate-50 border-none rounded-2xl text-sm font-black text-slate-800 shadow-inner"
-                placeholder="••••••••"
+                placeholder=""
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
