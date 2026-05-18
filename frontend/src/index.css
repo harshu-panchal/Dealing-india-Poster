@@ -18,7 +18,9 @@
 }
 
 @layer base {
-  html, body {
+
+  html,
+  body {
     height: 100% !important;
     width: 100% !important;
     overflow: hidden !important;
@@ -65,11 +67,21 @@
   }
 
   .brand-gradient-text {
-    background: linear-gradient(to right, #ff0080, #ff8c00, #ffd700, #32cd32, #00bfff, #8a2be2);
+    background: linear-gradient(to bottom, #ff0080, #ff8c00, #ffd700, #32cd32, #00bfff, #8a2be2);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
     display: inline-block;
+  }
+
+  .brand-vertical-gradient-text {
+    background: linear-gradient(to bottom, #ff0080, #ff8c00, #ffd700, #32cd32, #00bfff, #8a2be2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+    line-height: 1;
   }
 }

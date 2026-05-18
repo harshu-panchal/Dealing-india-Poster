@@ -270,15 +270,6 @@ const ForYou = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 lg:px-0">
               {templates.map(tpl => (
                 <div key={tpl._id} className="relative group">
-                  <div className="absolute top-4 right-4 z-[20]">
-                    <button 
-                       onClick={() => handleLikePOTD(tpl._id)}
-                       className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 active:scale-95 transition-all"
-                    >
-                       <Heart size={16} className={tpl.isLiked ? 'fill-red-500 text-red-500' : 'text-slate-300'} />
-                       <span className="text-[0.7rem] font-black text-slate-700">{tpl.likeCount || 0}</span>
-                    </button>
-                  </div>
                   <POTDCard poster={tpl} onEdit={openDetail} />
                 </div>
               ))}
