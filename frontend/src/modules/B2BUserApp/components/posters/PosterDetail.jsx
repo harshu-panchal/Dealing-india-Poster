@@ -4,6 +4,7 @@ import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
 import VideoEditor from '../editor/VideoEditor';
 import BrandingOverlay from './BrandingOverlay';
+import dealingIndiaText from '../../../../assets/dealing_india-removebg-preview.png';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
@@ -523,8 +524,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
                   className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-black/10 shadow-lg pointer-events-none"
                 >
                   <img src="/dealing-india-logo.png" className="w-8 h-8 object-contain" alt="DI" crossOrigin="anonymous" />
-                  <span className="brand-gradient-text font-black tracking-tighter text-sm uppercase whitespace-nowrap">Dealingindia</span>
-
+                  <img src={dealingIndiaText} className="h-3.5 w-auto object-contain" alt="DEALING INDIA" />
                 </div>
                 {/* Poster Background */}
                 {(currentTemplate.type === 'video' || currentTemplate.isVideo || isVideoUrl(currentTemplate.image)) ? (

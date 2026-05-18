@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Edit2, Download, MessageCircle, Share2, Flame, Heart, Video, PlayCircle, Play, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useEditor } from '../../context/EditorContext';
+import dealingIndiaText from '../../../../assets/dealing_india-removebg-preview.png';
 import BrandingOverlay from './BrandingOverlay';
 
 const POTDCard = ({ poster, onEdit }) => {
@@ -287,6 +288,22 @@ const POTDCard = ({ poster, onEdit }) => {
 
   return (
     <div className="flex flex-col w-full bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100" ref={cardRef}>
+      {/* Poster Heading with Like Button */}
+      <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-slate-50">
+        <h3 className="text-[0.75rem] font-black text-slate-800 uppercase tracking-wider truncate max-w-[70%]">
+          {poster.title || poster.name || 'Poster of the Day'}
+        </h3>
+        <button
+          onClick={handleLike}
+          className="flex items-center gap-1 hover:scale-105 active:scale-95 transition-all bg-transparent border-none cursor-pointer"
+        >
+          <Heart size={16} className={isLiked ? 'fill-red-500 text-red-500' : 'text-slate-300'} />
+          {likeCount > 0 && (
+            <span className={`text-[10px] font-black ${isLiked ? 'text-red-500' : 'text-slate-400'}`}>{likeCount}</span>
+          )}
+        </button>
+      </div>
+
       <div
         className="relative aspect-square overflow-hidden cursor-pointer group bg-slate-50"
         onClick={() => onEdit(poster)}
@@ -357,7 +374,7 @@ const POTDCard = ({ poster, onEdit }) => {
           className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none"
         >
           <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
-          <span className="brand-gradient-text font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+          <img src={dealingIndiaText} className="h-2.5 w-auto object-contain" alt="DEALING INDIA" />
         </div>
         {activeFrame && (
           <BrandingOverlay

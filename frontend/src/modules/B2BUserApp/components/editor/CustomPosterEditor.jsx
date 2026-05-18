@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import dealingIndiaText from '../../../../assets/dealing_india-removebg-preview.png';
 
 const FONTS = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -249,7 +250,7 @@ const CustomPosterEditor = ({ onClose }) => {
             {/* Dealing India Branding Badge */}
             <div className="absolute top-[3%] right-[3%] z-[95] flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-black/10 shadow-lg pointer-events-none">
               <img src="/dealing-india-logo.png" className="w-6 h-6 object-contain" alt="DI" crossOrigin="anonymous" />
-              <span className="brand-gradient-text font-black tracking-tighter text-[10px] uppercase whitespace-nowrap">Dealingindia</span>
+              <img src={dealingIndiaText} className="h-2.5 w-auto object-contain" alt="DEALING INDIA" />
             </div>
 
             
