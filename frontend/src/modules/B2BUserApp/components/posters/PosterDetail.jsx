@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import VideoEditor from '../editor/VideoEditor';
 import BrandingOverlay from './BrandingOverlay';
 import dealingIndiaText from '../../../../assets/dealing_india-removebg-preview.png';
+import ShareModal from '../modals/ShareModal';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
@@ -25,6 +26,7 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
   const { user } = useAuth();
   const [showVideoEditor, setShowVideoEditor] = useState(false);
   const [autoVideoDownload, setAutoVideoDownload] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (initialEditorTab === 'video') {
@@ -411,55 +413,10 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
     }
   };
 
-  const handleWhatsApp = async () => {
-    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
-    const userName = userData.name || globalUserData?.name || 'Dealingindia User';
-    
-    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
-
-    // On mobile, try sharing the file if it's an image
-    // REMOVED navigator.share here to ensure WhatsApp button goes DIRECTLY to WhatsApp
-    // The 'Share' button handles the native share dialog with multiple options.
-
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
+  const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
 
   const handleShare = async () => {
-    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
-    const userName = userData.name || globalUserData?.name || 'Dealingindia User';
-    
-    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
-
-    if (navigator.share) {
-      try {
-        const shareData = {
-          title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
-          text: message,
-        };
-
-        // Try sharing file if image
-        if (!isVideo && navigator.canShare) {
-          const file = await getPosterFile();
-          if (file && navigator.canShare({ files: [file] })) {
-            shareData.files = [file];
-            // When sharing files, some platforms ignore the 'url' field, so we include it in 'text'
-          } else {
-            shareData.url = shareLink;
-          }
-        } else {
-          shareData.url = shareLink;
-        }
-
-        await navigator.share(shareData);
-      } catch (err) {
-        console.log('Share failed', err);
-      }
-    } else {
-      handleWhatsApp();
-    }
+    setIsShareModalOpen(true);
   };
 
 
@@ -647,7 +604,17 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
           />
           <ActionIcon icon={Video} label="Video" color="#f43f5e" onClick={() => setShowVideoEditor(true)} />
           <ActionIcon icon={Download} label="Save" color="#475569" onClick={handleDownload} />
-          <ActionIcon icon={MessageCircle} label="WhatsApp" color="#22c55e" onClick={handleWhatsApp} />
+          <ActionIcon 
+            icon={MessageCircle} 
+            label="WhatsApp" 
+            color="#22c55e" 
+            onClick={() => {
+              const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
+              const userName = userData.name || globalUserData?.name || 'Dealingindia User';
+              const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            }} 
+          />
           <ActionIcon icon={Share2} label="Share" color="#f59e0b" onClick={handleShare} />
         </div>
 
@@ -689,6 +656,16 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
               setShowVideoEditor(false);
               setAutoVideoDownload(false);
             }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isShareModalOpen && (
+          <ShareModal 
+            isOpen={isShareModalOpen} 
+            onClose={() => setIsShareModalOpen(false)} 
+            shareLink={shareLink}
+            isVideo={currentTemplate.isVideo || currentTemplate.type === 'video'}
           />
         )}
       </AnimatePresence>

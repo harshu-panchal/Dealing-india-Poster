@@ -185,6 +185,7 @@ const CustomPosterEditor = ({ onClose }) => {
     try {
       const canvas = await window.html2canvas(posterRef.current, {
         useCORS: true,
+        allowTaint: true,
         scale: 3,
         backgroundColor: null
       });
@@ -194,6 +195,7 @@ const CustomPosterEditor = ({ onClose }) => {
       link.click();
     } catch (err) {
       console.error('Export failed:', err);
+      alert('Failed to download the poster. This may happen if the background image blocks CORS access. Please try a different background or capture your screen.');
     } finally {
       restoreStyles();
       setIsExporting(false);
@@ -211,7 +213,10 @@ const CustomPosterEditor = ({ onClose }) => {
         className="w-full h-full md:h-[90vh] md:max-w-[1000px] bg-slate-50 flex flex-col overflow-hidden md:rounded-[2.5rem] shadow-2xl relative"
       >
         {/* Header */}
-        <div className="h-14 md:h-16 px-4 md:px-8 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div 
+          className="min-h-[3.5rem] md:min-h-[4rem] px-4 md:px-8 bg-white border-b border-slate-200 flex items-center justify-between shrink-0"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.5rem)', paddingBottom: '0.5rem' }}
+        >
           <div className="flex items-center gap-4">
             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors border-none cursor-pointer">
               <X size={20} className="text-slate-600" />
@@ -282,11 +287,13 @@ const CustomPosterEditor = ({ onClose }) => {
                   fontFamily: t.font,
                   fontSize: `${t.size}px`,
                   textAlign: t.align,
-                  textShadow: `${t.shadow.x}px ${t.shadow.y}px ${t.shadow.blur}px ${t.shadow.color}`,
+                  textShadow: t.bgColor === 'transparent' ? `${t.shadow.x}px ${t.shadow.y}px ${t.shadow.blur}px ${t.shadow.color}` : 'none',
+                  boxShadow: t.bgColor !== 'transparent' ? `${t.shadow.x}px ${t.shadow.y}px ${t.shadow.blur}px ${t.shadow.color}` : 'none',
                   transform: 'translate(-50%, -50%)',
                   whiteSpace: 'pre-wrap',
                   overflowWrap: 'anywhere',
                   wordBreak: 'break-word',
+                  touchAction: 'none',
                   zIndex: selectedTextId === t.id ? 100 : 10,
                   width: 'fit-content',
                   maxWidth: '85%',
@@ -380,8 +387,17 @@ const CustomPosterEditor = ({ onClose }) => {
                     >
                       <Plus size={20} className="text-slate-300 group-hover:text-indigo-600" />
                       <span className="text-[8px] font-bold text-slate-400">Custom</span>
-                      <input type="file" hidden ref={backgroundInputRef} accept="image/*" onChange={handleBackgroundUpload} />
+                      <input type="file" hidden ref={backgroundInputRef} accept="image/*" capture="environment" onChange={handleBackgroundUpload} />
                     </div>
+                    {selectedBackground && (
+                      <div 
+                        onClick={() => setSelectedBackground(null)}
+                        className="aspect-square border-2 border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-red-400 hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
+                      >
+                        <Trash2 size={20} />
+                        <span className="text-[8px] font-bold">Remove</span>
+                      </div>
+                    )}
                     {backgrounds.map(bg => (
                       <div 
                         key={bg._id}
@@ -513,7 +529,7 @@ const CustomPosterEditor = ({ onClose }) => {
                             <div className="space-y-4">
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Shadow Offset</label>
                               <input 
-                                type="range" min="-20" max="20" 
+                                type="range" min="-100" max="100" 
                                 value={selectedText.shadow.x} 
                                 onChange={(e) => updateSelectedText({ shadow: { ...selectedText.shadow, x: parseInt(e.target.value), y: parseInt(e.target.value) } })}
                                 className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
@@ -522,7 +538,7 @@ const CustomPosterEditor = ({ onClose }) => {
                             <div className="space-y-4">
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Shadow Blur</label>
                               <input 
-                                type="range" min="0" max="40" 
+                                type="range" min="0" max="100" 
                                 value={selectedText.shadow.blur} 
                                 onChange={(e) => updateSelectedText({ shadow: { ...selectedText.shadow, blur: parseInt(e.target.value) } })}
                                 className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layers } from 'lucide-react';
 import axios from 'axios';
 import HorizontalScrollList from '../components/common/HorizontalScrollList';
@@ -8,6 +9,7 @@ import SearchBar from '../components/common/SearchBar';
 import { useEditor } from '../context/EditorContext';
 
 const Trending = () => {
+  const navigate = useNavigate();
   const { openDetail } = useEditor();
   const [activeCategoryId, setActiveCategoryId] = useState('Trending');
   const [categories, setCategories] = useState([]);
@@ -84,9 +86,6 @@ const Trending = () => {
     <div className="bg-[#f8fafc] pb-20 min-h-screen">
       {/* Search Bar Area */}
       <div className="bg-white p-3 px-4 pt-1 border-b border-[#f1f5f9]">
-        <div className="bg-[#f1f5f9] -mx-4 px-4 py-2 mb-3 text-center text-[0.8rem] font-bold text-orange-700 border-b border-[#e2e8f0]">
-           🙏 Support us & give 5* rating - click here! 🙏
-        </div>
         <SearchBar 
           placeholder="Search Posters" 
           value={searchQuery}
@@ -108,7 +107,10 @@ const Trending = () => {
            ))}
         </div>
         {categoryOptions.length > 6 && (
-           <button className="w-[100px] py-1.5 rounded-full border border-[#e2e8f0] bg-white text-[#475569] text-[0.7rem] font-black shadow-sm active:scale-95 transition-transform">
+           <button 
+             className="w-[100px] py-1.5 rounded-full border border-[#e2e8f0] bg-white text-[#475569] text-[0.7rem] font-black shadow-sm active:scale-95 transition-transform"
+             onClick={() => navigate('/categories')}
+           >
               View More
            </button>
         )}
@@ -128,7 +130,8 @@ const Trending = () => {
           <div key={section.id} className="bg-white py-1 mb-1 shadow-sm">
             <SectionHeader 
                title={section.title} 
-               showViewAll={true} 
+               showViewAll={activeCategoryId === 'Trending'} 
+               onViewAll={() => setActiveCategoryId(section.id)}
             />
             <HorizontalScrollList>
               {section.items.map(tpl => (

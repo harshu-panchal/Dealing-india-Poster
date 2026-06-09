@@ -120,7 +120,8 @@ const PosterEditor = ({ template, onClose }) => {
   // Handlers
   const addExtraText = () => {
     if ((localUserData.extraTexts?.length || 0) >= 5) return;
-    const newText = { id: Date.now(), text: 'New Text', color: '#ffffff', size: 20, x: 0, y: 0 };
+    const offset = (localUserData.extraTexts?.length || 0) * 5;
+    const newText = { id: Date.now(), text: 'New Text', color: '#ffffff', size: 20, x: `${40 + offset}%`, y: `${40 + offset}%` };
     setLocalUserData(prev => ({ ...prev, extraTexts: [...(prev.extraTexts || []), newText] }));
   };
 
@@ -181,15 +182,16 @@ const PosterEditor = ({ template, onClose }) => {
 
 
   const addSticker = (url) => {
-    const newSticker = {
-      id: `sticker-${Date.now()}`,
-      url,
-      x: '30%',
-      y: '30%',
-      size: 15
-    };
     setLocalUserData(prev => {
       const currentStickers = prev.stickers || [];
+      const offset = currentStickers.length * 5;
+      const newSticker = {
+        id: `sticker-${Date.now()}`,
+        url,
+        x: `${20 + offset}%`,
+        y: `${20 + offset}%`,
+        size: 15
+      };
       return { ...prev, stickers: [...currentStickers, newSticker] };
     });
     setShowStickerModal(false);
@@ -221,7 +223,8 @@ const PosterEditor = ({ template, onClose }) => {
       textShadow: frameStyle.textShadow || '0 2px 4px rgba(0,0,0,0.8)',
       textTransform: frameStyle.textTransform || 'uppercase',
       letterSpacing: frameStyle.letterSpacing === 'tight' ? '-0.02em' : frameStyle.letterSpacing === 'wide' ? '0.05em' : frameStyle.letterSpacing === 'widest' ? '0.1em' : 'normal',
-      whiteSpace: 'nowrap'
+      whiteSpace: 'nowrap',
+      textAlign: frameStyle.textAlign || 'left'
     };
   };
 
@@ -667,7 +670,14 @@ const PosterEditor = ({ template, onClose }) => {
                     key={t.id}
                     className="absolute select-none p-1 pointer-events-auto touch-none"
                     style={{ left: t.x ?? '40%', top: t.y ?? '40%', color: t.color, fontSize: `${t.size}px`, fontWeight: 'black', textShadow: '0 2px 6px rgba(0,0,0,0.8)', zIndex: 90 }}
-                    animate={{ x: 0, y: 0 }}
+                    drag
+                    dragMomentum={false}
+                    onDragStart={(e, info) => onDragStart(t.id, info, t.x ?? '40%', t.y ?? '40%')}
+                    onDrag={(e, info) => {
+                      const pos = getNextPosition(t.id, info);
+                      if (pos) updateDraggable('extraTexts', t.id, pos);
+                    }}
+                    whileDrag={{ scale: 1.05, zIndex: 100 }}
                   >
                     {t.text}
                   </motion.div>
@@ -704,8 +714,13 @@ const PosterEditor = ({ template, onClose }) => {
                     key={p.id}
                     className="absolute group pointer-events-auto touch-none"
                     style={{ left: p.x ?? '50%', top: p.y ?? '30%', width: `${p.size || 20}%`, aspectRatio: '1/1', zIndex: 82 }}
-                    animate={{ x: 0, y: 0 }}
-                    transition={{ duration: 0 }}
+                    drag
+                    dragMomentum={false}
+                    onDragStart={(e, info) => onDragStart(p.id, info, p.x ?? '50%', p.y ?? '30%')}
+                    onDrag={(e, info) => {
+                      const pos = getNextPosition(p.id, info);
+                      if (pos) updateDraggable('extraPhotos', p.id, pos);
+                    }}
                     whileDrag={{ scale: 1.05, zIndex: 100 }}
                   >
                     <div className="relative w-full h-full">
@@ -725,8 +740,13 @@ const PosterEditor = ({ template, onClose }) => {
                     key={s.id}
                     className="absolute pointer-events-auto touch-none"
                     style={{ left: s.x ?? '20%', top: s.y ?? '20%', width: `${s.size || 15}%`, aspectRatio: '1/1', zIndex: 80 }}
-                    animate={{ x: 0, y: 0 }}
-                    transition={{ duration: 0 }}
+                    drag
+                    dragMomentum={false}
+                    onDragStart={(e, info) => onDragStart(s.id, info, s.x ?? '20%', s.y ?? '20%')}
+                    onDrag={(e, info) => {
+                      const pos = getNextPosition(s.id, info);
+                      if (pos) updateDraggable('stickers', s.id, pos);
+                    }}
                     whileDrag={{ scale: 1.1, zIndex: 100 }}
                   >
                     <div className="relative w-full h-full">
@@ -796,7 +816,7 @@ const PosterEditor = ({ template, onClose }) => {
                     <div className="mt-4 space-y-3">
                       {localUserData.extraTexts.map((t, idx) => (
                         <div key={t.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-700" value={t.text} onChange={(e) => updateExtraText(t.id, { text: e.target.value })} />
+                          <input type="text" maxLength={40} className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-700" value={t.text} onChange={(e) => updateExtraText(t.id, { text: e.target.value })} />
                           <input type="color" className="w-8 h-8 rounded-lg border-none cursor-pointer bg-transparent" value={t.color} onChange={(e) => updateExtraText(t.id, { color: e.target.value })} />
                           <button onClick={() => removeExtraText(t.id)} className="w-8 h-8 rounded-lg bg-red-50 text-red-500 border-none flex items-center justify-center"><Trash2 size={16} /></button>
                         </div>
@@ -817,28 +837,28 @@ const PosterEditor = ({ template, onClose }) => {
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Personal Name</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.name || ''} onChange={e => updateLocalField('name', e.target.value)} />
+                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.name || ''} onChange={e => updateLocalField('name', e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 30))} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.name !== false ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('name')}>{localUserData.enabledFields?.name !== false && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Mobile Number</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.phone_number || ''} onChange={e => updateLocalField('phone_number', e.target.value)} />
+                          <input type="tel" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.phone_number || ''} onChange={e => updateLocalField('phone_number', e.target.value.replace(/\D/g, '').slice(0, 10))} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.phone ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('phone')}>{localUserData.enabledFields?.phone && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Website</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.website || ''} onChange={e => updateLocalField('website', e.target.value)} />
+                          <input type="url" maxLength={50} className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.website || ''} onChange={e => updateLocalField('website', e.target.value)} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.website ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('website')}>{localUserData.enabledFields?.website && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Email ID</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.email || ''} onChange={e => updateLocalField('email', e.target.value)} />
+                          <input type="email" maxLength={50} className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.email || ''} onChange={e => updateLocalField('email', e.target.value)} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.email ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('email')}>{localUserData.enabledFields?.email && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
@@ -849,7 +869,7 @@ const PosterEditor = ({ template, onClose }) => {
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Designation / Role</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" placeholder="e.g. Founder, CEO, Manager" value={localUserData.designation || ''} onChange={e => updateLocalField('designation', e.target.value)} />
+                          <input type="text" maxLength={30} className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" placeholder="e.g. Founder, CEO, Manager" value={localUserData.designation || ''} onChange={e => updateLocalField('designation', e.target.value)} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.designation ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('designation')}>{localUserData.enabledFields?.designation && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
@@ -860,14 +880,14 @@ const PosterEditor = ({ template, onClose }) => {
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Business Name</label>
                         <div className="flex items-center gap-3">
-                          <input type="text" className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.business_name || ''} onChange={e => updateLocalField('business_name', e.target.value)} />
+                          <input type="text" maxLength={40} className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700" value={localUserData.business_name || ''} onChange={e => updateLocalField('business_name', e.target.value)} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.business_name !== false ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('business_name')}>{localUserData.enabledFields?.business_name !== false && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[0.7rem] font-black text-gray-400 uppercase tracking-widest pl-1">Business Address</label>
                         <div className="flex items-center gap-3">
-                          <textarea rows={3} className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700 resize-none" value={localUserData.address || ''} onChange={e => updateLocalField('address', e.target.value)} />
+                          <textarea rows={3} maxLength={100} className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none text-[0.9rem] font-bold text-gray-700 resize-none" value={localUserData.address || ''} onChange={e => updateLocalField('address', e.target.value)} />
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer ${localUserData.enabledFields?.address ? 'bg-blue-500' : 'bg-gray-100'}`} onClick={() => toggleField('address')}>{localUserData.enabledFields?.address && <Check size={16} className="text-white" />}</div>
                         </div>
                       </div>
@@ -911,7 +931,7 @@ const PosterEditor = ({ template, onClose }) => {
                   </div>
                   <label className="bg-amber-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg cursor-pointer">
                     Add Photo
-                    <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => addExtraPhoto(ev.target.result); reader.readAsDataURL(file); } }} />
+                    <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => addExtraPhoto(ev.target.result); reader.readAsDataURL(file); } }} />
                   </label>
                 </div>
                 {/* Profile Photo & Logo Controls */}
@@ -924,7 +944,7 @@ const PosterEditor = ({ template, onClose }) => {
                       <h4 className="text-[0.9rem] font-bold text-gray-800">Profile Photo</h4>
                       <label className="mt-2 inline-block bg-amber-50 text-amber-600 px-4 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest cursor-pointer">
                         Change
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleGlobalImageUpload(e.target.files[0], 'profile')} />
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleGlobalImageUpload(e.target.files[0], 'profile')} />
                       </label>
                     </div>
                   </div>
@@ -940,7 +960,7 @@ const PosterEditor = ({ template, onClose }) => {
                       <h4 className="text-[0.9rem] font-bold text-gray-800">Logo</h4>
                       <label className="mt-2 inline-block bg-amber-50 text-amber-600 px-4 py-1.5 rounded-lg text-[0.65rem] font-black uppercase tracking-widest cursor-pointer">
                         {localUserData.logo ? 'Change' : 'Add'}
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleGlobalImageUpload(e.target.files[0], 'logo')} />
+                        <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleGlobalImageUpload(e.target.files[0], 'logo')} />
                       </label>
                     </div>
                   </div>

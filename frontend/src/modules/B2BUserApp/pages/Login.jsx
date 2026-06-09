@@ -81,11 +81,14 @@ const Login = () => {
       await posterLogin(mobileNumber);
       navigate('/');
     } catch (err) {
+      // Safely convert err to string
+      const errorMessage = typeof err === 'string' ? err : (err?.message || JSON.stringify(err));
+      
       // If user not found (404), go to registration step
-      if (err.includes('not found') || err.includes('register')) {
+      if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('register')) {
         setStep(2);
       } else {
-        setIsError(err);
+        setIsError(errorMessage);
       }
     } finally {
       setIsProcessing(false);

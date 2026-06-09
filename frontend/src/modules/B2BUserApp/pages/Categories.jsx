@@ -65,7 +65,7 @@ const Categories = () => {
   return (
     <div className="bg-bg min-h-screen">
       {/* Search & Header */}
-      <div className="p-3 px-4 bg-white sticky top-0 z-[10] shadow-sm">
+      <div className="p-3 px-4 bg-white sticky top-0 z-[100] shadow-sm">
         <SearchBar 
           placeholder="Search Business Posters" 
           value={searchQuery}

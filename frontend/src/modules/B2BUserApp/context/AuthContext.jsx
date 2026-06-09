@@ -54,7 +54,13 @@ export const AuthProvider = ({ children }) => {
           if (isAdminPath) {
             window.location.href = '/admin/login';
           } else {
-            logout();
+            // Clear storage immediately to prevent reload loop
+            localStorage.removeItem('userInfo');
+            setUser(null);
+            
+            if (error.config && !error.config.url.includes('/logout')) {
+              logout().catch(() => {});
+            }
             window.location.href = '/login';
           }
         }

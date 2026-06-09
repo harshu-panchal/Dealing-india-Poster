@@ -845,7 +845,7 @@ const LogoUpload = ({ label, desc, value, onChange, enabled, onToggle, isCircle 
         {!isSticker && (
           <label className="mt-1.5 inline-block bg-amber-400 text-amber-900 px-6 py-1.5 rounded-lg text-[12px] font-bold cursor-pointer shadow-sm active:scale-95 transition-all text-center w-fit">
             Change
-            <input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = (ev) => onChange(ev.target.result); r.readAsDataURL(f); } }} />
+            <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = (ev) => onChange(ev.target.result); r.readAsDataURL(f); } }} />
           </label>
         )}
         {isSticker && (

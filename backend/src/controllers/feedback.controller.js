@@ -8,8 +8,8 @@ export const submitFeedback = async (req, res) => {
   try {
     const { message, rating } = req.body;
 
-    if (!message || !rating) {
-      return res.status(400).json({ message: 'Please provide both message and rating' });
+    if (!rating) {
+      return res.status(400).json({ message: 'Please provide a rating' });
     }
 
     const feedback = await Feedback.create({

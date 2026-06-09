@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Globe, LayoutGrid, FolderPlus, Heart, 
+  Globe, LayoutGrid, FolderPlus, Heart, Flame,
   CalendarDays, Settings, Share2, HelpCircle, 
   ThumbsUp, Info, User, X, LogOut, AlertCircle, Award, Briefcase, 
   MessageSquare, Instagram, Facebook, Youtube, ChevronDown, ShieldCheck, FileText, Sparkles
@@ -58,7 +58,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
 
     { icon: <Heart size={20} />, label: t("likedPosters"), path: "/liked-posters" },
     { icon: <FolderPlus size={20} />, label: t("myPosters"), path: "/my-posters" },
-    { icon: <Heart size={20} />, label: t("trending"), path: "/trending" },
+    { icon: <Flame size={20} />, label: t("trending"), path: "/trending" },
     { icon: <CalendarDays size={20} />, label: t("calendar"), path: "/calendar" },
     { icon: <Award size={20} />, label: t("referAndEarn"), path: "/referral" },
     { icon: <Settings size={20} />, label: t("settings"), path: "/dashboard" },
@@ -70,8 +70,8 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
         isGroup: true,
         subItems: [
            { icon: <Info size={16} />, label: t("aboutAppzeto"), path: "/about" },
-           { icon: <ShieldCheck size={16} />, label: t("privacyPolicy"), path: "/privacy-policy" },
-           { icon: <FileText size={16} />, label: t("termsAndConditions"), path: "/terms-conditions" }
+           { icon: <ShieldCheck size={16} />, label: t("privacyPolicy"), path: "/privacy" },
+           { icon: <FileText size={16} />, label: t("termsAndConditions"), path: "/terms" }
         ]
     },
     { 
@@ -98,7 +98,7 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
 
   const sidebarContent = (
-    <div className={`${isPersistent ? 'relative h-full' : 'fixed top-0 left-0 bottom-0'} w-[280px] bg-white z-[2001] shadow-xl flex flex-col border-r border-[#f1f5f9]`}>
+    <div className={`${isPersistent ? 'relative h-full border-r border-[#f1f5f9]' : 'fixed top-0 left-0 bottom-0'} w-[280px] bg-white z-[2001] shadow-xl flex flex-col`}>
       {/* Red Profile Section */}
       <div 
         className="bg-[#ef4444] p-6 text-white relative"
@@ -127,7 +127,10 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
             <p className="text-sm opacity-80 font-medium">{identifier}</p>
           </div>
           <button 
-            onClick={() => navigate('/profile')}
+            onClick={() => {
+              navigate('/profile');
+              if (!isPersistent) onClose();
+            }}
             className="text-sm font-bold underline underline-offset-4 text-white/90 active:opacity-70 transition-opacity w-fit"
           >
             {t("viewFullProfile")}
@@ -310,24 +313,26 @@ const Sidebar = ({ isOpen, onClose, isPersistent = false }) => {
     <>
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[2000]">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
-            />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute top-0 left-0 bottom-0"
-            >
-              {sidebarContent}
-            </motion.div>
-          </div>
+          <motion.div
+            key="sidebar-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-[2000]"
+          />
+        )}
+        {isOpen && (
+          <motion.div
+            key="sidebar-content"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed top-0 left-0 bottom-0 z-[2001]"
+          >
+            {sidebarContent}
+          </motion.div>
         )}
       </AnimatePresence>
       {logoutModal}

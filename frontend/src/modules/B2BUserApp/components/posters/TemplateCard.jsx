@@ -1,16 +1,19 @@
 import React from 'react';
 import axios from 'axios';
 import { Edit2, Download, MessageCircle, Share2, Sparkles, Video, PlayCircle, Play, Pause, Volume2, Heart, X } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import { useEditor } from '../../context/EditorContext';
 import { useAuth } from '../../context/AuthContext';
 import dealingIndiaText from '../../../../assets/dealing_india-removebg-preview.png';
 import BrandingOverlay from './BrandingOverlay';
+import ShareModal from '../modals/ShareModal';
 
 const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showActions = true }) => {
   const { openEditor, userData, likedTemplates, toggleLike, frames } = useEditor();
   const { user } = useAuth();
   const [localLikeCount, setLocalLikeCount] = React.useState(template.likeCount || 0);
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     setLocalLikeCount(template.likeCount || 0);
@@ -216,43 +219,15 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     }
   };
 
-  const getPosterFile = async () => {
-    const restoreStyles = inlineSafeColorsForHtml2Canvas(cardRef.current);
-    try {
-      const canvas = await window.html2canvas(cardRef.current, {
-        useCORS: true,
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-      return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            resolve(null);
-            return;
-          }
-          const file = new File([blob], `poster-${Date.now()}.png`, { type: 'image/png' });
-          resolve(file);
-        }, 'image/png', 0.9);
-      });
-    } catch (error) {
-      console.error('Error generating share file:', error);
-      return null;
-    } finally {
-      restoreStyles();
-    }
-  };
+  const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
 
   const handleWhatsApp = async (e) => {
     e.stopPropagation();
     recordActivity();
-    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
+    const isVideo = currentTemplate.type === 'video' || currentTemplate.isVideo;
     const userName = effectiveUserData.name || userData?.name || 'Dealingindia User';
-    
     const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
 
-    // If it's a video, we usually want them to go to the detail view to generate it
     if (isVideo) {
       onClick();
       return;
@@ -262,43 +237,10 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-
   const handleShare = async (e) => {
     e.stopPropagation();
     recordActivity();
-    const isVideo = currentTemplate.isVideo || currentTemplate.type === 'video';
-    const shareLink = `${API_URL}/share/poster/${currentTemplate._id}`;
-    const userName = effectiveUserData.name || userData?.name || 'Dealingindia User';
-    
-    const message = `${userName}\n\nI created this ${isVideo ? 'video greeting' : 'greeting'} using Dealingindia Poster app. Download Dealingindia Poster now to create custom WhatsApp status -\n\n${shareLink}`;
-
-    if (navigator.share) {
-      try {
-        const shareData = {
-          title: isVideo ? 'Professional Video Poster' : 'Professional Poster',
-          text: message,
-        };
-
-        if (isVideo) {
-           shareData.url = shareLink;
-        } else if (navigator.canShare) {
-          const file = await getPosterFile();
-          if (file && navigator.canShare({ files: [file] })) {
-            shareData.files = [file];
-          } else {
-            shareData.url = shareLink;
-          }
-        } else {
-          shareData.url = shareLink;
-        }
-
-        await navigator.share(shareData);
-      } catch (err) {
-        console.log('Share failed', err);
-      }
-    } else {
-      handleWhatsApp(e);
-    }
+    setIsShareModalOpen(true);
   };
 
   const handleAction = (e, callback) => {
@@ -320,13 +262,7 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
             className="w-full h-full object-cover relative z-[1]"
             onError={handleImageError}
           />
-          {activeFrame && (
-            overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={true} frameStyle={activeFrameObj?.textStyle} />
-          )}
         </div>
-        {!activeFrame && (
-          overlay || <BrandingOverlay userData={effectiveUserData} size="compact" activeFrame={activeFrame} isOverlay={false} frameStyle={activeFrameObj?.textStyle} />
-        )}
       </div>
     );
   }
@@ -547,6 +483,16 @@ const TemplateCard = ({ template, onClick, variant = 'regular', overlay, showAct
           </div>
         </div>
       )}
+      <AnimatePresence>
+        {isShareModalOpen && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            shareLink={shareLink}
+            isVideo={currentTemplate.isVideo || currentTemplate.type === 'video'}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

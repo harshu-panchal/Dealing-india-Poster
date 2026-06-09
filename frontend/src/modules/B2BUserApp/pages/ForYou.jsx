@@ -70,7 +70,11 @@ const ForYou = () => {
     };
 
     recognition.onerror = (event) => {
-      console.error("Speech recognition error", event.error);
+      if (event.error === 'not-allowed') {
+        alert("Microphone access was denied. Please allow microphone permissions to use voice search.");
+      } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        console.error("Speech recognition error:", event.error);
+      }
       setIsListening(false);
     };
 
@@ -353,19 +357,20 @@ const ForYou = () => {
           >
             <ChevronRight className="rotate-180" size={24} />
           </button>
-          <div className="flex-1 bg-white rounded-md flex items-center px-3 py-1.5 gap-2">
-            <Search className="text-slate-400" size={18} />
+          <div className="flex-1 min-w-0 bg-white rounded-md flex items-center px-3 py-1.5 gap-2">
+            <Search className="shrink-0 text-slate-400" size={18} />
             <input 
               autoFocus
               type="text" 
               placeholder="Search P..." 
-              className="flex-1 border-none outline-none text-sm"
+              className="flex-1 min-w-0 w-full border-none outline-none text-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <button 
-              onClick={startListening} 
-              className={`p-1 transition-all duration-300 ${isListening ? 'text-blue-500 scale-125 animate-pulse' : 'text-[#ef4444]'}`}
+              type="button"
+              onClick={(e) => { e.preventDefault(); startListening(); }}
+              className={`p-1 shrink-0 transition-all duration-300 ${isListening ? 'text-blue-500 scale-125 animate-pulse' : 'text-[#ef4444]'}`}
             >
               <Mic size={18} />
             </button>
@@ -383,14 +388,18 @@ const ForYou = () => {
         </div>
       ) : (
         <div className="sticky top-0 z-[1000] shadow-sm bg-white">
-          <div className="bg-white p-1 px-4 text-center border-b border-[#f1f5f9]">
-            <p className="text-[0.75rem] font-bold text-[#c2410c] m-0">{t("supportRating")}</p>
-          </div>
-
           <section className="p-3 px-4 bg-white flex justify-center overflow-hidden">
             <div className="w-full lg:max-w-4xl flex items-center gap-2">
               <div className="flex-1 min-w-0" onClick={() => setIsSearchMode(true)}>
-                <SearchBar value={searchQuery} onChange={setSearchQuery} />
+                <SearchBar 
+                  value={searchQuery} 
+                  onChange={setSearchQuery} 
+                  onVoiceComplete={(transcript) => {
+                    setSearchQuery(transcript);
+                    setDebouncedQuery(transcript);
+                    setIsSearchMode(true);
+                  }}
+                />
               </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); openCustomPosterEditor(); }}

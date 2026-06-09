@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Mic, MicOff, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const SearchBar = ({ value, onChange, placeholder, className = "" }) => {
+const SearchBar = ({ value, onChange, placeholder, className = "", onVoiceComplete }) => {
   const { t } = useTranslation();
   const [isListening, setIsListening] = useState(false);
 
@@ -25,11 +25,16 @@ const SearchBar = ({ value, onChange, placeholder, className = "" }) => {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       onChange(transcript);
+      if (onVoiceComplete) onVoiceComplete(transcript);
       setIsListening(false);
     };
 
     recognition.onerror = (event) => {
-      console.error("Speech recognition error", event.error);
+      if (event.error === 'not-allowed') {
+        alert("Microphone access was denied. Please allow microphone permissions to use voice search.");
+      } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        console.error("Speech recognition error:", event.error);
+      }
       setIsListening(false);
     };
 
@@ -46,12 +51,17 @@ const SearchBar = ({ value, onChange, placeholder, className = "" }) => {
       <input 
         type="text" 
         placeholder={placeholder || t("searchPosters")} 
-        className="flex-1 border-none bg-transparent outline-none text-[0.95rem] lg:text-base"
+        className="flex-1 min-w-0 w-full border-none bg-transparent outline-none text-[0.95rem] lg:text-base"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
       <button 
-        onClick={startListening}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          startListening();
+        }}
         className={`transition-all duration-300 ${isListening ? 'text-red-600 scale-125 animate-pulse' : 'text-[#64748b] hover:text-[#ef4444]'}`}
       >
         {isListening ? <Loader2 size={18} className="animate-spin" /> : <Mic size={18} className="lg:w-5 lg:h-5" />}

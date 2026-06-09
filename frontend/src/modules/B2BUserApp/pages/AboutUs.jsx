@@ -52,7 +52,7 @@ const AboutUs = () => {
                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Legal Information</h3>
                <div className="space-y-3">
                   <button 
-                    onClick={() => navigate('/privacy-policy')}
+                    onClick={() => navigate('/privacy')}
                     className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-red-50 transition-colors border-none cursor-pointer group"
                   >
                     <div className="flex items-center gap-3">
@@ -62,7 +62,7 @@ const AboutUs = () => {
                     <ArrowLeft size={16} className="text-slate-300 rotate-180 group-hover:text-red-500" />
                   </button>
                   <button 
-                    onClick={() => navigate('/terms-conditions')}
+                    onClick={() => navigate('/terms')}
                     className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-red-50 transition-colors border-none cursor-pointer group"
                   >
                     <div className="flex items-center gap-3">

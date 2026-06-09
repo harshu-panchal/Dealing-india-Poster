@@ -10,6 +10,15 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
   const navigate = useNavigate();
   const { user } = useAuth();
   const { openCustomPosterEditor } = useEditor();
+  const [hasNewUpdates, setHasNewUpdates] = React.useState(() => {
+    return localStorage.getItem('has_read_updates') !== 'true';
+  });
+
+  const handleNotificationClick = () => {
+    localStorage.setItem('has_read_updates', 'true');
+    setHasNewUpdates(false);
+    navigate('/whats-new');
+  };
 
 
   return (
@@ -34,7 +43,11 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
           </div>
           <span className="text-white text-[1rem] md:text-[1.15rem] font-bold whitespace-nowrap">Posters</span>
           <button 
-            onClick={() => { window.location.href = getReturnUrl(); }}
+            onClick={() => { 
+              if (window.confirm('Do you want to switch back to vendor screen?')) {
+                window.location.href = getReturnUrl(); 
+              }
+            }}
             className="bg-[#fde047] text-[#854d0e] px-1.5 md:px-2.5 py-1 rounded-sm text-[0.6rem] md:text-[0.7rem] font-extrabold flex items-center gap-1 ml-0.5 md:ml-1 flex-shrink-0 cursor-pointer border-none outline-none shadow-sm hover:bg-[#facc15] transition-colors"
           >
             {hasReturnUrl() && <ArrowLeft size={10} strokeWidth={3} className="shrink-0" />}
@@ -67,23 +80,25 @@ const CommonHeader = ({ showSearch = false, onSearchChange, searchQuery, onOpenS
           </button>
 
           <div 
-            className="relative text-white flex items-center cursor-pointer"
-            onClick={() => navigate('/whats-new')}
+            className="relative text-white flex items-center justify-center cursor-pointer p-1 w-8 h-8 rounded-full hover:bg-white/10 transition-colors"
+            onClick={handleNotificationClick}
           >
              <Bell size={20} />
-             <span className="absolute -top-1.5 -right-1.5 bg-[#3b82f6] text-white px-1 ml-0.5 rounded-[10px] text-[0.55rem] font-bold border-[1.2px] border-[#b91c1c]">9+</span>
+             {hasNewUpdates && (
+               <span className="absolute -top-1 -right-1 bg-[#3b82f6] text-white px-1 rounded-[10px] text-[0.55rem] font-bold border-[1.2px] border-[#b91c1c]">9+</span>
+             )}
           </div>
           
           <div 
-            className="relative text-white flex flex-col items-center cursor-pointer group"
+            className="relative text-white flex items-center justify-center cursor-pointer p-1 w-8 h-8 rounded-full hover:bg-white/10 transition-colors group"
             onClick={() => navigate('/calendar')}
           >
              <CalendarCheck size={20} />
-             <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-[#3b82f6] text-white px-1.5 py-0.2 rounded-sm text-[0.45rem] font-bold uppercase whitespace-nowrap border-[1px] border-[#b91c1c]">New</div>
+             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#3b82f6] text-white px-1.5 py-[1px] rounded-sm text-[0.45rem] font-bold uppercase whitespace-nowrap border-[1px] border-[#b91c1c]">New</div>
           </div>
           
           <div className="relative group">
-             <div className="relative text-white flex items-center cursor-pointer p-1">
+             <div onClick={() => navigate('/help')} className="relative text-white flex items-center justify-center cursor-pointer p-1 w-8 h-8 rounded-full hover:bg-white/10 transition-colors">
                 <HelpCircle size={20} />
              </div>
              

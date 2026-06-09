@@ -9,17 +9,15 @@ const FeedbackModal = ({ isOpen, onClose, user }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
     if (rating === 0) {
-      alert('Please select a rating');
-      return;
-    }
-    if (!message.trim()) {
-      alert('Please enter your feedback message');
+      setErrorMsg('Please select a rating');
       return;
     }
 
@@ -38,9 +36,9 @@ const FeedbackModal = ({ isOpen, onClose, user }) => {
         setMessage('');
         setSubmitted(false);
       }, 2000);
-    } catch (error) {
+      } catch (error) {
       console.error('Feedback error:', error);
-      alert(error.response?.data?.message || 'Failed to submit feedback');
+      setErrorMsg(error.response?.data?.message || 'Failed to submit feedback');
     } finally {
       setLoading(false);
     }
@@ -94,6 +92,11 @@ const FeedbackModal = ({ isOpen, onClose, user }) => {
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-8 w-full">
+                    {errorMsg && (
+                      <div className="bg-red-50 text-red-500 text-sm font-bold p-3 rounded-xl border border-red-100 flex items-center gap-2">
+                        <AlertCircle size={16} /> {errorMsg}
+                      </div>
+                    )}
                     {/* Rating Section */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between px-1">

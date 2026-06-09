@@ -14,6 +14,7 @@
   "settings": "Settings",
   "logout": "Logout",
   "searchPlaceholder": "Search Posters...",
+  "searchPosters": "Search Posters",
   "viewAll": "View All",
   "premium": "Premium",
   "free": "Free",
@@ -33,7 +34,7 @@
   "helpAndSupport": "Help & Support",
   "howToUseApp": "How to Use App",
   "directSupport": "Direct Support",
-  "aboutAppzeto": "About Appzeto",
+  "aboutAppzeto": "About Us",
   "privacyPolicy": "Privacy Policy",
   "termsAndConditions": "Terms & Conditions",
 
