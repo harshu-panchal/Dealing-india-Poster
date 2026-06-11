@@ -57,10 +57,11 @@ const SearchBar = ({ value, onChange, placeholder, className = "", onVoiceComple
       />
       <button 
         type="button"
+        disabled={isListening}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          startListening();
+          if (!isListening) startListening();
         }}
         className={`transition-all duration-300 ${isListening ? 'text-red-600 scale-125 animate-pulse' : 'text-[#64748b] hover:text-[#ef4444]'}`}
       >

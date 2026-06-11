@@ -369,7 +369,8 @@ const ForYou = () => {
             />
             <button 
               type="button"
-              onClick={(e) => { e.preventDefault(); startListening(); }}
+              disabled={isListening}
+              onClick={(e) => { e.preventDefault(); if (!isListening) startListening(); }}
               className={`p-1 shrink-0 transition-all duration-300 ${isListening ? 'text-blue-500 scale-125 animate-pulse' : 'text-[#ef4444]'}`}
             >
               <Mic size={18} />

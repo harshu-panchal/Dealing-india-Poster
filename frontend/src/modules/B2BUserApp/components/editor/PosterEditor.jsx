@@ -982,18 +982,6 @@ const PosterEditor = ({ template, onClose }) => {
               <div className="p-5 flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[1rem] font-black text-gray-800 flex items-center gap-2 mb-1"><Layers size={20} className="text-blue-500" /> Frame Overlays</h3>
-                  {effectiveSelectedFrame && (
-                    <button
-                      onClick={() => {
-                        setSelectedFrame(null);
-                        setLocalUserData(prev => ({ ...prev, selectedFrame: null }));
-                      }}
-
-                      className="text-[0.65rem] font-black text-red-500 uppercase tracking-widest bg-red-50 px-3 py-1 rounded-lg border-none hover:bg-red-100 transition-colors"
-                    >
-                      Reset Frame
-                    </button>
-                  )}
                 </div>
                 <p className="text-[0.7rem] font-bold text-gray-400 uppercase tracking-widest -mt-4">Apply transparent border overlays</p>
 

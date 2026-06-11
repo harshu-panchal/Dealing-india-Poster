@@ -82,6 +82,16 @@ const Trending = () => {
     return sectionsFromSubs;
   }, [activeCategoryId, categories, allTemplates]);
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return allTemplates.filter(t =>
+      t.title?.toLowerCase().includes(q) ||
+      t.name?.toLowerCase().includes(q) ||
+      t.tags?.some(tag => tag.toLowerCase().includes(q))
+    );
+  }, [searchQuery, allTemplates]);
+
   return (
     <div className="bg-[#f8fafc] pb-20 min-h-screen">
       {/* Search Bar Area */}
@@ -116,7 +126,6 @@ const Trending = () => {
         )}
       </div>
 
-
       {/* Loader */}
       {isLoading && (
         <div className="p-4 space-y-4">
@@ -124,39 +133,70 @@ const Trending = () => {
         </div>
       )}
 
-      {/* Display Sections */}
-      <div className="flex flex-col gap-2">
-        {displaySections.map((section) => (
-          <div key={section.id} className="bg-white py-1 mb-1 shadow-sm">
-            <SectionHeader 
-               title={section.title} 
-               showViewAll={activeCategoryId === 'Trending'} 
-               onViewAll={() => setActiveCategoryId(section.id)}
-            />
-            <HorizontalScrollList>
-              {section.items.map(tpl => (
-                <TemplateCard 
-                  key={tpl._id} 
-                  template={tpl} 
-                  variant="compact" 
-                  onClick={() => openDetail(tpl)} 
+      {/* ── SEARCH RESULTS ── */}
+      {searchQuery.trim() && (
+        <div className="bg-white mt-2 py-4 shadow-sm">
+          <div className="px-4 mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-800 tracking-tight">
+              Results for "{searchQuery}"
+              <span className="ml-2 text-slate-400 font-bold text-xs">({searchResults.length})</span>
+            </h2>
+          </div>
+          {searchResults.length === 0 ? (
+            <div className="text-center py-10 opacity-40">
+              <Layers className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No results found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 px-4">
+              {searchResults.map(tpl => (
+                <TemplateCard
+                  key={tpl._id}
+                  template={tpl}
+                  variant="compact"
+                  onClick={() => openDetail(tpl)}
                 />
               ))}
-            </HorizontalScrollList>
-            {section.items.length === 0 && (
-               <div className="p-10 text-center opacity-30 text-[0.7rem] font-bold text-slate-400">
-                  Coming soon!
-               </div>
-            )}
-          </div>
-        ))}
-        {!isLoading && displaySections.length === 0 && (
-           <div className="text-center py-20 opacity-40">
-              <Layers className="w-16 h-16 mx-auto mb-2 text-slate-300" />
-              <p className="font-bold text-slate-400 uppercase tracking-widest text-[0.65rem]">Gallery Under Update</p>
-           </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Display Sections */}
+      {!searchQuery.trim() && (
+        <div className="flex flex-col gap-2">
+          {displaySections.map((section) => (
+            <div key={section.id} className="bg-white py-1 mb-1 shadow-sm">
+              <SectionHeader 
+                 title={section.title} 
+                 showViewAll={activeCategoryId === 'Trending'} 
+                 onViewAll={() => setActiveCategoryId(section.id)}
+              />
+              <HorizontalScrollList>
+                {section.items.map(tpl => (
+                  <TemplateCard 
+                    key={tpl._id} 
+                    template={tpl} 
+                    variant="compact" 
+                    onClick={() => openDetail(tpl)} 
+                  />
+                ))}
+              </HorizontalScrollList>
+              {section.items.length === 0 && (
+                 <div className="p-10 text-center opacity-30 text-[0.7rem] font-bold text-slate-400">
+                    Coming soon!
+                 </div>
+              )}
+            </div>
+          ))}
+          {!isLoading && displaySections.length === 0 && (
+             <div className="text-center py-20 opacity-40">
+                <Layers className="w-16 h-16 mx-auto mb-2 text-slate-300" />
+                <p className="font-bold text-slate-400 uppercase tracking-widest text-[0.65rem]">Gallery Under Update</p>
+             </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
