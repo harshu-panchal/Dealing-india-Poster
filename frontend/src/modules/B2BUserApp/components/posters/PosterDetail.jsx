@@ -622,9 +622,6 @@ const PosterDetail = ({ template, onEdit, onClose }) => {
         <div className="px-5 py-6">
           <h4 className="text-[0.7rem] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Select Frame Overlay</h4>
           <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1">
-            <div className={`min-w-[70px] h-[70px] rounded-2xl flex items-center justify-center border-2 cursor-pointer transition-all ${!selectedFrame ? 'border-primary bg-indigo-50/50 shadow-md' : 'border-slate-100 bg-slate-50/50'}`} onClick={() => setSelectedFrame(null)}>
-              <div className="w-8 h-8 rounded-full border-2 border-slate-300 relative flex items-center justify-center"><div className="w-10 h-[2px] bg-slate-300 rotate-45 absolute" /></div>
-            </div>
             {frames.map(frame => (
               <div key={frame._id} className={`min-w-[70px] h-[70px] rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${activeFrame === frame.image ? 'border-primary scale-95 shadow-md shadow-indigo-100' : 'border-slate-100 opacity-80'}`} onClick={() => setSelectedFrame(frame.image)}>
                 <img src={frame.image} className="w-full h-full object-fill" />
